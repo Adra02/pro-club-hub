@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro Club Hub - FIFA Pro Clubs Community</title>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-spinner"></div>
+        <p>Caricamento...</p>
+    </div>
+
+    <div id="notification" class="notification"></div>
+
+    <header id="mainHeader" class="header">
+        <div class="container">
+            <div class="header-content">
+                <h1 class="logo">
+                    <i class="fas fa-futbol"></i>
+                    Pro Club Hub
+                </h1>
+                <nav class="nav" id="mainNav">
+                    <button class="nav-btn" data-page="home">
+                        <i class="fas fa-home"></i>
+                        <span>Home</span>
+                    </button>
+                    <button class="nav-btn" data-page="players">
+                        <i class="fas fa-users"></i>
+                        <span>Giocatori</span>
+                    </button>
+                    <button class="nav-btn" data-page="teams">
+                        <i class="fas fa-shield-alt"></i>
+                        <span>Squadre</span>
+                    </button>
+                    <button class="nav-btn" data-page="profile" id="profileNavBtn" style="display: none;">
+                        <i class="fas fa-user"></i>
+                        <span>Profilo</span>
+                    </button>
+                    <button class="btn-logout" id="logoutBtn" style="display: none;">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Esci</span>
+                    </button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main id="mainContent" class="main-content">
+        <div id="homePage" class="page">
+            <div class="hero">
+                <div class="container">
+                    <div class="hero-content">
+                        <h2 class="hero-title">Benvenuto su Pro Club Hub</h2>
+                        <p class="hero-subtitle">La community definitiva per i giocatori di FIFA Pro Clubs</p>
+                        <div class="hero-actions" id="heroActions">
+                            <button class="btn btn-primary btn-large" id="heroLoginBtn">
+                                <i class="fas fa-sign-in-alt"></i>
+                                Accedi
+                            </button>
+                            <button class="btn btn-secondary btn-large" id="heroRegisterBtn">
+                                <i class="fas fa-user-plus"></i>
+                                Registrati
+                            </button>
+                        </div>
+                        <div class="hero-user-info" id="heroUserInfo" style="display: none;">
+                            <div class="user-card-large">
+                                <div class="user-avatar-large">
+                                    <i class="fas fa-user-circle"></i>
+                                </div>
+                                <div class="user-details">
+                                    <h3 id="heroUsername"></h3>
+                                    <div class="user-level">
+                                        <span>Livello <strong id="heroLevel"></strong></span>
+                                        <div class="level-bar">
+                                            <div class="level-progress" id="heroLevelProgress"></div>
+                                        </div>
+                                    </div>
+                                    <div class="user-rating">
+                                        <i class="fas fa-star"></i>
+                                        <span id="heroRating">0.0</span>
+                                        <span class="rating-count">(<span id="heroRatingCount">0</span> feedback)</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="features">
+                        <div class="feature-card">
+                            <div class="feature-icon">
+                                <i class="fas fa-search"></i>
+                            </div>
+                            <h3>Trova Giocatori</h3>
+                            <p>Cerca giocatori per ruolo, livello e piattaforma</p>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-icon">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <h3>Crea Squadre</h3>
+                            <p>Forma la tua squadra e competi insieme</p>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-icon">
+                                <i class="fas fa-star"></i>
+                            </div>
+                            <h3>Lascia Feedback</h3>
+                            <p>Valuta i giocatori e costruisci la tua reputazione</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="playersPage" class="page" style="display: none;">
+            <div class="container">
+                <div class="page-header">
+                    <h2><i class="fas fa-users"></i> Cerca Giocatori</h2>
+                </div>
+                
+                <div class="search-filters">
+                    <div class="filter-row">
+                        <input type="text" id="playerSearchInput" class="input" placeholder="🔍 Cerca per nome...">
+                        <select id="roleFilter" class="select">
+                            <option value="">Tutti i ruoli</option>
+                            <option value="Portiere (GK)">Portiere (GK)</option>
+                            <option value="Difensore (CB/LB/RB)">Difensore (CB/LB/RB)</option>
+                            <option value="Centrocampista (CM/CDM/CAM)">Centrocampista (CM/CDM/CAM)</option>
+                            <option value="Ala (LW/RW/LM/RM)">Ala (LW/RW/LM/RM)</option>
+                            <option value="Attaccante (ST/CF)">Attaccante (ST/CF)</option>
+                        </select>
+                        <select id="platformFilter" class="select">
+                            <option value="">Tutte le piattaforme</option>
+                            <option value="PlayStation">PlayStation</option>
+                            <option value="Xbox">Xbox</option>
+                            <option value="PC">PC</option>
+                        </select>
+                    </div>
+                    <div class="filter-row">
+                        <div class="level-filter">
+                            <label>Livello minimo:</label>
+                            <input type="number" id="minLevelFilter" class="input input-small" min="1" max="150" placeholder="1">
+                        </div>
+                        <div class="level-filter">
+                            <label>Livello massimo:</label>
+                            <input type="number" id="maxLevelFilter" class="input input-small" min="1" max="150" placeholder="150">
+                        </div>
+                        <button class="btn btn-primary" id="searchPlayersBtn">
+                            <i class="fas fa-search"></i>
+                            Cerca
+                        </button>
+                    </div>
+                </div>
+
+                <div id="playersResults" class="results-grid"></div>
+            </div>
+        </div>
+
+        <div id="teamsPage" class="page" style="display: none;">
+            <div class="container">
+                <div class="page-header">
+                    <h2><i class="fas fa-shield-alt"></i> Squadre</h2>
+                    <button class="btn btn-primary" id="createTeamBtn" style="display: none;">
+                        <i class="fas fa-plus"></i>
+                        Crea Squadra
+                    </button>
+                </div>
+
+                <div class="search-filters">
+                    <input type="text" id="teamSearchInput" class="input" placeholder="🔍 Cerca squadra...">
+                    <select id="teamPlatformFilter" class="select">
+                        <option value="">Tutte le piattaforme</option>
+                        <option value="PlayStation">PlayStation</option>
+                        <option value="Xbox">Xbox</option>
+                        <option value="PC">PC</option>
+                    </select>
+                    <button class="btn btn-primary" id="searchTeamsBtn">
+                        <i class="fas fa-search"></i>
+                        Cerca
+                    </button>
+                </div>
+
+                <div id="teamsResults" class="results-grid"></div>
+            </div>
+        </div>
+
+        <div id="profilePage" class="page" style="display: none;">
+            <div class="container">
+                <div class="profile-content">
+                    <div class="profile-header">
+                        <div class="profile-avatar">
+                            <i class="fas fa-user-circle"></i>
+                        </div>
+                        <div class="profile-info">
+                            <h2 id="profileUsername"></h2>
+                            <div class="profile-level">
+                                <span>Livello <strong id="profileLevel"></strong>/150</span>
+                                <div class="level-bar level-bar-large">
+                                    <div class="level-progress" id="profileLevelProgress"></div>
+                                </div>
+                            </div>
+                            <div class="profile-rating">
+                                <i class="fas fa-star"></i>
+                                <span id="profileRating">0.0</span>
+                                <span class="rating-count">(<span id="profileRatingCount">0</span> feedback)</span>
+                            </div>
+                        </div>
+                        <button class="btn btn-secondary" id="editProfileBtn">
+                            <i class="fas fa-edit"></i>
+                            Modifica Profilo
+                        </button>
+                    </div>
+
+                    <div class="profile-details">
+                        <div class="detail-card">
+                            <h3><i class="fas fa-envelope"></i> Email</h3>
+                            <p id="profileEmail"></p>
+                        </div>
+                        <div class="detail-card">
+                            <h3><i class="fas fa-gamepad"></i> Piattaforma</h3>
+                            <p id="profilePlatform"></p>
+                        </div>
+                        <div class="detail-card">
+                            <h3><i class="fas fa-trophy"></i> Ruolo Principale</h3>
+                            <p id="profilePrimaryRole"></p>
+                        </div>
+                        <div class="detail-card">
+                            <h3><i class="fas fa-users"></i> Ruoli Secondari</h3>
+                            <p id="profileSecondaryRoles">Nessuno</p>
+                        </div>
+                        <div class="detail-card">
+                            <h3><i class="fas fa-comment"></i> Bio</h3>
+                            <p id="profileBio">Nessuna bio</p>
+                        </div>
+                        <div class="detail-card" id="profileSocialCard">
+                            <h3><i class="fas fa-share-alt"></i> Social</h3>
+                            <div class="social-links" id="profileSocialLinks"></div>
+                        </div>
+                    </div>
+
+                    <div class="feedback-section">
+                        <h3><i class="fas fa-star"></i> Feedback Ricevuti</h3>
+                        <div id="profileFeedbackList"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="authModal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" id="closeAuthModal">
+                <i class="fas fa-times"></i>
+            </button>
+            
+            <div id="loginForm" class="auth-form">
+                <h2><i class="fas fa-sign-in-alt"></i> Accedi</h2>
+                <form id="loginFormElement">
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="loginEmail" class="input" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" id="loginPassword" class="input" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">
+                        <i class="fas fa-sign-in-alt"></i>
+                        Accedi
+                    </button>
+                </form>
+                <p class="auth-switch">
+                    Non hai un account? 
+                    <a href="#" id="showRegisterForm">Registrati</a>
+                </p>
+            </div>
+
+            <div id="registerForm" class="auth-form" style="display: none;">
+                <h2><i class="fas fa-user-plus"></i> Registrati</h2>
+                <form id="registerFormElement">
+                    <div class="form-group">
+                        <label>Username</label>
+                        <input type="text" id="registerUsername" class="input" required minlength="3" maxlength="20">
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="registerEmail" class="input" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" id="registerPassword" class="input" required minlength="6">
+                    </div>
+                    <div class="form-group">
+                        <label>Ruolo Principale</label>
+                        <select id="registerRole" class="select" required>
+                            <option value="">Seleziona ruolo</option>
+                            <option value="Portiere (GK)">Portiere (GK)</option>
+                            <option value="Difensore (CB/LB/RB)">Difensore (CB/LB/RB)</option>
+                            <option value="Centrocampista (CM/CDM/CAM)">Centrocampista (CM/CDM/CAM)</option>
+                            <option value="Ala (LW/RW/LM/RM)">Ala (LW/RW/LM/RM)</option>
+                            <option value="Attaccante (ST/CF)">Attaccante (ST/CF)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Piattaforma</label>
+                        <select id="registerPlatform" class="select" required>
+                            <option value="">Seleziona piattaforma</option>
+                            <option value="PlayStation">PlayStation</option>
+                            <option value="Xbox">Xbox</option>
+                            <option value="PC">PC</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Livello (1-150)</label>
+                        <input type="number" id="registerLevel" class="input" min="1" max="150" value="1" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">
+                        <i class="fas fa-user-plus"></i>
+                        Registrati
+                    </button>
+                </form>
+                <p class="auth-switch">
+                    Hai già un account? 
+                    <a href="#" id="showLoginForm">Accedi</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div id="editProfileModal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" id="closeEditModal">
+                <i class="fas fa-times"></i>
+            </button>
+            <h2><i class="fas fa-edit"></i> Modifica Profilo</h2>
+            <form id="editProfileForm">
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" id="editUsername" class="input" required minlength="3" maxlength="20">
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="editEmail" class="input" required>
+                </div>
+                <div class="form-group">
+                    <label>Nuova Password (lascia vuoto per non modificare)</label>
+                    <input type="password" id="editPassword" class="input" minlength="6">
+                </div>
+                <div class="form-group">
+                    <label>Ruolo Principale</label>
+                    <select id="editPrimaryRole" class="select" required>
+                        <option value="Portiere (GK)">Portiere (GK)</option>
+                        <option value="Difensore (CB/LB/RB)">Difensore (CB/LB/RB)</option>
+                        <option value="Centrocampista (CM/CDM/CAM)">Centrocampista (CM/CDM/CAM)</option>
+                        <option value="Ala (LW/RW/LM/RM)">Ala (LW/RW/LM/RM)</option>
+                        <option value="Attaccante (ST/CF)">Attaccante (ST/CF)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Ruoli Secondari (max 2)</label>
+                    <div class="checkbox-group" id="secondaryRolesCheckboxes">
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="Portiere (GK)"> Portiere (GK)
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="Difensore (CB/LB/RB)"> Difensore (CB/LB/RB)
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="Centrocampista (CM/CDM/CAM)"> Centrocampista (CM/CDM/CAM)
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="Ala (LW/RW/LM/RM)"> Ala (LW/RW/LM/RM)
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="Attaccante (ST/CF)"> Attaccante (ST/CF)
+                        </label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Piattaforma</label>
+                    <select id="editPlatform" class="select" required>
+                        <option value="PlayStation">PlayStation</option>
+                        <option value="Xbox">Xbox</option>
+                        <option value="PC">PC</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Livello (1-150)</label>
+                    <input type="number" id="editLevel" class="input" min="1" max="150" required>
+                </div>
+                <div class="form-group">
+                    <label>Instagram (username)</label>
+                    <input type="text" id="editInstagram" class="input" placeholder="tuousername">
+                </div>
+                <div class="form-group">
+                    <label>TikTok (username)</label>
+                    <input type="text" id="editTiktok" class="input" placeholder="tuousername">
+                </div>
+                <div class="form-group">
+                    <label>Bio</label>
+                    <textarea id="editBio" class="textarea" rows="4" maxlength="500"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">
+                    <i class="fas fa-save"></i>
+                    Salva Modifiche
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div id="createTeamModal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" id="closeCreateTeamModal">
+                <i class="fas fa-times"></i>
+            </button>
+            <h2><i class="fas fa-plus"></i> Crea Squadra</h2>
+            <form id="createTeamForm">
+                <div class="form-group">
+                    <label>Nome Squadra</label>
+                    <input type="text" id="teamName" class="input" required minlength="3" maxlength="30">
+                </div>
+                <div class="form-group">
+                    <label>Descrizione</label>
+                    <textarea id="teamDescription" class="textarea" rows="4" maxlength="500"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Piattaforma</label>
+                    <select id="teamPlatform" class="select" required>
+                        <option value="">Seleziona piattaforma</option>
+                        <option value="PlayStation">PlayStation</option>
+                        <option value="Xbox">Xbox</option>
+                        <option value="PC">PC</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Instagram (username)</label>
+                    <input type="text" id="teamInstagram" class="input" placeholder="squadra_instagram">
+                </div>
+                <div class="form-group">
+                    <label>TikTok (username)</label>
+                    <input type="text" id="teamTiktok" class="input" placeholder="squadra_tiktok">
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">
+                    <i class="fas fa-plus"></i>
+                    Crea Squadra
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div id="feedbackModal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" id="closeFeedbackModal">
+                <i class="fas fa-times"></i>
+            </button>
+            <h2><i class="fas fa-star"></i> Lascia Feedback</h2>
+            <form id="feedbackForm">
+                <input type="hidden" id="feedbackTargetUserId">
+                <input type="hidden" id="feedbackTargetTeamId">
+                
+                <div class="form-group">
+                    <label>Valutazione</label>
+                    <div class="star-rating" id="starRating">
+                        <i class="far fa-star" data-rating="1"></i>
+                        <i class="far fa-star" data-rating="2"></i>
+                        <i class="far fa-star" data-rating="3"></i>
+                        <i class="far fa-star" data-rating="4"></i>
+                        <i class="far fa-star" data-rating="5"></i>
+                    </div>
+                    <input type="hidden" id="feedbackRating" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Tag (opzionale)</label>
+                    <div class="tag-selector" id="tagSelector">
+                        <button type="button" class="tag-btn" data-tag="Serio">
+                            <i class="fas fa-user-tie"></i> Serio
+                        </button>
+                        <button type="button" class="tag-btn" data-tag="Comunicativo">
+                            <i class="fas fa-comments"></i> Comunicativo
+                        </button>
+                        <button type="button" class="tag-btn" data-tag="Divertente">
+                            <i class="fas fa-laugh"></i> Divertente
+                        </button>
+                        <button type="button" class="tag-btn" data-tag="Tossico">
+                            <i class="fas fa-skull-crossbones"></i> Tossico
+                        </button>
+                        <button type="button" class="tag-btn" data-tag="Giocatore di squadra">
+                            <i class="fas fa-users"></i> Giocatore di squadra
+                        </button>
+                        <button type="button" class="tag-btn" data-tag="Leader">
+                            <i class="fas fa-crown"></i> Leader
+                        </button>
+                        <button type="button" class="tag-btn" data-tag="Affidabile">
+                            <i class="fas fa-handshake"></i> Affidabile
+                        </button>
+                        <button type="button" class="tag-btn" data-tag="Puntuale">
+                            <i class="fas fa-clock"></i> Puntuale
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Commento (opzionale)</label>
+                    <textarea id="feedbackComment" class="textarea" rows="4" maxlength="500"></textarea>
+                </div>
+                
+                <button type="submit" class="btn btn-primary btn-block">
+                    <i class="fas fa-paper-plane"></i>
+                    Invia Feedback
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div id="playerDetailModal" class="modal">
+        <div class="modal-content modal-large">
+            <button class="modal-close" id="closePlayerDetailModal">
+                <i class="fas fa-times"></i>
+            </button>
+            <div id="playerDetailContent"></div>
+        </div>
+    </div>
+
+    <div id="teamDetailModal" class="modal">
+        <div class="modal-content modal-large">
+            <button class="modal-close" id="closeTeamDetailModal">
+                <i class="fas fa-times"></i>
+            </button>
+            <div id="teamDetailContent"></div>
+        </div>
+    </div>
+
+    <script src="/app.js"></script>
+</body>
+</html>
