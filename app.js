@@ -50,7 +50,7 @@ async function fetchCurrentUser() {
 }
 
 function updateUIForUser() {
-    document.getElementById('profileNavBtn').style.display = 'block';
+    document.getElementById('profileNavBtn').style.display = 'flex';
     document.getElementById('logoutBtn').style.display = 'flex';
     document.getElementById('heroActions').style.display = 'none';
     document.getElementById('heroUserInfo').style.display = 'block';
@@ -80,40 +80,69 @@ function setupEventListeners() {
         });
     });
 
-    document.getElementById('heroLoginBtn')?.addEventListener('click', () => openAuthModal('login'));
-    document.getElementById('heroRegisterBtn')?.addEventListener('click', () => openAuthModal('register'));
-    document.getElementById('logoutBtn')?.addEventListener('click', logout);
+    const heroLoginBtn = document.getElementById('heroLoginBtn');
+    const heroRegisterBtn = document.getElementById('heroRegisterBtn');
+    if (heroLoginBtn) heroLoginBtn.addEventListener('click', () => openAuthModal('login'));
+    if (heroRegisterBtn) heroRegisterBtn.addEventListener('click', () => openAuthModal('register'));
+    
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) logoutBtn.addEventListener('click', logout);
 
-    document.getElementById('showRegisterForm')?.addEventListener('click', (e) => {
+    const showRegisterForm = document.getElementById('showRegisterForm');
+    const showLoginForm = document.getElementById('showLoginForm');
+    if (showRegisterForm) showRegisterForm.addEventListener('click', (e) => {
         e.preventDefault();
         switchAuthForm('register');
     });
-
-    document.getElementById('showLoginForm')?.addEventListener('click', (e) => {
+    if (showLoginForm) showLoginForm.addEventListener('click', (e) => {
         e.preventDefault();
         switchAuthForm('login');
     });
 
-    document.getElementById('closeAuthModal')?.addEventListener('click', closeAuthModal);
-    document.getElementById('loginFormElement')?.addEventListener('submit', handleLogin);
-    document.getElementById('registerFormElement')?.addEventListener('submit', handleRegister);
+    const closeAuthModal = document.getElementById('closeAuthModal');
+    if (closeAuthModal) closeAuthModal.addEventListener('click', closeAuthModalFn);
 
-    document.getElementById('editProfileBtn')?.addEventListener('click', openEditProfileModal);
-    document.getElementById('closeEditModal')?.addEventListener('click', closeEditProfileModal);
-    document.getElementById('editProfileForm')?.addEventListener('submit', handleEditProfile);
+    const loginFormElement = document.getElementById('loginFormElement');
+    if (loginFormElement) loginFormElement.addEventListener('submit', handleLogin);
 
-    document.getElementById('createTeamBtn')?.addEventListener('click', openCreateTeamModal);
-    document.getElementById('closeCreateTeamModal')?.addEventListener('click', closeCreateTeamModal);
-    document.getElementById('createTeamForm')?.addEventListener('submit', handleCreateTeam);
+    const registerFormElement = document.getElementById('registerFormElement');
+    if (registerFormElement) registerFormElement.addEventListener('submit', handleRegister);
 
-    document.getElementById('searchPlayersBtn')?.addEventListener('click', searchPlayers);
-    document.getElementById('searchTeamsBtn')?.addEventListener('click', searchTeams);
+    const editProfileBtn = document.getElementById('editProfileBtn');
+    if (editProfileBtn) editProfileBtn.addEventListener('click', openEditProfileModal);
 
-    document.getElementById('closeFeedbackModal')?.addEventListener('click', closeFeedbackModal);
-    document.getElementById('feedbackForm')?.addEventListener('submit', handleSubmitFeedback);
+    const closeEditModal = document.getElementById('closeEditModal');
+    if (closeEditModal) closeEditModal.addEventListener('click', closeEditProfileModal);
 
-    document.getElementById('closePlayerDetailModal')?.addEventListener('click', closePlayerDetailModal);
-    document.getElementById('closeTeamDetailModal')?.addEventListener('click', closeTeamDetailModal);
+    const editProfileForm = document.getElementById('editProfileForm');
+    if (editProfileForm) editProfileForm.addEventListener('submit', handleEditProfile);
+
+    const createTeamBtn = document.getElementById('createTeamBtn');
+    if (createTeamBtn) createTeamBtn.addEventListener('click', openCreateTeamModal);
+
+    const closeCreateTeamModal = document.getElementById('closeCreateTeamModal');
+    if (closeCreateTeamModal) closeCreateTeamModal.addEventListener('click', closeCreateTeamModalFn);
+
+    const createTeamForm = document.getElementById('createTeamForm');
+    if (createTeamForm) createTeamForm.addEventListener('submit', handleCreateTeam);
+
+    const searchPlayersBtn = document.getElementById('searchPlayersBtn');
+    if (searchPlayersBtn) searchPlayersBtn.addEventListener('click', searchPlayers);
+
+    const searchTeamsBtn = document.getElementById('searchTeamsBtn');
+    if (searchTeamsBtn) searchTeamsBtn.addEventListener('click', searchTeams);
+
+    const closeFeedbackModal = document.getElementById('closeFeedbackModal');
+    if (closeFeedbackModal) closeFeedbackModal.addEventListener('click', closeFeedbackModalFn);
+
+    const feedbackForm = document.getElementById('feedbackForm');
+    if (feedbackForm) feedbackForm.addEventListener('submit', handleSubmitFeedback);
+
+    const closePlayerDetailModal = document.getElementById('closePlayerDetailModal');
+    if (closePlayerDetailModal) closePlayerDetailModal.addEventListener('click', closePlayerDetailModalFn);
+
+    const closeTeamDetailModal = document.getElementById('closeTeamDetailModal');
+    if (closeTeamDetailModal) closeTeamDetailModal.addEventListener('click', closeTeamDetailModalFn);
 
     setupStarRating();
     setupTagSelector();
@@ -152,27 +181,43 @@ function navigateTo(page) {
 }
 
 function openAuthModal(form) {
-    document.getElementById('loginForm').style.display = form === 'login' ? 'block' : 'none';
-    document.getElementById('registerForm').style.display = form === 'register' ? 'block' : 'none';
-    document.getElementById('authModal').classList.add('active');
+    const loginForm = document.getElementById('loginForm');
+    const registerForm = document.getElementById('registerForm');
+    const authModal = document.getElementById('authModal');
+
+    if (loginForm) loginForm.style.display = form === 'login' ? 'block' : 'none';
+    if (registerForm) registerForm.style.display = form === 'register' ? 'block' : 'none';
+    if (authModal) authModal.classList.add('active');
 }
 
-function closeAuthModal() {
-    document.getElementById('authModal').classList.remove('active');
-    document.getElementById('loginFormElement').reset();
-    document.getElementById('registerFormElement').reset();
+function closeAuthModalFn() {
+    const authModal = document.getElementById('authModal');
+    if (authModal) authModal.classList.remove('active');
+    
+    const loginFormElement = document.getElementById('loginFormElement');
+    const registerFormElement = document.getElementById('registerFormElement');
+    if (loginFormElement) loginFormElement.reset();
+    if (registerFormElement) registerFormElement.reset();
 }
 
 function switchAuthForm(form) {
-    document.getElementById('loginForm').style.display = form === 'login' ? 'block' : 'none';
-    document.getElementById('registerForm').style.display = form === 'register' ? 'block' : 'none';
+    const loginForm = document.getElementById('loginForm');
+    const registerForm = document.getElementById('registerForm');
+    
+    if (loginForm) loginForm.style.display = form === 'login' ? 'block' : 'none';
+    if (registerForm) registerForm.style.display = form === 'register' ? 'block' : 'none';
 }
 
 async function handleLogin(e) {
     e.preventDefault();
 
-    const email = document.getElementById('loginEmail').value;
+    const email = document.getElementById('loginEmail').value.trim();
     const password = document.getElementById('loginPassword').value;
+
+    if (!email || !password) {
+        showNotification('⚠️ Compila tutti i campi', 'error');
+        return;
+    }
 
     try {
         showLoading();
@@ -187,16 +232,16 @@ async function handleLogin(e) {
         if (response.ok) {
             localStorage.setItem('token', data.token);
             currentUser = data.user;
-            closeAuthModal();
+            closeAuthModalFn();
             updateUIForUser();
-            showNotification('Login effettuato con successo!', 'success');
+            showNotification('✅ Login effettuato con successo!', 'success');
             navigateTo('home');
         } else {
-            showNotification(data.error || 'Errore durante il login', 'error');
+            showNotification('❌ ' + (data.error || 'Errore durante il login'), 'error');
         }
     } catch (error) {
         console.error('Login error:', error);
-        showNotification('Errore di connessione', 'error');
+        showNotification('❌ Errore di connessione', 'error');
     } finally {
         hideLoading();
     }
@@ -205,19 +250,58 @@ async function handleLogin(e) {
 async function handleRegister(e) {
     e.preventDefault();
 
-    const username = document.getElementById('registerUsername').value;
-    const email = document.getElementById('registerEmail').value;
+    const username = document.getElementById('registerUsername').value.trim();
+    const email = document.getElementById('registerEmail').value.trim();
     const password = document.getElementById('registerPassword').value;
     const primaryRole = document.getElementById('registerRole').value;
     const platform = document.getElementById('registerPlatform').value;
     const level = parseInt(document.getElementById('registerLevel').value);
 
+    if (!username || username.length < 3) {
+        showNotification('⚠️ Username deve essere almeno 3 caratteri', 'error');
+        return;
+    }
+
+    if (!email || !email.includes('@')) {
+        showNotification('⚠️ Inserisci un\'email valida', 'error');
+        return;
+    }
+
+    if (!password || password.length < 6) {
+        showNotification('⚠️ Password deve essere almeno 6 caratteri', 'error');
+        return;
+    }
+
+    if (!primaryRole) {
+        showNotification('⚠️ Seleziona un ruolo', 'error');
+        return;
+    }
+
+    if (!platform) {
+        showNotification('⚠️ Seleziona una piattaforma', 'error');
+        return;
+    }
+
+    if (!level || level < 1 || level > 150) {
+        showNotification('⚠️ Livello deve essere tra 1 e 150', 'error');
+        return;
+    }
+
     try {
         showLoading();
         const response = await fetch(`${API_BASE}/auth/register`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, email, password, primaryRole, platform, level })
+            headers: { 
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ 
+                username, 
+                email, 
+                password, 
+                primaryRole, 
+                platform, 
+                level 
+            })
         });
 
         const data = await response.json();
@@ -225,16 +309,16 @@ async function handleRegister(e) {
         if (response.ok) {
             localStorage.setItem('token', data.token);
             currentUser = data.user;
-            closeAuthModal();
+            closeAuthModalFn();
             updateUIForUser();
-            showNotification('Registrazione completata! Benvenuto!', 'success');
+            showNotification('🎉 Registrazione completata! Benvenuto!', 'success');
             navigateTo('home');
         } else {
-            showNotification(data.error || 'Errore durante la registrazione', 'error');
+            showNotification('❌ ' + (data.error || 'Errore durante la registrazione'), 'error');
         }
     } catch (error) {
         console.error('Registration error:', error);
-        showNotification('Errore di connessione', 'error');
+        showNotification('❌ Errore di connessione. Riprova.', 'error');
     } finally {
         hideLoading();
     }
@@ -244,18 +328,18 @@ function logout() {
     localStorage.removeItem('token');
     currentUser = null;
     updateUIForGuest();
-    showNotification('Logout effettuato', 'info');
+    showNotification('👋 Logout effettuato', 'info');
     navigateTo('home');
 }
 
 async function searchPlayers() {
     if (!currentUser) {
-        showNotification('Devi effettuare il login per cercare giocatori', 'error');
+        showNotification('⚠️ Devi effettuare il login per cercare giocatori', 'error');
         openAuthModal('login');
         return;
     }
 
-    const search = document.getElementById('playerSearchInput').value;
+    const search = document.getElementById('playerSearchInput').value.trim();
     const role = document.getElementById('roleFilter').value;
     const platform = document.getElementById('platformFilter').value;
     const minLevel = document.getElementById('minLevelFilter').value;
@@ -281,11 +365,11 @@ async function searchPlayers() {
         if (response.ok) {
             displayPlayers(data.users);
         } else {
-            showNotification(data.error || 'Errore nel caricamento giocatori', 'error');
+            showNotification('❌ ' + (data.error || 'Errore nel caricamento giocatori'), 'error');
         }
     } catch (error) {
         console.error('Search players error:', error);
-        showNotification('Errore di connessione', 'error');
+        showNotification('❌ Errore di connessione', 'error');
     } finally {
         hideLoading();
     }
@@ -361,11 +445,11 @@ async function showPlayerDetail(playerId) {
 
             displayPlayerDetailModal(player, feedbackData);
         } else {
-            showNotification(data.error || 'Errore nel caricamento del profilo', 'error');
+            showNotification('❌ ' + (data.error || 'Errore nel caricamento del profilo'), 'error');
         }
     } catch (error) {
         console.error('Show player detail error:', error);
-        showNotification('Errore di connessione', 'error');
+        showNotification('❌ Errore di connessione', 'error');
     } finally {
         hideLoading();
     }
@@ -377,7 +461,7 @@ function displayPlayerDetailModal(player, feedbackData) {
 
     const secondaryRoles = player.secondaryRoles && player.secondaryRoles.length > 0
         ? player.secondaryRoles.map(r => `<span class="role-badge">${r}</span>`).join('')
-        : '<p>Nessuno</p>';
+        : '<p style="color: #64748b;">Nessuno</p>';
 
     const socialLinks = [];
     if (player.instagram) {
@@ -486,18 +570,19 @@ function displayPlayerDetailModal(player, feedbackData) {
     document.getElementById('playerDetailModal').classList.add('active');
 }
 
-function closePlayerDetailModal() {
-    document.getElementById('playerDetailModal').classList.remove('active');
+function closePlayerDetailModalFn() {
+    const modal = document.getElementById('playerDetailModal');
+    if (modal) modal.classList.remove('active');
 }
 
 async function searchTeams() {
     if (!currentUser) {
-        showNotification('Devi effettuare il login per cercare squadre', 'error');
+        showNotification('⚠️ Devi effettuare il login per cercare squadre', 'error');
         openAuthModal('login');
         return;
     }
 
-    const search = document.getElementById('teamSearchInput').value;
+    const search = document.getElementById('teamSearchInput').value.trim();
     const platform = document.getElementById('teamPlatformFilter').value;
 
     const params = new URLSearchParams();
@@ -517,11 +602,11 @@ async function searchTeams() {
         if (response.ok) {
             displayTeams(data.teams);
         } else {
-            showNotification(data.error || 'Errore nel caricamento squadre', 'error');
+            showNotification('❌ ' + (data.error || 'Errore nel caricamento squadre'), 'error');
         }
     } catch (error) {
         console.error('Search teams error:', error);
-        showNotification('Errore di connessione', 'error');
+        showNotification('❌ Errore di connessione', 'error');
     } finally {
         hideLoading();
     }
@@ -588,11 +673,11 @@ async function showTeamDetail(teamId) {
 
             displayTeamDetailModal(team, feedbackData);
         } else {
-            showNotification(data.error || 'Errore nel caricamento della squadra', 'error');
+            showNotification('❌ ' + (data.error || 'Errore nel caricamento della squadra'), 'error');
         }
     } catch (error) {
         console.error('Show team detail error:', error);
-        showNotification('Errore di connessione', 'error');
+        showNotification('❌ Errore di connessione', 'error');
     } finally {
         hideLoading();
     }
@@ -633,7 +718,7 @@ function displayTeamDetailModal(team, feedbackData) {
                 </div>
             `;
         }).join('')
-        : '<p>Nessun membro</p>';
+        : '<p style="color: #64748b;">Nessun membro</p>';
 
     const feedbackList = feedbackData.feedback && feedbackData.feedback.length > 0
         ? feedbackData.feedback.map(fb => {
@@ -749,8 +834,9 @@ function displayTeamDetailModal(team, feedbackData) {
     document.getElementById('teamDetailModal').classList.add('active');
 }
 
-function closeTeamDetailModal() {
-    document.getElementById('teamDetailModal').classList.remove('active');
+function closeTeamDetailModalFn() {
+    const modal = document.getElementById('teamDetailModal');
+    if (modal) modal.classList.remove('active');
 }
 
 async function joinTeam(teamId) {
@@ -768,16 +854,16 @@ async function joinTeam(teamId) {
         const data = await response.json();
 
         if (response.ok) {
-            showNotification('Ti sei unito alla squadra!', 'success');
-            closeTeamDetailModal();
+            showNotification('✅ Ti sei unito alla squadra!', 'success');
+            closeTeamDetailModalFn();
             await fetchCurrentUser();
             searchTeams();
         } else {
-            showNotification(data.error || 'Errore durante l\'operazione', 'error');
+            showNotification('❌ ' + (data.error || 'Errore durante l\'operazione'), 'error');
         }
     } catch (error) {
         console.error('Join team error:', error);
-        showNotification('Errore di connessione', 'error');
+        showNotification('❌ Errore di connessione', 'error');
     } finally {
         hideLoading();
     }
@@ -800,16 +886,16 @@ async function leaveTeam(teamId) {
         const data = await response.json();
 
         if (response.ok) {
-            showNotification('Hai lasciato la squadra', 'info');
-            closeTeamDetailModal();
+            showNotification('👋 Hai lasciato la squadra', 'info');
+            closeTeamDetailModalFn();
             await fetchCurrentUser();
             searchTeams();
         } else {
-            showNotification(data.error || 'Errore durante l\'operazione', 'error');
+            showNotification('❌ ' + (data.error || 'Errore durante l\'operazione'), 'error');
         }
     } catch (error) {
         console.error('Leave team error:', error);
-        showNotification('Errore di connessione', 'error');
+        showNotification('❌ Errore di connessione', 'error');
     } finally {
         hideLoading();
     }
@@ -817,31 +903,45 @@ async function leaveTeam(teamId) {
 
 function openCreateTeamModal() {
     if (!currentUser) {
-        showNotification('Devi effettuare il login', 'error');
+        showNotification('⚠️ Devi effettuare il login', 'error');
         return;
     }
 
     if (currentUser.team) {
-        showNotification('Sei già in una squadra', 'error');
+        showNotification('⚠️ Sei già in una squadra', 'error');
         return;
     }
 
-    document.getElementById('createTeamModal').classList.add('active');
+    const modal = document.getElementById('createTeamModal');
+    if (modal) modal.classList.add('active');
 }
 
-function closeCreateTeamModal() {
-    document.getElementById('createTeamModal').classList.remove('active');
-    document.getElementById('createTeamForm').reset();
+function closeCreateTeamModalFn() {
+    const modal = document.getElementById('createTeamModal');
+    if (modal) modal.classList.remove('active');
+    
+    const form = document.getElementById('createTeamForm');
+    if (form) form.reset();
 }
 
 async function handleCreateTeam(e) {
     e.preventDefault();
 
-    const name = document.getElementById('teamName').value;
-    const description = document.getElementById('teamDescription').value;
+    const name = document.getElementById('teamName').value.trim();
+    const description = document.getElementById('teamDescription').value.trim();
     const platform = document.getElementById('teamPlatform').value;
-    const instagram = document.getElementById('teamInstagram').value;
-    const tiktok = document.getElementById('teamTiktok').value;
+    const instagram = document.getElementById('teamInstagram').value.trim();
+    const tiktok = document.getElementById('teamTiktok').value.trim();
+
+    if (!name || name.length < 3) {
+        showNotification('⚠️ Nome squadra deve essere almeno 3 caratteri', 'error');
+        return;
+    }
+
+    if (!platform) {
+        showNotification('⚠️ Seleziona una piattaforma', 'error');
+        return;
+    }
 
     try {
         showLoading();
@@ -857,16 +957,16 @@ async function handleCreateTeam(e) {
         const data = await response.json();
 
         if (response.ok) {
-            closeCreateTeamModal();
-            showNotification('Squadra creata con successo!', 'success');
+            closeCreateTeamModalFn();
+            showNotification('🎉 Squadra creata con successo!', 'success');
             await fetchCurrentUser();
             navigateTo('teams');
         } else {
-            showNotification(data.error || 'Errore durante la creazione', 'error');
+            showNotification('❌ ' + (data.error || 'Errore durante la creazione'), 'error');
         }
     } catch (error) {
         console.error('Create team error:', error);
-        showNotification('Errore di connessione', 'error');
+        showNotification('❌ Errore di connessione', 'error');
     } finally {
         hideLoading();
     }
@@ -902,11 +1002,12 @@ async function loadProfile() {
         socialLinks.push(`<a href="https://tiktok.com/@${currentUser.tiktok}" target="_blank" class="social-link tiktok"><i class="fab fa-tiktok"></i> ${currentUser.tiktok}</a>`);
     }
 
+    const socialCard = document.getElementById('profileSocialCard');
     if (socialLinks.length > 0) {
         document.getElementById('profileSocialLinks').innerHTML = socialLinks.join('');
-        document.getElementById('profileSocialCard').style.display = 'block';
+        if (socialCard) socialCard.style.display = 'block';
     } else {
-        document.getElementById('profileSocialCard').style.display = 'none';
+        if (socialCard) socialCard.style.display = 'none';
     }
 
     try {
@@ -976,29 +1077,53 @@ function openEditProfileModal() {
         cb.checked = currentUser.secondaryRoles && currentUser.secondaryRoles.includes(cb.value);
     });
 
-    document.getElementById('editProfileModal').classList.add('active');
+    const modal = document.getElementById('editProfileModal');
+    if (modal) modal.classList.add('active');
 }
 
 function closeEditProfileModal() {
-    document.getElementById('editProfileModal').classList.remove('active');
-    document.getElementById('editProfileForm').reset();
+    const modal = document.getElementById('editProfileModal');
+    if (modal) modal.classList.remove('active');
+    
+    const form = document.getElementById('editProfileForm');
+    if (form) form.reset();
 }
 
 async function handleEditProfile(e) {
     e.preventDefault();
 
-    const username = document.getElementById('editUsername').value;
-    const email = document.getElementById('editEmail').value;
+    const username = document.getElementById('editUsername').value.trim();
+    const email = document.getElementById('editEmail').value.trim();
     const password = document.getElementById('editPassword').value;
     const primaryRole = document.getElementById('editPrimaryRole').value;
     const platform = document.getElementById('editPlatform').value;
     const level = parseInt(document.getElementById('editLevel').value);
-    const instagram = document.getElementById('editInstagram').value;
-    const tiktok = document.getElementById('editTiktok').value;
-    const bio = document.getElementById('editBio').value;
+    const instagram = document.getElementById('editInstagram').value.trim();
+    const tiktok = document.getElementById('editTiktok').value.trim();
+    const bio = document.getElementById('editBio').value.trim();
 
     const secondaryRoles = Array.from(document.querySelectorAll('#secondaryRolesCheckboxes input[type="checkbox"]:checked'))
         .map(cb => cb.value);
+
+    if (!username || username.length < 3) {
+        showNotification('⚠️ Username deve essere almeno 3 caratteri', 'error');
+        return;
+    }
+
+    if (!email || !email.includes('@')) {
+        showNotification('⚠️ Email non valida', 'error');
+        return;
+    }
+
+    if (password && password.length < 6) {
+        showNotification('⚠️ Password deve essere almeno 6 caratteri', 'error');
+        return;
+    }
+
+    if (!level || level < 1 || level > 150) {
+        showNotification('⚠️ Livello deve essere tra 1 e 150', 'error');
+        return;
+    }
 
     const updates = {
         username,
@@ -1032,15 +1157,15 @@ async function handleEditProfile(e) {
         if (response.ok) {
             currentUser = data.user;
             closeEditProfileModal();
-            showNotification('Profilo aggiornato con successo!', 'success');
+            showNotification('✅ Profilo aggiornato con successo!', 'success');
             loadProfile();
             updateUIForUser();
         } else {
-            showNotification(data.error || 'Errore durante l\'aggiornamento', 'error');
+            showNotification('❌ ' + (data.error || 'Errore durante l\'aggiornamento'), 'error');
         }
     } catch (error) {
         console.error('Edit profile error:', error);
-        showNotification('Errore di connessione', 'error');
+        showNotification('❌ Errore di connessione', 'error');
     } finally {
         hideLoading();
     }
@@ -1077,10 +1202,14 @@ function openFeedbackModalForUser(userId) {
     document.getElementById('feedbackRating').value = '';
     document.getElementById('feedbackComment').value = '';
     
-    document.querySelectorAll('.star-rating i').forEach(star => star.classList.remove('active'));
+    document.querySelectorAll('.star-rating i').forEach(star => {
+        star.classList.remove('fas', 'active');
+        star.classList.add('far');
+    });
     document.querySelectorAll('.tag-btn').forEach(btn => btn.classList.remove('active'));
     
-    document.getElementById('feedbackModal').classList.add('active');
+    const modal = document.getElementById('feedbackModal');
+    if (modal) modal.classList.add('active');
 }
 
 function openFeedbackModalForTeam(teamId) {
@@ -1092,15 +1221,23 @@ function openFeedbackModalForTeam(teamId) {
     document.getElementById('feedbackRating').value = '';
     document.getElementById('feedbackComment').value = '';
     
-    document.querySelectorAll('.star-rating i').forEach(star => star.classList.remove('active'));
+    document.querySelectorAll('.star-rating i').forEach(star => {
+        star.classList.remove('fas', 'active');
+        star.classList.add('far');
+    });
     document.querySelectorAll('.tag-btn').forEach(btn => btn.classList.remove('active'));
     
-    document.getElementById('feedbackModal').classList.add('active');
+    const modal = document.getElementById('feedbackModal');
+    if (modal) modal.classList.add('active');
 }
 
-function closeFeedbackModal() {
-    document.getElementById('feedbackModal').classList.remove('active');
-    document.getElementById('feedbackForm').reset();
+function closeFeedbackModalFn() {
+    const modal = document.getElementById('feedbackModal');
+    if (modal) modal.classList.remove('active');
+    
+    const form = document.getElementById('feedbackForm');
+    if (form) form.reset();
+    
     selectedTags = [];
     selectedRating = 0;
 }
@@ -1150,10 +1287,10 @@ async function handleSubmitFeedback(e) {
     const targetUserId = document.getElementById('feedbackTargetUserId').value;
     const targetTeamId = document.getElementById('feedbackTargetTeamId').value;
     const rating = parseInt(document.getElementById('feedbackRating').value);
-    const comment = document.getElementById('feedbackComment').value;
+    const comment = document.getElementById('feedbackComment').value.trim();
 
-    if (!rating) {
-        showNotification('Seleziona una valutazione', 'error');
+    if (!rating || rating < 1 || rating > 5) {
+        showNotification('⚠️ Seleziona una valutazione (1-5 stelle)', 'error');
         return;
     }
 
@@ -1177,20 +1314,20 @@ async function handleSubmitFeedback(e) {
         const data = await response.json();
 
         if (response.ok) {
-            closeFeedbackModal();
-            showNotification('Feedback inviato con successo!', 'success');
+            closeFeedbackModalFn();
+            showNotification('✅ Feedback inviato con successo!', 'success');
             
             if (targetUserId) {
-                closePlayerDetailModal();
+                closePlayerDetailModalFn();
             } else if (targetTeamId) {
-                closeTeamDetailModal();
+                closeTeamDetailModalFn();
             }
         } else {
-            showNotification(data.error || 'Errore durante l\'invio del feedback', 'error');
+            showNotification('❌ ' + (data.error || 'Errore durante l\'invio del feedback'), 'error');
         }
     } catch (error) {
         console.error('Submit feedback error:', error);
-        showNotification('Errore di connessione', 'error');
+        showNotification('❌ Errore di connessione', 'error');
     } finally {
         hideLoading();
     }
@@ -1198,44 +1335,31 @@ async function handleSubmitFeedback(e) {
 
 function showNotification(message, type = 'info') {
     const notification = document.getElementById('notification');
+    if (!notification) return;
+    
     notification.textContent = message;
     notification.className = `notification ${type}`;
     notification.style.display = 'block';
 
     setTimeout(() => {
         notification.style.display = 'none';
-    }, 4000);
+    }, 5000);
 }
 
 function showLoading() {
-    document.getElementById('loadingOverlay').classList.add('active');
+    const overlay = document.getElementById('loadingOverlay');
+    if (overlay) overlay.classList.add('active');
 }
 
 function hideLoading() {
-    document.getElementById('loadingOverlay').classList.remove('active');
+    const overlay = document.getElementById('loadingOverlay');
+    if (overlay) overlay.classList.remove('active');
 }
-```
 
----
-
-## 🎉 Applicazione Completata!
-
-Hai ora tutti i **18 file** completi per la tua web app **Pro Club Hub**. Ecco come procedere:
-
-### 📋 Checklist Deploy:
-
-1. **Crea il progetto su Vercel**:
-   - Vai su [vercel.com](https://vercel.com)
-   - Collega il tuo repository GitHub
-   - Importa il progetto
-
-2. **Configura MongoDB Atlas**:
-   - Crea un cluster su [mongodb.com/atlas](https://www.mongodb.com/atlas)
-   - Ottieni la connection string
-
-3. **Imposta le variabili d'ambiente su Vercel**:
-```
-   MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/proclubhub
-   JWT_SECRET=tuo-segreto-super-sicuro-cambialo
-   GMAIL_EMAIL=tua-email@gmail.com
-   GMAIL_APP_PASSWORD=password-app-gmail
+// Funzioni globali per onclick negli HTML dinamici
+window.showPlayerDetail = showPlayerDetail;
+window.showTeamDetail = showTeamDetail;
+window.openFeedbackModalForUser = openFeedbackModalForUser;
+window.openFeedbackModalForTeam = openFeedbackModalForTeam;
+window.joinTeam = joinTeam;
+window.leaveTeam = leaveTeam;
