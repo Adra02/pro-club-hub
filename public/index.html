@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro Club Hub - FIFA Pro Clubs Community</title>
+    <title>Pro Club Hub - La community definitiva per i giocatori di Pro Club</title>
+    <meta name="description" content="La community definitiva per i giocatori di FIFA Pro Club. Trova giocatori, crea squadre, lascia feedback.">
     <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -23,7 +24,7 @@
                     Pro Club Hub
                 </h1>
                 <nav class="nav" id="mainNav">
-                    <button class="nav-btn" data-page="home">
+                    <button class="nav-btn active" data-page="home">
                         <i class="fas fa-home"></i>
                         <span>Home</span>
                     </button>
@@ -34,6 +35,11 @@
                     <button class="nav-btn" data-page="teams">
                         <i class="fas fa-shield-alt"></i>
                         <span>Squadre</span>
+                    </button>
+                    <button class="nav-btn" data-page="requests" id="requestsNavBtn" style="display: none;">
+                        <i class="fas fa-envelope"></i>
+                        <span>Richieste</span>
+                        <span class="badge" id="requestsBadge" style="display: none;">0</span>
                     </button>
                     <button class="nav-btn" data-page="profile" id="profileNavBtn" style="display: none;">
                         <i class="fas fa-user"></i>
@@ -49,12 +55,13 @@
     </header>
 
     <main id="mainContent" class="main-content">
+        <!-- HOME PAGE -->
         <div id="homePage" class="page">
             <div class="hero">
                 <div class="container">
                     <div class="hero-content">
                         <h2 class="hero-title">Benvenuto su Pro Club Hub</h2>
-                        <p class="hero-subtitle">La community definitiva per i giocatori di FIFA Pro Clubs</p>
+                        <p class="hero-subtitle">La community definitiva per i giocatori di Pro Club</p>
                         <div class="hero-actions" id="heroActions">
                             <button class="btn btn-primary btn-large" id="heroLoginBtn">
                                 <i class="fas fa-sign-in-alt"></i>
@@ -114,6 +121,7 @@
             </div>
         </div>
 
+        <!-- PLAYERS PAGE -->
         <div id="playersPage" class="page" style="display: none;">
             <div class="container">
                 <div class="page-header">
@@ -125,11 +133,18 @@
                         <input type="text" id="playerSearchInput" class="input" placeholder="🔍 Cerca per nome...">
                         <select id="roleFilter" class="select">
                             <option value="">Tutti i ruoli</option>
-                            <option value="Portiere (GK)">Portiere (GK)</option>
-                            <option value="Difensore (CB/LB/RB)">Difensore (CB/LB/RB)</option>
-                            <option value="Centrocampista (CM/CDM/CAM)">Centrocampista (CM/CDM/CAM)</option>
-                            <option value="Ala (LW/RW/LM/RM)">Ala (LW/RW/LM/RM)</option>
-                            <option value="Attaccante (ST/CF)">Attaccante (ST/CF)</option>
+                            <option value="Portiere (POR)">Portiere (POR)</option>
+                            <option value="Difensore Centrale (DC)">Difensore Centrale (DC)</option>
+                            <option value="Terzino Destro (TD)">Terzino Destro (TD)</option>
+                            <option value="Terzino Sinistro (TS)">Terzino Sinistro (TS)</option>
+                            <option value="Centrocampista Difensivo (CDC)">Centrocampista Difensivo (CDC)</option>
+                            <option value="Centrocampista (CC)">Centrocampista (CC)</option>
+                            <option value="Centrocampista Offensivo (COC)">Centrocampista Offensivo (COC)</option>
+                            <option value="Esterno Destro (ED)">Esterno Destro (ED)</option>
+                            <option value="Esterno Sinistro (ES)">Esterno Sinistro (ES)</option>
+                            <option value="Ala Destra (AD)">Ala Destra (AD)</option>
+                            <option value="Ala Sinistra (AS)">Ala Sinistra (AS)</option>
+                            <option value="Attaccante (ATT)">Attaccante (ATT)</option>
                         </select>
                         <select id="platformFilter" class="select">
                             <option value="">Tutte le piattaforme</option>
@@ -141,11 +156,11 @@
                     <div class="filter-row">
                         <div class="level-filter">
                             <label>Livello minimo:</label>
-                            <input type="number" id="minLevelFilter" class="input input-small" min="1" max="150" placeholder="1">
+                            <input type="number" id="minLevelFilter" class="input input-small" min="1" placeholder="1">
                         </div>
                         <div class="level-filter">
                             <label>Livello massimo:</label>
-                            <input type="number" id="maxLevelFilter" class="input input-small" min="1" max="150" placeholder="150">
+                            <input type="number" id="maxLevelFilter" class="input input-small" min="1" placeholder="999">
                         </div>
                         <button class="btn btn-primary" id="searchPlayersBtn">
                             <i class="fas fa-search"></i>
@@ -158,6 +173,7 @@
             </div>
         </div>
 
+        <!-- TEAMS PAGE -->
         <div id="teamsPage" class="page" style="display: none;">
             <div class="container">
                 <div class="page-header">
@@ -186,6 +202,30 @@
             </div>
         </div>
 
+        <!-- REQUESTS PAGE -->
+        <div id="requestsPage" class="page" style="display: none;">
+            <div class="container">
+                <div class="page-header">
+                    <h2><i class="fas fa-envelope"></i> Richieste</h2>
+                </div>
+
+                <div class="requests-tabs">
+                    <button class="tab-btn active" data-tab="received">
+                        <i class="fas fa-inbox"></i>
+                        Ricevute
+                    </button>
+                    <button class="tab-btn" data-tab="sent">
+                        <i class="fas fa-paper-plane"></i>
+                        Inviate
+                    </button>
+                </div>
+
+                <div id="receivedRequests" class="requests-container"></div>
+                <div id="sentRequests" class="requests-container" style="display: none;"></div>
+            </div>
+        </div>
+
+        <!-- PROFILE PAGE -->
         <div id="profilePage" class="page" style="display: none;">
             <div class="container">
                 <div class="profile-content">
@@ -196,7 +236,7 @@
                         <div class="profile-info">
                             <h2 id="profileUsername"></h2>
                             <div class="profile-level">
-                                <span>Livello <strong id="profileLevel"></strong>/150</span>
+                                <span>Livello <strong id="profileLevel"></strong></span>
                                 <div class="level-bar level-bar-large">
                                     <div class="level-progress" id="profileLevelProgress"></div>
                                 </div>
@@ -234,10 +274,21 @@
                             <h3><i class="fas fa-comment"></i> Bio</h3>
                             <p id="profileBio">Nessuna bio</p>
                         </div>
-                        <div class="detail-card" id="profileSocialCard">
+                        <div class="detail-card">
+                            <h3><i class="fas fa-search"></i> Cerca Squadra</h3>
+                            <p id="profileLookingForTeam">No</p>
+                        </div>
+                        <div class="detail-card" id="profileSocialCard" style="display: none;">
                             <h3><i class="fas fa-share-alt"></i> Social</h3>
                             <div class="social-links" id="profileSocialLinks"></div>
                         </div>
+                    </div>
+
+                    <div class="profile-actions">
+                        <button class="btn btn-danger" id="resetPasswordBtn">
+                            <i class="fas fa-key"></i>
+                            Cambia Password (via Email)
+                        </button>
                     </div>
 
                     <div class="feedback-section">
@@ -249,6 +300,7 @@
         </div>
     </main>
 
+    <!-- MODALS -->
     <div id="authModal" class="modal">
         <div class="modal-content">
             <button class="modal-close" id="closeAuthModal">
@@ -275,6 +327,9 @@
                     Non hai un account? 
                     <a href="#" id="showRegisterForm">Registrati</a>
                 </p>
+                <p class="auth-switch">
+                    <a href="#" id="showForgotPassword">Password dimenticata?</a>
+                </p>
             </div>
 
             <div id="registerForm" class="auth-form" style="display: none;">
@@ -296,11 +351,18 @@
                         <label>Ruolo Principale</label>
                         <select id="registerRole" class="select" required>
                             <option value="">Seleziona ruolo</option>
-                            <option value="Portiere (GK)">Portiere (GK)</option>
-                            <option value="Difensore (CB/LB/RB)">Difensore (CB/LB/RB)</option>
-                            <option value="Centrocampista (CM/CDM/CAM)">Centrocampista (CM/CDM/CAM)</option>
-                            <option value="Ala (LW/RW/LM/RM)">Ala (LW/RW/LM/RM)</option>
-                            <option value="Attaccante (ST/CF)">Attaccante (ST/CF)</option>
+                            <option value="Portiere (POR)">Portiere (POR)</option>
+                            <option value="Difensore Centrale (DC)">Difensore Centrale (DC)</option>
+                            <option value="Terzino Destro (TD)">Terzino Destro (TD)</option>
+                            <option value="Terzino Sinistro (TS)">Terzino Sinistro (TS)</option>
+                            <option value="Centrocampista Difensivo (CDC)">Centrocampista Difensivo (CDC)</option>
+                            <option value="Centrocampista (CC)">Centrocampista (CC)</option>
+                            <option value="Centrocampista Offensivo (COC)">Centrocampista Offensivo (COC)</option>
+                            <option value="Esterno Destro (ED)">Esterno Destro (ED)</option>
+                            <option value="Esterno Sinistro (ES)">Esterno Sinistro (ES)</option>
+                            <option value="Ala Destra (AD)">Ala Destra (AD)</option>
+                            <option value="Ala Sinistra (AS)">Ala Sinistra (AS)</option>
+                            <option value="Attaccante (ATT)">Attaccante (ATT)</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -313,8 +375,8 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>Livello (1-150)</label>
-                        <input type="number" id="registerLevel" class="input" min="1" max="150" value="1" required>
+                        <label>Livello Iniziale</label>
+                        <input type="number" id="registerLevel" class="input" min="1" value="1" required>
                     </div>
                     <button type="submit" class="btn btn-primary btn-block">
                         <i class="fas fa-user-plus"></i>
@@ -324,6 +386,26 @@
                 <p class="auth-switch">
                     Hai già un account? 
                     <a href="#" id="showLoginForm">Accedi</a>
+                </p>
+            </div>
+
+            <div id="forgotPasswordForm" class="auth-form" style="display: none;">
+                <h2><i class="fas fa-key"></i> Recupera Password</h2>
+                <p style="color: #cbd5e1; margin-bottom: 1.5rem;">
+                    Inserisci la tua email e ti invieremo un link per reimpostare la password.
+                </p>
+                <form id="forgotPasswordFormElement">
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="forgotEmail" class="input" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">
+                        <i class="fas fa-paper-plane"></i>
+                        Invia Link
+                    </button>
+                </form>
+                <p class="auth-switch">
+                    <a href="#" id="backToLogin">Torna al login</a>
                 </p>
             </div>
         </div>
@@ -345,36 +427,60 @@
                     <input type="email" id="editEmail" class="input" required>
                 </div>
                 <div class="form-group">
-                    <label>Nuova Password (lascia vuoto per non modificare)</label>
-                    <input type="password" id="editPassword" class="input" minlength="6">
-                </div>
-                <div class="form-group">
                     <label>Ruolo Principale</label>
                     <select id="editPrimaryRole" class="select" required>
-                        <option value="Portiere (GK)">Portiere (GK)</option>
-                        <option value="Difensore (CB/LB/RB)">Difensore (CB/LB/RB)</option>
-                        <option value="Centrocampista (CM/CDM/CAM)">Centrocampista (CM/CDM/CAM)</option>
-                        <option value="Ala (LW/RW/LM/RM)">Ala (LW/RW/LM/RM)</option>
-                        <option value="Attaccante (ST/CF)">Attaccante (ST/CF)</option>
+                        <option value="Portiere (POR)">Portiere (POR)</option>
+                        <option value="Difensore Centrale (DC)">Difensore Centrale (DC)</option>
+                        <option value="Terzino Destro (TD)">Terzino Destro (TD)</option>
+                        <option value="Terzino Sinistro (TS)">Terzino Sinistro (TS)</option>
+                        <option value="Centrocampista Difensivo (CDC)">Centrocampista Difensivo (CDC)</option>
+                        <option value="Centrocampista (CC)">Centrocampista (CC)</option>
+                        <option value="Centrocampista Offensivo (COC)">Centrocampista Offensivo (COC)</option>
+                        <option value="Esterno Destro (ED)">Esterno Destro (ED)</option>
+                        <option value="Esterno Sinistro (ES)">Esterno Sinistro (ES)</option>
+                        <option value="Ala Destra (AD)">Ala Destra (AD)</option>
+                        <option value="Ala Sinistra (AS)">Ala Sinistra (AS)</option>
+                        <option value="Attaccante (ATT)">Attaccante (ATT)</option>
                     </select>
                 </div>
                 <div class="form-group">
                     <label>Ruoli Secondari (max 2)</label>
                     <div class="checkbox-group" id="secondaryRolesCheckboxes">
                         <label class="checkbox-label">
-                            <input type="checkbox" value="Portiere (GK)"> Portiere (GK)
+                            <input type="checkbox" value="Portiere (POR)"> Portiere (POR)
                         </label>
                         <label class="checkbox-label">
-                            <input type="checkbox" value="Difensore (CB/LB/RB)"> Difensore (CB/LB/RB)
+                            <input type="checkbox" value="Difensore Centrale (DC)"> Difensore Centrale (DC)
                         </label>
                         <label class="checkbox-label">
-                            <input type="checkbox" value="Centrocampista (CM/CDM/CAM)"> Centrocampista (CM/CDM/CAM)
+                            <input type="checkbox" value="Terzino Destro (TD)"> Terzino Destro (TD)
                         </label>
                         <label class="checkbox-label">
-                            <input type="checkbox" value="Ala (LW/RW/LM/RM)"> Ala (LW/RW/LM/RM)
+                            <input type="checkbox" value="Terzino Sinistro (TS)"> Terzino Sinistro (TS)
                         </label>
                         <label class="checkbox-label">
-                            <input type="checkbox" value="Attaccante (ST/CF)"> Attaccante (ST/CF)
+                            <input type="checkbox" value="Centrocampista Difensivo (CDC)"> Centrocampista Difensivo (CDC)
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="Centrocampista (CC)"> Centrocampista (CC)
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="Centrocampista Offensivo (COC)"> Centrocampista Offensivo (COC)
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="Esterno Destro (ED)"> Esterno Destro (ED)
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="Esterno Sinistro (ES)"> Esterno Sinistro (ES)
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="Ala Destra (AD)"> Ala Destra (AD)
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="Ala Sinistra (AS)"> Ala Sinistra (AS)
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="Attaccante (ATT)"> Attaccante (ATT)
                         </label>
                     </div>
                 </div>
@@ -387,8 +493,8 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>Livello (1-150)</label>
-                    <input type="number" id="editLevel" class="input" min="1" max="150" required>
+                    <label>Livello</label>
+                    <input type="number" id="editLevel" class="input" min="1" required>
                 </div>
                 <div class="form-group">
                     <label>Instagram (username)</label>
@@ -401,6 +507,12 @@
                 <div class="form-group">
                     <label>Bio</label>
                     <textarea id="editBio" class="textarea" rows="4" maxlength="500"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="checkbox-label-single">
+                        <input type="checkbox" id="editLookingForTeam">
+                        <span>Cerco squadra</span>
+                    </label>
                 </div>
                 <button type="submit" class="btn btn-primary btn-block">
                     <i class="fas fa-save"></i>
@@ -442,9 +554,69 @@
                     <label>TikTok (username)</label>
                     <input type="text" id="teamTiktok" class="input" placeholder="squadra_tiktok">
                 </div>
+                <div class="form-group">
+                    <label>Link Live (Twitch/YouTube)</label>
+                    <input type="url" id="teamLiveLink" class="input" placeholder="https://twitch.tv/tuocanale">
+                </div>
+                <div class="form-group">
+                    <label class="checkbox-label-single">
+                        <input type="checkbox" id="teamLookingForPlayers" checked>
+                        <span>Cerchiamo giocatori</span>
+                    </label>
+                </div>
                 <button type="submit" class="btn btn-primary btn-block">
                     <i class="fas fa-plus"></i>
                     Crea Squadra
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div id="editTeamModal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" id="closeEditTeamModal">
+                <i class="fas fa-times"></i>
+            </button>
+            <h2><i class="fas fa-edit"></i> Modifica Squadra</h2>
+            <form id="editTeamForm">
+                <input type="hidden" id="editTeamId">
+                <div class="form-group">
+                    <label>Nome Squadra</label>
+                    <input type="text" id="editTeamName" class="input" required minlength="3" maxlength="30">
+                </div>
+                <div class="form-group">
+                    <label>Descrizione</label>
+                    <textarea id="editTeamDescription" class="textarea" rows="4" maxlength="500"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Piattaforma</label>
+                    <select id="editTeamPlatform" class="select" required>
+                        <option value="PlayStation">PlayStation</option>
+                        <option value="Xbox">Xbox</option>
+                        <option value="PC">PC</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Instagram (username)</label>
+                    <input type="text" id="editTeamInstagram" class="input" placeholder="squadra_instagram">
+                </div>
+                <div class="form-group">
+                    <label>TikTok (username)</label>
+                    <input type="text" id="editTeamTiktok" class="input" placeholder="squadra_tiktok">
+                </div>
+                <div class="form-group">
+                    <label>Link Live (Twitch/YouTube)</label>
+                    <input type="url" id="editTeamLiveLink" class="input" placeholder="https://twitch.tv/tuocanale">
+                </div>
+                <div class="form-group">
+                    <label class="checkbox-label-single">
+                        <input type="checkbox" id="editTeamLookingForPlayers">
+                        <span>Cerchiamo giocatori</span>
+                    </label>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">
+                    <i class="fas fa-save"></i>
+                    Salva Modifiche
                 </button>
             </form>
         </div>
@@ -498,6 +670,12 @@
                         </button>
                         <button type="button" class="tag-btn" data-tag="Puntuale">
                             <i class="fas fa-clock"></i> Puntuale
+                        </button>
+                        <button type="button" class="tag-btn" data-tag="Tecnico">
+                            <i class="fas fa-futbol"></i> Tecnico
+                        </button>
+                        <button type="button" class="tag-btn" data-tag="Tattico">
+                            <i class="fas fa-chess"></i> Tattico
                         </button>
                     </div>
                 </div>
