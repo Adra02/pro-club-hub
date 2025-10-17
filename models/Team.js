@@ -11,13 +11,14 @@ export class TeamModel {
       await this.collection.createIndex({ name: 1 }, { unique: true });
       await this.collection.createIndex({ createdAt: -1 });
       await this.collection.createIndex({ captain: 1 });
+      await this.collection.createIndex({ lookingForPlayers: 1 });
     } catch (error) {
       console.error('Error creating team indexes:', error);
     }
   }
 
   async create(teamData, captainId) {
-    const { name, description, platform, instagram, tiktok } = teamData;
+    const { name, description, platform, instagram, tiktok, liveLink } = teamData;
 
     const existingTeam = await this.collection.findOne({ name });
     if (existingTeam) {
@@ -30,10 +31,13 @@ export class TeamModel {
       platform,
       instagram: instagram || '',
       tiktok: tiktok || '',
+      liveLink: liveLink || '',
       captain: new ObjectId(captainId),
+      viceCaptain: null,
       members: [new ObjectId(captainId)],
       feedbackCount: 0,
       averageRating: 0,
+      lookingForPlayers: true,
       createdAt: new Date(),
       updatedAt: new Date()
     };
@@ -51,17 +55,25 @@ export class TeamModel {
     return await this.collection.findOne({ name });
   }
 
+  async findByCaptain(captainId) {
+    if (!ObjectId.isValid(captainId)) return null;
+    return await this.collection.findOne({ captain: new ObjectId(captainId) });
+  }
+
   async update(teamId, updateData, userId) {
     if (!ObjectId.isValid(teamId)) throw new Error('ID squadra non valido');
 
     const team = await this.findById(teamId);
     if (!team) throw new Error('Squadra non trovata');
 
-    if (team.captain.toString() !== userId) {
-      throw new Error('Solo il capitano può modificare la squadra');
+    const isCaptain = team.captain.toString() === userId;
+    const isViceCaptain = team.viceCaptain && team.viceCaptain.toString() === userId;
+
+    if (!isCaptain && !isViceCaptain) {
+      throw new Error('Solo il capitano o vice capitano possono modificare la squadra');
     }
 
-    const allowedFields = ['name', 'description', 'platform', 'instagram', 'tiktok'];
+    const allowedFields = ['name', 'description', 'platform', 'instagram', 'tiktok', 'liveLink', 'lookingForPlayers'];
     const filteredData = {};
 
     for (const field of allowedFields) {
@@ -81,7 +93,7 @@ export class TeamModel {
     return result;
   }
 
-  async addMember(teamId, userId, requesterId) {
+  async setViceCaptain(teamId, userId, captainId) {
     if (!ObjectId.isValid(teamId) || !ObjectId.isValid(userId)) {
       throw new Error('ID non valido');
     }
@@ -89,9 +101,34 @@ export class TeamModel {
     const team = await this.findById(teamId);
     if (!team) throw new Error('Squadra non trovata');
 
-    if (team.captain.toString() !== requesterId) {
-      throw new Error('Solo il capitano può aggiungere membri');
+    if (team.captain.toString() !== captainId) {
+      throw new Error('Solo il capitano può nominare il vice capitano');
     }
+
+    if (!team.members.some(m => m.toString() === userId)) {
+      throw new Error('Il giocatore deve essere un membro della squadra');
+    }
+
+    await this.collection.updateOne(
+      { _id: new ObjectId(teamId) },
+      {
+        $set: { 
+          viceCaptain: new ObjectId(userId),
+          updatedAt: new Date() 
+        }
+      }
+    );
+
+    return true;
+  }
+
+  async addMember(teamId, userId) {
+    if (!ObjectId.isValid(teamId) || !ObjectId.isValid(userId)) {
+      throw new Error('ID non valido');
+    }
+
+    const team = await this.findById(teamId);
+    if (!team) throw new Error('Squadra non trovata');
 
     const userObjectId = new ObjectId(userId);
     if (team.members.some(m => m.toString() === userId)) {
@@ -117,7 +154,11 @@ export class TeamModel {
     const team = await this.findById(teamId);
     if (!team) throw new Error('Squadra non trovata');
 
-    if (team.captain.toString() !== requesterId && requesterId !== userId) {
+    const isCaptain = team.captain.toString() === requesterId;
+    const isViceCaptain = team.viceCaptain && team.viceCaptain.toString() === requesterId;
+    const isSelf = requesterId === userId;
+
+    if (!isCaptain && !isViceCaptain && !isSelf) {
       throw new Error('Non hai i permessi per rimuovere questo membro');
     }
 
@@ -133,11 +174,20 @@ export class TeamModel {
       }
     );
 
+    if (team.viceCaptain && team.viceCaptain.toString() === userId) {
+      await this.collection.updateOne(
+        { _id: new ObjectId(teamId) },
+        {
+          $set: { viceCaptain: null, updatedAt: new Date() }
+        }
+      );
+    }
+
     return true;
   }
 
   async search(filters = {}) {
-    const query = {};
+    const query = { lookingForPlayers: true };
 
     if (filters.platform) {
       query.platform = filters.platform;
