@@ -8,7 +8,9 @@ export const FEEDBACK_TAGS = [
   'Giocatore di squadra',
   'Leader',
   'Affidabile',
-  'Puntuale'
+  'Puntuale',
+  'Tecnico',
+  'Tattico'
 ];
 
 export class FeedbackModel {
