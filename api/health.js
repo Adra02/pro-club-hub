@@ -7,7 +7,6 @@ export default async function handler(req, res) {
 
   try {
     const { db } = await connectToDatabase();
-    
     await db.admin().ping();
 
     return res.status(200).json({ 
@@ -15,7 +14,6 @@ export default async function handler(req, res) {
       timestamp: new Date().toISOString(),
       database: 'connected'
     });
-
   } catch (error) {
     console.error('Health check error:', error);
     return res.status(503).json({ 
