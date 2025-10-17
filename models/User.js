@@ -1,13 +1,19 @@
-
 import { ObjectId } from 'mongodb';
 import bcrypt from 'bcryptjs';
 
 export const ROLES = [
-  'Portiere (GK)',
-  'Difensore (CB/LB/RB)',
-  'Centrocampista (CM/CDM/CAM)',
-  'Ala (LW/RW/LM/RM)',
-  'Attaccante (ST/CF)'
+  'Portiere (POR)',
+  'Difensore Centrale (DC)',
+  'Terzino Destro (TD)',
+  'Terzino Sinistro (TS)',
+  'Centrocampista Difensivo (CDC)',
+  'Centrocampista (CC)',
+  'Centrocampista Offensivo (COC)',
+  'Esterno Destro (ED)',
+  'Esterno Sinistro (ES)',
+  'Ala Destra (AD)',
+  'Ala Sinistra (AS)',
+  'Attaccante (ATT)'
 ];
 
 export const PLATFORMS = ['PlayStation', 'Xbox', 'PC'];
@@ -24,6 +30,8 @@ export class UserModel {
       await this.collection.createIndex({ username: 1 }, { unique: true });
       await this.collection.createIndex({ level: -1 });
       await this.collection.createIndex({ createdAt: -1 });
+      await this.collection.createIndex({ lastActive: -1 });
+      await this.collection.createIndex({ lookingForTeam: 1 });
     } catch (error) {
       console.error('Error creating indexes:', error);
     }
@@ -49,15 +57,19 @@ export class UserModel {
       primaryRole,
       secondaryRoles: [],
       platform,
-      level: Math.min(Math.max(1, level), 150),
+      level: Math.max(1, level),
       instagram: '',
       tiktok: '',
       bio: '',
       team: null,
       feedbackCount: 0,
       averageRating: 0,
+      lookingForTeam: true,
+      resetToken: null,
+      resetTokenExpiry: null,
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
+      lastActive: new Date()
     };
 
     const result = await this.collection.insertOne(user);
@@ -77,6 +89,13 @@ export class UserModel {
     return await this.collection.findOne({ username });
   }
 
+  async findByResetToken(token) {
+    return await this.collection.findOne({
+      resetToken: token,
+      resetTokenExpiry: { $gt: new Date() }
+    });
+  }
+
   async verifyPassword(plainPassword, hashedPassword) {
     return await bcrypt.compare(plainPassword, hashedPassword);
   }
@@ -86,7 +105,7 @@ export class UserModel {
 
     const allowedFields = [
       'username', 'email', 'primaryRole', 'secondaryRoles',
-      'platform', 'level', 'instagram', 'tiktok', 'bio'
+      'platform', 'level', 'instagram', 'tiktok', 'bio', 'lookingForTeam'
     ];
 
     const filteredData = {};
@@ -101,7 +120,7 @@ export class UserModel {
     }
 
     if (filteredData.level !== undefined) {
-      filteredData.level = Math.min(Math.max(1, filteredData.level), 150);
+      filteredData.level = Math.max(1, filteredData.level);
     }
 
     if (updateData.password) {
@@ -109,6 +128,7 @@ export class UserModel {
     }
 
     filteredData.updatedAt = new Date();
+    filteredData.lastActive = new Date();
 
     const result = await this.collection.findOneAndUpdate(
       { _id: new ObjectId(userId) },
@@ -117,6 +137,38 @@ export class UserModel {
     );
 
     return result;
+  }
+
+  async setResetToken(userId, token, expiryDate) {
+    if (!ObjectId.isValid(userId)) return false;
+
+    await this.collection.updateOne(
+      { _id: new ObjectId(userId) },
+      {
+        $set: {
+          resetToken: token,
+          resetTokenExpiry: expiryDate,
+          updatedAt: new Date()
+        }
+      }
+    );
+    return true;
+  }
+
+  async clearResetToken(userId) {
+    if (!ObjectId.isValid(userId)) return false;
+
+    await this.collection.updateOne(
+      { _id: new ObjectId(userId) },
+      {
+        $set: {
+          resetToken: null,
+          resetTokenExpiry: null,
+          updatedAt: new Date()
+        }
+      }
+    );
+    return true;
   }
 
   async updateFeedbackStats(userId, averageRating, feedbackCount) {
@@ -135,8 +187,23 @@ export class UserModel {
     return true;
   }
 
+  async updateLastActive(userId) {
+    if (!ObjectId.isValid(userId)) return false;
+
+    await this.collection.updateOne(
+      { _id: new ObjectId(userId) },
+      {
+        $set: {
+          lastActive: new Date(),
+          updatedAt: new Date()
+        }
+      }
+    );
+    return true;
+  }
+
   async search(filters = {}) {
-    const query = {};
+    const query = { lookingForTeam: true };
 
     if (filters.role) {
       query.$or = [
@@ -165,9 +232,13 @@ export class UserModel {
       ];
     }
 
+    const oneYearAgo = new Date();
+    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+    query.lastActive = { $gte: oneYearAgo };
+
     const users = await this.collection
       .find(query)
-      .project({ password: 0 })
+      .project({ password: 0, resetToken: 0, resetTokenExpiry: 0 })
       .sort({ averageRating: -1, level: -1 })
       .limit(50)
       .toArray();
@@ -180,14 +251,38 @@ export class UserModel {
 
     await this.collection.updateOne(
       { _id: new ObjectId(userId) },
-      { $set: { team: teamId ? new ObjectId(teamId) : null, updatedAt: new Date() } }
+      { 
+        $set: { 
+          team: teamId ? new ObjectId(teamId) : null, 
+          lookingForTeam: false,
+          updatedAt: new Date() 
+        } 
+      }
     );
     return true;
   }
 
+  async resetInactiveUsers() {
+    const oneYearAgo = new Date();
+    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+
+    const result = await this.collection.updateMany(
+      { lastActive: { $lt: oneYearAgo } },
+      {
+        $set: {
+          level: 1,
+          lookingForTeam: false,
+          updatedAt: new Date()
+        }
+      }
+    );
+
+    return result.modifiedCount;
+  }
+
   sanitizeUser(user) {
     if (!user) return null;
-    const { password, ...sanitized } = user;
+    const { password, resetToken, resetTokenExpiry, ...sanitized } = user;
     return sanitized;
   }
 }
