@@ -1,16 +1,12 @@
 {
   "name": "pro-club-hub",
-  "version": "1.0.0",
-  "description": "Professional FIFA Pro Clubs networking platform",
-  "main": "index.js",
+  "version": "2.0.0",
+  "description": "La community definitiva per i giocatori di Pro Club",
+  "type": "module",
   "scripts": {
-    "build": "echo 'No build step required'",
-    "start": "echo 'Serverless functions'",
+    "build": "echo 'Build completed'",
     "dev": "vercel dev"
   },
-  "keywords": ["fifa", "pro-clubs", "gaming", "social"],
-  "author": "",
-  "license": "MIT",
   "dependencies": {
     "mongodb": "^6.3.0",
     "bcryptjs": "^2.4.3",
