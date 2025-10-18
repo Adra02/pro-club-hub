@@ -1,6 +1,6 @@
 {
   "name": "pro-club-hub",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "description": "La community definitiva per i giocatori di Pro Club",
   "type": "module",
   "scripts": {
@@ -11,6 +11,6 @@
     "mongodb": "^6.3.0",
     "bcryptjs": "^2.4.3",
     "jsonwebtoken": "^9.0.2",
-    "nodemailer": "^6.9.7"
+    "resend": "^3.2.0"
   }
 }
