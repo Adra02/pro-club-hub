@@ -12,13 +12,14 @@ export class TeamModel {
       await this.collection.createIndex({ createdAt: -1 });
       await this.collection.createIndex({ captain: 1 });
       await this.collection.createIndex({ lookingForPlayers: 1 });
+      await this.collection.createIndex({ nationality: 1 });
     } catch (error) {
       console.error('Error creating team indexes:', error);
     }
   }
 
   async create(teamData, captainId) {
-    const { name, description, platform, instagram, tiktok, liveLink } = teamData;
+    const { name, description, platform, instagram, tiktok, liveLink, nationality } = teamData;
 
     const existingTeam = await this.collection.findOne({ name });
     if (existingTeam) {
@@ -29,6 +30,7 @@ export class TeamModel {
       name,
       description: description || '',
       platform,
+      nationality: nationality || 'Italia',
       instagram: instagram || '',
       tiktok: tiktok || '',
       liveLink: liveLink || '',
@@ -73,7 +75,7 @@ export class TeamModel {
       throw new Error('Solo il capitano o vice capitano possono modificare la squadra');
     }
 
-    const allowedFields = ['name', 'description', 'platform', 'instagram', 'tiktok', 'liveLink', 'lookingForPlayers'];
+    const allowedFields = ['name', 'description', 'platform', 'nationality', 'instagram', 'tiktok', 'liveLink', 'lookingForPlayers'];
     const filteredData = {};
 
     for (const field of allowedFields) {
@@ -155,11 +157,11 @@ export class TeamModel {
     if (!team) throw new Error('Squadra non trovata');
 
     const isCaptain = team.captain.toString() === requesterId;
-    const isViceCaptain = team.viceCaptain && team.viceCaptain.toString() === requesterId;
     const isSelf = requesterId === userId;
 
-    if (!isCaptain && !isViceCaptain && !isSelf) {
-      throw new Error('Non hai i permessi per rimuovere questo membro');
+    // SOLO IL CAPITANO può espellere, o l'utente può uscire da solo
+    if (!isCaptain && !isSelf) {
+      throw new Error('Solo il capitano può espellere membri');
     }
 
     if (team.captain.toString() === userId) {
@@ -191,6 +193,10 @@ export class TeamModel {
 
     if (filters.platform) {
       query.platform = filters.platform;
+    }
+
+    if (filters.nationality) {
+      query.nationality = filters.nationality;
     }
 
     if (filters.search) {
@@ -237,5 +243,14 @@ export class TeamModel {
 
     await this.collection.deleteOne({ _id: new ObjectId(teamId) });
     return true;
+  }
+
+  async deleteAll() {
+    const result = await this.collection.deleteMany({});
+    return result.deletedCount;
+  }
+
+  async countAll() {
+    return await this.collection.countDocuments();
   }
 }
