@@ -18,6 +18,35 @@ export const ROLES = [
 
 export const PLATFORMS = ['PlayStation', 'Xbox', 'PC'];
 
+export const NATIONALITIES = [
+  'Afghanistan', 'Albania', 'Algeria', 'Andorra', 'Angola', 'Antigua e Barbuda', 'Arabia Saudita', 
+  'Argentina', 'Armenia', 'Australia', 'Austria', 'Azerbaigian', 'Bahamas', 'Bahrein', 'Bangladesh',
+  'Barbados', 'Belgio', 'Belize', 'Benin', 'Bhutan', 'Bielorussia', 'Birmania', 'Bolivia', 
+  'Bosnia ed Erzegovina', 'Botswana', 'Brasile', 'Brunei', 'Bulgaria', 'Burkina Faso', 'Burundi',
+  'Cambogia', 'Camerun', 'Canada', 'Capo Verde', 'Ciad', 'Cile', 'Cina', 'Cipro', 'Colombia',
+  'Comore', 'Corea del Nord', 'Corea del Sud', 'Costa d\'Avorio', 'Costa Rica', 'Croazia', 'Cuba',
+  'Danimarca', 'Dominica', 'Ecuador', 'Egitto', 'El Salvador', 'Emirati Arabi Uniti', 'Eritrea',
+  'Estonia', 'Etiopia', 'Figi', 'Filippine', 'Finlandia', 'Francia', 'Gabon', 'Gambia', 'Georgia',
+  'Germania', 'Ghana', 'Giamaica', 'Giappone', 'Gibuti', 'Giordania', 'Grecia', 'Grenada',
+  'Guatemala', 'Guinea', 'Guinea-Bissau', 'Guinea Equatoriale', 'Guyana', 'Haiti', 'Honduras',
+  'India', 'Indonesia', 'Iran', 'Iraq', 'Irlanda', 'Islanda', 'Israele', 'Italia', 'Kazakhstan',
+  'Kenya', 'Kirghizistan', 'Kiribati', 'Kosovo', 'Kuwait', 'Laos', 'Lesotho', 'Lettonia', 'Libano',
+  'Liberia', 'Libia', 'Liechtenstein', 'Lituania', 'Lussemburgo', 'Macedonia del Nord', 'Madagascar',
+  'Malawi', 'Malaysia', 'Maldive', 'Mali', 'Malta', 'Marocco', 'Marshall', 'Mauritania', 'Mauritius',
+  'Messico', 'Micronesia', 'Moldavia', 'Monaco', 'Mongolia', 'Montenegro', 'Mozambico', 'Namibia',
+  'Nauru', 'Nepal', 'Nicaragua', 'Niger', 'Nigeria', 'Norvegia', 'Nuova Zelanda', 'Oman', 'Paesi Bassi',
+  'Pakistan', 'Palau', 'Palestina', 'Panama', 'Papua Nuova Guinea', 'Paraguay', 'Perù', 'Polonia',
+  'Portogallo', 'Qatar', 'Regno Unito', 'Repubblica Ceca', 'Repubblica Centrafricana', 
+  'Repubblica del Congo', 'Repubblica Democratica del Congo', 'Repubblica Dominicana', 'Romania',
+  'Ruanda', 'Russia', 'Saint Kitts e Nevis', 'Saint Lucia', 'Saint Vincent e Grenadine', 'Samoa',
+  'San Marino', 'Santa Sede', 'São Tomé e Príncipe', 'Senegal', 'Serbia', 'Seychelles', 'Sierra Leone',
+  'Singapore', 'Siria', 'Slovacchia', 'Slovenia', 'Somalia', 'Spagna', 'Sri Lanka', 'Stati Uniti',
+  'Sudafrica', 'Sudan', 'Sudan del Sud', 'Suriname', 'Svezia', 'Svizzera', 'Swaziland', 'Tagikistan',
+  'Taiwan', 'Tanzania', 'Thailandia', 'Timor Est', 'Togo', 'Tonga', 'Trinidad e Tobago', 'Tunisia',
+  'Turchia', 'Turkmenistan', 'Tuvalu', 'Ucraina', 'Uganda', 'Ungheria', 'Uruguay', 'Uzbekistan',
+  'Vanuatu', 'Venezuela', 'Vietnam', 'Yemen', 'Zambia', 'Zimbabwe'
+];
+
 export class UserModel {
   constructor(db) {
     this.collection = db.collection('users');
@@ -32,13 +61,15 @@ export class UserModel {
       await this.collection.createIndex({ createdAt: -1 });
       await this.collection.createIndex({ lastActive: -1 });
       await this.collection.createIndex({ lookingForTeam: 1 });
+      await this.collection.createIndex({ nationality: 1 });
+      await this.collection.createIndex({ isAdmin: 1 });
     } catch (error) {
       console.error('Error creating indexes:', error);
     }
   }
 
   async create(userData) {
-    const { username, email, password, primaryRole, platform, level = 1 } = userData;
+    const { username, email, password, primaryRole, platform, level = 1, nationality = 'Italia' } = userData;
 
     const existingUser = await this.collection.findOne({
       $or: [{ email: email.toLowerCase() }, { username }]
@@ -57,6 +88,7 @@ export class UserModel {
       primaryRole,
       secondaryRoles: [],
       platform,
+      nationality,
       level: Math.max(1, level),
       instagram: '',
       tiktok: '',
@@ -67,6 +99,8 @@ export class UserModel {
       lookingForTeam: true,
       resetToken: null,
       resetTokenExpiry: null,
+      isAdmin: false,
+      isSuspended: false,
       createdAt: new Date(),
       updatedAt: new Date(),
       lastActive: new Date()
@@ -105,7 +139,7 @@ export class UserModel {
 
     const allowedFields = [
       'username', 'email', 'primaryRole', 'secondaryRoles',
-      'platform', 'level', 'instagram', 'tiktok', 'bio', 'lookingForTeam'
+      'platform', 'level', 'instagram', 'tiktok', 'bio', 'lookingForTeam', 'nationality'
     ];
 
     const filteredData = {};
@@ -203,7 +237,7 @@ export class UserModel {
   }
 
   async search(filters = {}) {
-    const query = { lookingForTeam: true };
+    const query = { lookingForTeam: true, isSuspended: { $ne: true } };
 
     if (filters.role) {
       query.$or = [
@@ -214,6 +248,10 @@ export class UserModel {
 
     if (filters.platform) {
       query.platform = filters.platform;
+    }
+
+    if (filters.nationality) {
+      query.nationality = filters.nationality;
     }
 
     if (filters.minLevel) {
@@ -278,6 +316,45 @@ export class UserModel {
     );
 
     return result.modifiedCount;
+  }
+
+  async suspendUser(userId, suspend = true) {
+    if (!ObjectId.isValid(userId)) return false;
+
+    await this.collection.updateOne(
+      { _id: new ObjectId(userId) },
+      {
+        $set: {
+          isSuspended: suspend,
+          updatedAt: new Date()
+        }
+      }
+    );
+    return true;
+  }
+
+  async deleteUser(userId) {
+    if (!ObjectId.isValid(userId)) return false;
+    await this.collection.deleteOne({ _id: new ObjectId(userId) });
+    return true;
+  }
+
+  async getAllUsers() {
+    return await this.collection
+      .find({})
+      .project({ password: 0, resetToken: 0, resetTokenExpiry: 0 })
+      .sort({ createdAt: -1 })
+      .toArray();
+  }
+
+  async countAll() {
+    return await this.collection.countDocuments();
+  }
+
+  async countInactive() {
+    const oneYearAgo = new Date();
+    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+    return await this.collection.countDocuments({ lastActive: { $lt: oneYearAgo } });
   }
 
   sanitizeUser(user) {
