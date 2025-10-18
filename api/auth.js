@@ -10,9 +10,9 @@ export default async function handler(req, res) {
   // REGISTER
   if (req.method === 'POST' && req.url === '/api/auth?action=register') {
     try {
-      const { username, email, password, primaryRole, platform, level } = req.body;
+      const { username, email, password, primaryRole, platform, level, nationality } = req.body;
 
-      if (!username || !email || !password || !primaryRole || !platform) {
+      if (!username || !email || !password || !primaryRole || !platform || !nationality) {
         return res.status(400).json({ error: 'Tutti i campi sono obbligatori' });
       }
 
@@ -43,6 +43,7 @@ export default async function handler(req, res) {
         password,
         primaryRole,
         platform,
+        nationality,
         level: level || 1
       });
 
@@ -80,6 +81,36 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'Email e password sono obbligatori' });
       }
 
+      // CHECK ADMIN
+      const adminEmail = process.env.ADMIN_EMAIL;
+      const adminPassword = process.env.ADMIN_PASSWORD;
+
+      if (email === adminEmail && password === adminPassword) {
+        const adminUser = {
+          _id: 'admin',
+          username: 'Admin',
+          email: adminEmail,
+          isAdmin: true,
+          level: 999,
+          platform: 'All',
+          nationality: 'Global',
+          primaryRole: 'Admin',
+          secondaryRoles: [],
+          averageRating: 5,
+          feedbackCount: 0,
+          team: null,
+          lookingForTeam: false,
+          profileCompleted: true
+        };
+
+        const token = generateToken('admin');
+        return res.status(200).json({
+          message: 'Login Admin effettuato',
+          token,
+          user: adminUser
+        });
+      }
+
       const user = await userModel.findByEmail(email);
       if (!user) {
         return res.status(401).json({ error: 'Email o password non corretti' });
@@ -115,6 +146,26 @@ export default async function handler(req, res) {
         return res.status(401).json({ error: 'Non autenticato' });
       }
 
+      if (userId === 'admin') {
+        const adminUser = {
+          _id: 'admin',
+          username: 'Admin',
+          email: process.env.ADMIN_EMAIL,
+          isAdmin: true,
+          level: 999,
+          platform: 'All',
+          nationality: 'Global',
+          primaryRole: 'Admin',
+          secondaryRoles: [],
+          averageRating: 5,
+          feedbackCount: 0,
+          team: null,
+          lookingForTeam: false,
+          profileCompleted: true
+        };
+        return res.status(200).json({ user: adminUser });
+      }
+
       const user = await userModel.findById(userId);
       if (!user) {
         return res.status(404).json({ error: 'Utente non trovato' });
@@ -139,14 +190,11 @@ export default async function handler(req, res) {
         return res.status(401).json({ error: 'Non autenticato' });
       }
 
-      const updates = req.body;
-
-      if (updates.email) {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(updates.email)) {
-          return res.status(400).json({ error: 'Email non valida' });
-        }
+      if (userId === 'admin') {
+        return res.status(403).json({ error: 'Admin non può modificare il profilo' });
       }
+
+      const updates = req.body;
 
       if (updates.level !== undefined) {
         const level = parseInt(updates.level);
@@ -156,8 +204,28 @@ export default async function handler(req, res) {
         updates.level = level;
       }
 
-      if (updates.secondaryRoles && updates.secondaryRoles.length > 2) {
-        return res.status(400).json({ error: 'Massimo 2 ruoli secondari' });
+      if (updates.secondaryRoles) {
+        if (!Array.isArray(updates.secondaryRoles)) {
+          return res.status(400).json({ error: 'Ruoli secondari deve essere un array' });
+        }
+        if (updates.secondaryRoles.length < 1) {
+          return res.status(400).json({ error: 'Almeno 1 ruolo secondario richiesto' });
+        }
+        if (updates.secondaryRoles.length > 2) {
+          return res.status(400).json({ error: 'Massimo 2 ruoli secondari' });
+        }
+      }
+
+      // Check profile completion
+      const user = await userModel.findById(userId);
+      const hasSecondaryRoles = updates.secondaryRoles?.length >= 1 || user.secondaryRoles?.length >= 1;
+      const hasContact = updates.instagram || updates.tiktok || user.instagram || user.tiktok;
+
+      if (hasSecondaryRoles && hasContact) {
+        updates.profileCompleted = true;
+      } else {
+        updates.profileCompleted = false;
+        updates.lookingForTeam = false;
       }
 
       const updatedUser = await userModel.update(userId, updates);
@@ -199,7 +267,7 @@ export default async function handler(req, res) {
       }
 
       const resetToken = generateResetToken();
-      const expiryDate = new Date(Date.now() + 3600000); // 1 ora
+      const expiryDate = new Date(Date.now() + 3600000);
 
       await userModel.setResetToken(user._id.toString(), resetToken, expiryDate);
 
