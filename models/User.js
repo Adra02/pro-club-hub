@@ -62,7 +62,7 @@ export class UserModel {
       await this.collection.createIndex({ lastActive: -1 });
       await this.collection.createIndex({ lookingForTeam: 1 });
       await this.collection.createIndex({ nationality: 1 });
-      await this.collection.createIndex({ isAdmin: 1 });
+      await this.collection.createIndex({ profileCompleted: 1 });
     } catch (error) {
       console.error('Error creating indexes:', error);
     }
@@ -96,7 +96,8 @@ export class UserModel {
       team: null,
       feedbackCount: 0,
       averageRating: 0,
-      lookingForTeam: true,
+      lookingForTeam: false,
+      profileCompleted: false,
       resetToken: null,
       resetTokenExpiry: null,
       isAdmin: false,
@@ -138,8 +139,9 @@ export class UserModel {
     if (!ObjectId.isValid(userId)) throw new Error('ID utente non valido');
 
     const allowedFields = [
-      'username', 'email', 'primaryRole', 'secondaryRoles',
-      'platform', 'level', 'instagram', 'tiktok', 'bio', 'lookingForTeam', 'nationality'
+      'username', 'primaryRole', 'secondaryRoles',
+      'platform', 'level', 'instagram', 'tiktok', 'bio', 'lookingForTeam', 
+      'nationality', 'profileCompleted'
     ];
 
     const filteredData = {};
@@ -147,10 +149,6 @@ export class UserModel {
       if (updateData[field] !== undefined) {
         filteredData[field] = updateData[field];
       }
-    }
-
-    if (filteredData.email) {
-      filteredData.email = filteredData.email.toLowerCase();
     }
 
     if (filteredData.level !== undefined) {
@@ -237,7 +235,11 @@ export class UserModel {
   }
 
   async search(filters = {}) {
-    const query = { lookingForTeam: true, isSuspended: { $ne: true } };
+    const query = { 
+      lookingForTeam: true, 
+      profileCompleted: true,
+      isSuspended: { $ne: true } 
+    };
 
     if (filters.role) {
       query.$or = [
@@ -276,7 +278,7 @@ export class UserModel {
 
     const users = await this.collection
       .find(query)
-      .project({ password: 0, resetToken: 0, resetTokenExpiry: 0 })
+      .project({ password: 0, resetToken: 0, resetTokenExpiry: 0, email: 0 })
       .sort({ averageRating: -1, level: -1 })
       .limit(50)
       .toArray();
@@ -359,7 +361,7 @@ export class UserModel {
 
   sanitizeUser(user) {
     if (!user) return null;
-    const { password, resetToken, resetTokenExpiry, ...sanitized } = user;
+    const { password, resetToken, resetTokenExpiry, email, ...sanitized } = user;
     return sanitized;
   }
 }
