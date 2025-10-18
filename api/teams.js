@@ -63,6 +63,12 @@ export default async function handler(req, res) {
     if (req.method === 'POST') {
       const { name, description, platform, instagram, tiktok, liveLink, nationality } = req.body;
 
+      // Check profile completed
+      const user = await userModel.findById(userId);
+      if (!user.profileCompleted) {
+        return res.status(400).json({ error: 'Devi completare il profilo prima di creare una squadra' });
+      }
+
       if (!name || !platform) {
         return res.status(400).json({ error: 'Nome e piattaforma sono obbligatori' });
       }
@@ -92,6 +98,14 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'ID squadra richiesto' });
       }
 
+      const team = await teamModel.findById(teamId);
+      if (!team) {
+        return res.status(404).json({ error: 'Squadra non trovata' });
+      }
+
+      const isCaptain = team.captain.toString() === userId;
+      const isViceCaptain = team.viceCaptain && team.viceCaptain.toString() === userId;
+
       // Leave team
       if (action === 'leave') {
         await teamModel.removeMember(teamId, userId, userId);
@@ -103,6 +117,10 @@ export default async function handler(req, res) {
 
       // Remove member (ONLY CAPTAIN)
       if (action === 'removeMember') {
+        if (!isCaptain) {
+          return res.status(403).json({ error: 'Solo il capitano può espellere membri' });
+        }
+
         if (!targetUserId) {
           return res.status(400).json({ error: 'ID utente richiesto' });
         }
@@ -114,8 +132,12 @@ export default async function handler(req, res) {
         return res.status(200).json({ message: 'Membro rimosso con successo' });
       }
 
-      // Set vice captain
+      // Set vice captain (ONLY CAPTAIN)
       if (action === 'setViceCaptain') {
+        if (!isCaptain) {
+          return res.status(403).json({ error: 'Solo il capitano può nominare il vice capitano' });
+        }
+
         if (!targetUserId) {
           return res.status(400).json({ error: 'ID utente richiesto' });
         }
@@ -125,7 +147,11 @@ export default async function handler(req, res) {
         return res.status(200).json({ message: 'Vice capitano nominato con successo' });
       }
 
-      // Update team info
+      // Update team info (Captain or Vice Captain)
+      if (!isCaptain && !isViceCaptain) {
+        return res.status(403).json({ error: 'Solo capitano e vice capitano possono modificare la squadra' });
+      }
+
       const updatedTeam = await teamModel.update(teamId, updateData, userId);
       return res.status(200).json({
         message: 'Squadra aggiornata con successo',
