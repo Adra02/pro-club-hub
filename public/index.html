@@ -170,9 +170,7 @@
                     </div>
                     <div class="filter-row">
                         <input type="text" id="nationalityFilter" class="input" list="nationalitiesList" data-i18n-placeholder="players.nationality" placeholder="Nazionalità">
-                        <datalist id="nationalitiesList">
-                            <!-- Will be populated by JS -->
-                        </datalist>
+                        <datalist id="nationalitiesList"></datalist>
                         <div class="level-filter">
                             <label data-i18n="players.minLevel">Livello minimo:</label>
                             <input type="number" id="minLevelFilter" class="input input-small" min="1" placeholder="1">
@@ -212,9 +210,7 @@
                         <option value="PC">PC</option>
                     </select>
                     <input type="text" id="teamNationalityFilter" class="input" list="teamNationalitiesList" data-i18n-placeholder="teams.nationality" placeholder="Nazionalità">
-                    <datalist id="teamNationalitiesList">
-                        <!-- Will be populated by JS -->
-                    </datalist>
+                    <datalist id="teamNationalitiesList"></datalist>
                     <button class="btn btn-primary" id="searchTeamsBtn">
                         <i class="fas fa-search"></i>
                         <span data-i18n="common.search">Cerca</span>
@@ -222,115 +218,6 @@
                 </div>
 
                 <div id="teamsResults" class="results-grid"></div>
-            </div>
-        </div>
-
-        <!-- ADMIN PAGE -->
-        <div id="adminPage" class="page" style="display: none;">
-            <div class="container">
-                <div class="admin-dashboard">
-                    <h2 class="admin-title">
-                        <i class="fas fa-crown"></i>
-                        <span data-i18n="admin.title">Pannello Amministrativo</span>
-                    </h2>
-
-                    <!-- Stats Cards -->
-                    <div class="admin-stats">
-                        <div class="stat-card">
-                            <div class="stat-icon"><i class="fas fa-users"></i></div>
-                            <div class="stat-info">
-                                <h3 id="totalUsers">0</h3>
-                                <p data-i18n="admin.stats.users">Utenti Totali</p>
-                            </div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-icon"><i class="fas fa-shield-alt"></i></div>
-                            <div class="stat-info">
-                                <h3 id="totalTeams">0</h3>
-                                <p data-i18n="admin.stats.teams">Squadre Totali</p>
-                            </div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-icon"><i class="fas fa-user-clock"></i></div>
-                            <div class="stat-info">
-                                <h3 id="inactiveUsers">0</h3>
-                                <p data-i18n="admin.stats.inactive">Utenti Inattivi</p>
-                            </div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-icon"><i class="fas fa-envelope"></i></div>
-                            <div class="stat-info">
-                                <h3 id="pendingRequests">0</h3>
-                                <p data-i18n="admin.stats.requests">Richieste Pendenti</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Admin Actions -->
-                    <div class="admin-section">
-                        <h3><i class="fas fa-cog"></i> <span data-i18n="admin.actions.title">Azioni Amministrative</span></h3>
-                        <div class="admin-actions">
-                            <button class="btn btn-danger btn-large" id="deleteAllTeamsBtn">
-                                <i class="fas fa-trash-alt"></i>
-                                <span data-i18n="admin.actions.deleteTeams">Elimina Tutte le Squadre</span>
-                            </button>
-                            <button class="btn btn-warning btn-large" id="resetProfilesBtn">
-                                <i class="fas fa-redo"></i>
-                                <span data-i18n="admin.actions.resetProfiles">Reset Profili Giocatori</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Newsletter -->
-                    <div class="admin-section">
-                        <h3><i class="fas fa-paper-plane"></i> <span data-i18n="admin.newsletter.title">Invia Newsletter</span></h3>
-                        <form id="newsletterForm" class="newsletter-form">
-                            <div class="form-group">
-                                <label data-i18n="admin.newsletter.subject">Oggetto</label>
-                                <input type="text" id="newsletterSubject" class="input" required>
-                            </div>
-                            <div class="form-group">
-                                <label data-i18n="admin.newsletter.message">Messaggio</label>
-                                <textarea id="newsletterMessage" class="textarea" rows="6" required></textarea>
-                            </div>
-                            <button type="submit" class="btn btn-primary btn-large">
-                                <i class="fas fa-send"></i>
-                                <span data-i18n="admin.newsletter.send">Invia a Tutti gli Utenti</span>
-                            </button>
-                        </form>
-                    </div>
-
-                    <!-- Users Management -->
-                    <div class="admin-section">
-                        <h3><i class="fas fa-users-cog"></i> <span data-i18n="admin.users.title">Gestione Utenti</span></h3>
-                        <div id="usersList" class="users-list"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- REQUESTS, PROFILE pages... (continued in next message) -->
-    </main>
-    <!-- REQUESTS PAGE -->
-        <div id="requestsPage" class="page" style="display: none;">
-            <div class="container">
-                <div class="page-header">
-                    <h2><i class="fas fa-envelope"></i> <span data-i18n="requests.title">Richieste</span></h2>
-                </div>
-
-                <div class="requests-tabs">
-                    <button class="tab-btn active" data-tab="received">
-                        <i class="fas fa-inbox"></i>
-                        <span data-i18n="requests.received">Ricevute</span>
-                    </button>
-                    <button class="tab-btn" data-tab="sent">
-                        <i class="fas fa-paper-plane"></i>
-                        <span data-i18n="requests.sent">Inviate</span>
-                    </button>
-                </div>
-
-                <div id="receivedRequests" class="requests-container"></div>
-                <div id="sentRequests" class="requests-container" style="display: none;"></div>
             </div>
         </div>
 
@@ -363,10 +250,6 @@
                     </div>
 
                     <div class="profile-details">
-                        <div class="detail-card">
-                            <h3><i class="fas fa-envelope"></i> <span data-i18n="profile.email">Email</span></h3>
-                            <p id="profileEmail"></p>
-                        </div>
                         <div class="detail-card">
                             <h3><i class="fas fa-gamepad"></i> <span data-i18n="profile.platform">Piattaforma</span></h3>
                             <p id="profilePlatform"></p>
@@ -411,10 +294,112 @@
                 </div>
             </div>
         </div>
+
+        <!-- REQUESTS PAGE -->
+        <div id="requestsPage" class="page" style="display: none;">
+            <div class="container">
+                <div class="page-header">
+                    <h2><i class="fas fa-envelope"></i> <span data-i18n="requests.title">Richieste</span></h2>
+                </div>
+
+                <div class="requests-tabs">
+                    <button class="tab-btn active" data-tab="received">
+                        <i class="fas fa-inbox"></i>
+                        <span data-i18n="requests.received">Ricevute</span>
+                    </button>
+                    <button class="tab-btn" data-tab="sent">
+                        <i class="fas fa-paper-plane"></i>
+                        <span data-i18n="requests.sent">Inviate</span>
+                    </button>
+                </div>
+
+                <div id="receivedRequests" class="requests-container"></div>
+                <div id="sentRequests" class="requests-container" style="display: none;"></div>
+            </div>
+        </div>
+
+        <!-- ADMIN PAGE -->
+        <div id="adminPage" class="page" style="display: none;">
+            <div class="container">
+                <div class="admin-dashboard">
+                    <h2 class="admin-title">
+                        <i class="fas fa-crown"></i>
+                        <span data-i18n="admin.title">Pannello Amministrativo</span>
+                    </h2>
+
+                    <div class="admin-stats">
+                        <div class="stat-card">
+                            <div class="stat-icon"><i class="fas fa-users"></i></div>
+                            <div class="stat-info">
+                                <h3 id="totalUsers">0</h3>
+                                <p data-i18n="admin.stats.users">Utenti Totali</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon"><i class="fas fa-shield-alt"></i></div>
+                            <div class="stat-info">
+                                <h3 id="totalTeams">0</h3>
+                                <p data-i18n="admin.stats.teams">Squadre Totali</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon"><i class="fas fa-user-clock"></i></div>
+                            <div class="stat-info">
+                                <h3 id="inactiveUsers">0</h3>
+                                <p data-i18n="admin.stats.inactive">Utenti Inattivi</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon"><i class="fas fa-envelope"></i></div>
+                            <div class="stat-info">
+                                <h3 id="pendingRequests">0</h3>
+                                <p data-i18n="admin.stats.requests">Richieste Pendenti</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="admin-section">
+                        <h3><i class="fas fa-cog"></i> <span data-i18n="admin.actions.title">Azioni Amministrative</span></h3>
+                        <div class="admin-actions">
+                            <button class="btn btn-danger btn-large" id="deleteAllTeamsBtn">
+                                <i class="fas fa-trash-alt"></i>
+                                <span data-i18n="admin.actions.deleteTeams">Elimina Tutte le Squadre</span>
+                            </button>
+                            <button class="btn btn-warning btn-large" id="resetProfilesBtn">
+                                <i class="fas fa-redo"></i>
+                                <span data-i18n="admin.actions.resetProfiles">Reset Profili Giocatori</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="admin-section">
+                        <h3><i class="fas fa-paper-plane"></i> <span data-i18n="admin.newsletter.title">Invia Newsletter</span></h3>
+                        <form id="newsletterForm" class="newsletter-form">
+                            <div class="form-group">
+                                <label data-i18n="admin.newsletter.subject">Oggetto</label>
+                                <input type="text" id="newsletterSubject" class="input" required>
+                            </div>
+                            <div class="form-group">
+                                <label data-i18n="admin.newsletter.message">Messaggio</label>
+                                <textarea id="newsletterMessage" class="textarea" rows="6" required></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-large">
+                                <i class="fas fa-send"></i>
+                                <span data-i18n="admin.newsletter.send">Invia a Tutti gli Utenti</span>
+                            </button>
+                        </form>
+                    </div>
+
+                    <div class="admin-section">
+                        <h3><i class="fas fa-users-cog"></i> <span data-i18n="admin.users.title">Gestione Utenti</span></h3>
+                        <div id="usersList" class="users-list"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </main>
 
     <!-- MODALS -->
-    <!-- AUTH MODAL -->
     <div id="authModal" class="modal">
         <div class="modal-content">
             <button class="modal-close" id="closeAuthModal">
@@ -491,9 +476,7 @@
                     <div class="form-group">
                         <label data-i18n="auth.nationalityLabel">Nazionalità</label>
                         <input type="text" id="registerNationality" class="input" list="registerNationalitiesList" required>
-                        <datalist id="registerNationalitiesList">
-                            <!-- Populated by JS -->
-                        </datalist>
+                        <datalist id="registerNationalitiesList"></datalist>
                     </div>
                     <div class="form-group">
                         <label data-i18n="auth.levelLabel">Livello Iniziale</label>
@@ -545,10 +528,6 @@
                     <input type="text" id="editUsername" class="input" required minlength="3" maxlength="20">
                 </div>
                 <div class="form-group">
-                    <label data-i18n="auth.emailLabel">Email</label>
-                    <input type="email" id="editEmail" class="input" required>
-                </div>
-                <div class="form-group">
                     <label data-i18n="auth.roleLabel">Ruolo Principale</label>
                     <select id="editPrimaryRole" class="select" required>
                         <option value="Portiere (POR)">Portiere (POR)</option>
@@ -566,7 +545,7 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label data-i18n="profile.secondaryRolesLabel">Ruoli Secondari (max 2)</label>
+                    <label data-i18n="profile.secondaryRolesLabel">Ruoli Secondari (almeno 1)</label>
                     <div class="checkbox-group" id="secondaryRolesCheckboxes">
                         <label class="checkbox-label">
                             <input type="checkbox" value="Portiere (POR)"> Portiere (POR)
@@ -617,20 +596,18 @@
                 <div class="form-group">
                     <label data-i18n="auth.nationalityLabel">Nazionalità</label>
                     <input type="text" id="editNationality" class="input" list="editNationalitiesList" required>
-                    <datalist id="editNationalitiesList">
-                        <!-- Populated by JS -->
-                    </datalist>
+                    <datalist id="editNationalitiesList"></datalist>
                 </div>
                 <div class="form-group">
                     <label data-i18n="auth.levelLabel">Livello</label>
                     <input type="number" id="editLevel" class="input" min="1" required>
                 </div>
                 <div class="form-group">
-                    <label data-i18n="profile.instagramLabel">Instagram (username)</label>
+                    <label data-i18n="profile.instagramLabel">Instagram (username) - Almeno uno richiesto</label>
                     <input type="text" id="editInstagram" class="input" placeholder="tuousername">
                 </div>
                 <div class="form-group">
-                    <label data-i18n="profile.tiktokLabel">TikTok (username)</label>
+                    <label data-i18n="profile.tiktokLabel">TikTok (username) - Almeno uno richiesto</label>
                     <input type="text" id="editTiktok" class="input" placeholder="tuousername">
                 </div>
                 <div class="form-group">
@@ -639,8 +616,8 @@
                 </div>
                 <div class="form-group">
                     <label class="checkbox-label-single">
-                        <input type="checkbox" id="editLookingForTeam">
-                        <span data-i18n="profile.lookingForTeamCheckbox">Cerco squadra</span>
+                        <input type="checkbox" id="editLookingForTeam" disabled>
+                        <span data-i18n="profile.lookingForTeamCheckbox">Cerco squadra (si abilita completando il profilo)</span>
                     </label>
                 </div>
                 <button type="submit" class="btn btn-primary btn-block">
@@ -679,9 +656,7 @@
                 <div class="form-group">
                     <label data-i18n="teams.nationalityLabel">Nazionalità</label>
                     <input type="text" id="teamNationality" class="input" list="teamCreateNationalitiesList" required>
-                    <datalist id="teamCreateNationalitiesList">
-                        <!-- Populated by JS -->
-                    </datalist>
+                    <datalist id="teamCreateNationalitiesList"></datalist>
                 </div>
                 <div class="form-group">
                     <label data-i18n="teams.instagramLabel">Instagram (username)</label>
@@ -709,7 +684,6 @@
         </div>
     </div>
 
-    <!-- EDIT TEAM MODAL (similar structure) -->
     <!-- FEEDBACK MODAL -->
     <div id="feedbackModal" class="modal">
         <div class="modal-content">
@@ -802,6 +776,7 @@
         </div>
     </div>
 
+    <script src="/i18n.js"></script>
     <script src="/app.js"></script>
 </body>
 </html>
