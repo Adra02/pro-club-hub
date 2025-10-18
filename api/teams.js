@@ -17,7 +17,7 @@ export default async function handler(req, res) {
 
     // GET TEAMS
     if (req.method === 'GET') {
-      const { id, platform, search } = req.query;
+      const { id, platform, search, nationality } = req.query;
 
       // Get specific team
       if (id) {
@@ -50,6 +50,7 @@ export default async function handler(req, res) {
       const filters = {};
       if (platform) filters.platform = platform;
       if (search) filters.search = search;
+      if (nationality) filters.nationality = nationality;
 
       const teams = await teamModel.search(filters);
       return res.status(200).json({ 
@@ -60,7 +61,7 @@ export default async function handler(req, res) {
 
     // CREATE TEAM
     if (req.method === 'POST') {
-      const { name, description, platform, instagram, tiktok, liveLink } = req.body;
+      const { name, description, platform, instagram, tiktok, liveLink, nationality } = req.body;
 
       if (!name || !platform) {
         return res.status(400).json({ error: 'Nome e piattaforma sono obbligatori' });
@@ -70,15 +71,8 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'Nome deve essere tra 3 e 30 caratteri' });
       }
 
-      const currentUser = await userModel.findById(userId);
-      if (currentUser.team) {
-        return res.status(400).json({ 
-          error: 'Sei già in una squadra. Lasciala prima di crearne una nuova.' 
-        });
-      }
-
       const team = await teamModel.create(
-        { name, description, platform, instagram, tiktok, liveLink },
+        { name, description, platform, instagram, tiktok, liveLink, nationality },
         userId
       );
 
@@ -107,7 +101,7 @@ export default async function handler(req, res) {
         return res.status(200).json({ message: 'Hai lasciato la squadra' });
       }
 
-      // Remove member
+      // Remove member (ONLY CAPTAIN)
       if (action === 'removeMember') {
         if (!targetUserId) {
           return res.status(400).json({ error: 'ID utente richiesto' });
