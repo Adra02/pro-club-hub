@@ -12,6 +12,7 @@
     }
   },
   "env": {
-    "VERCEL_URL": "@vercel-url"
+    "VERCEL_URL": "_vercel-url"
   }
 }
+
