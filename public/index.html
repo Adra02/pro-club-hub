@@ -4,14 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pro Club Hub - La community definitiva per i giocatori di Pro Club</title>
-    <meta name="description" content="La community definitiva per i giocatori di FIFA Pro Club. Trova giocatori, crea squadre, lascia feedback.">
+    <meta name="description" content="La community definitiva per i giocatori di Pro Club. Trova giocatori, crea squadre, lascia feedback.">
     <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
     <div id="loadingOverlay" class="loading-overlay">
         <div class="loading-spinner"></div>
-        <p>Caricamento...</p>
+        <p data-i18n="loading">Caricamento...</p>
     </div>
 
     <div id="notification" class="notification"></div>
@@ -23,33 +23,48 @@
                     <i class="fas fa-futbol"></i>
                     Pro Club Hub
                 </h1>
-                <nav class="nav" id="mainNav">
-                    <button class="nav-btn active" data-page="home">
-                        <i class="fas fa-home"></i>
-                        <span>Home</span>
-                    </button>
-                    <button class="nav-btn" data-page="players">
-                        <i class="fas fa-users"></i>
-                        <span>Giocatori</span>
-                    </button>
-                    <button class="nav-btn" data-page="teams">
-                        <i class="fas fa-shield-alt"></i>
-                        <span>Squadre</span>
-                    </button>
-                    <button class="nav-btn" data-page="requests" id="requestsNavBtn" style="display: none;">
-                        <i class="fas fa-envelope"></i>
-                        <span>Richieste</span>
-                        <span class="badge" id="requestsBadge" style="display: none;">0</span>
-                    </button>
-                    <button class="nav-btn" data-page="profile" id="profileNavBtn" style="display: none;">
-                        <i class="fas fa-user"></i>
-                        <span>Profilo</span>
-                    </button>
-                    <button class="btn-logout" id="logoutBtn" style="display: none;">
-                        <i class="fas fa-sign-out-alt"></i>
-                        <span>Esci</span>
-                    </button>
-                </nav>
+                <div class="header-actions">
+                    <!-- Language Selector -->
+                    <select id="languageSelector" class="language-selector">
+                        <option value="it">🇮🇹 Italiano</option>
+                        <option value="en">🇬🇧 English</option>
+                        <option value="es">🇪🇸 Español</option>
+                        <option value="fr">🇫🇷 Français</option>
+                        <option value="pt">🇵🇹 Português</option>
+                    </select>
+                    
+                    <nav class="nav" id="mainNav">
+                        <button class="nav-btn active" data-page="home">
+                            <i class="fas fa-home"></i>
+                            <span data-i18n="nav.home">Home</span>
+                        </button>
+                        <button class="nav-btn" data-page="players">
+                            <i class="fas fa-users"></i>
+                            <span data-i18n="nav.players">Giocatori</span>
+                        </button>
+                        <button class="nav-btn" data-page="teams">
+                            <i class="fas fa-shield-alt"></i>
+                            <span data-i18n="nav.teams">Squadre</span>
+                        </button>
+                        <button class="nav-btn" data-page="requests" id="requestsNavBtn" style="display: none;">
+                            <i class="fas fa-envelope"></i>
+                            <span data-i18n="nav.requests">Richieste</span>
+                            <span class="badge" id="requestsBadge" style="display: none;">0</span>
+                        </button>
+                        <button class="nav-btn" data-page="profile" id="profileNavBtn" style="display: none;">
+                            <i class="fas fa-user"></i>
+                            <span data-i18n="nav.profile">Profilo</span>
+                        </button>
+                        <button class="nav-btn" data-page="admin" id="adminNavBtn" style="display: none;">
+                            <i class="fas fa-crown"></i>
+                            <span data-i18n="nav.admin">Admin</span>
+                        </button>
+                        <button class="btn-logout" id="logoutBtn" style="display: none;">
+                            <i class="fas fa-sign-out-alt"></i>
+                            <span data-i18n="nav.logout">Esci</span>
+                        </button>
+                    </nav>
+                </div>
             </div>
         </div>
     </header>
@@ -60,16 +75,16 @@
             <div class="hero">
                 <div class="container">
                     <div class="hero-content">
-                        <h2 class="hero-title">Benvenuto su Pro Club Hub</h2>
-                        <p class="hero-subtitle">La community definitiva per i giocatori di Pro Club</p>
+                        <h2 class="hero-title" data-i18n="home.title">Benvenuto su Pro Club Hub</h2>
+                        <p class="hero-subtitle" data-i18n="home.subtitle">La community definitiva per i giocatori di Pro Club</p>
                         <div class="hero-actions" id="heroActions">
                             <button class="btn btn-primary btn-large" id="heroLoginBtn">
                                 <i class="fas fa-sign-in-alt"></i>
-                                Accedi
+                                <span data-i18n="auth.login">Accedi</span>
                             </button>
                             <button class="btn btn-secondary btn-large" id="heroRegisterBtn">
                                 <i class="fas fa-user-plus"></i>
-                                Registrati
+                                <span data-i18n="auth.register">Registrati</span>
                             </button>
                         </div>
                         <div class="hero-user-info" id="heroUserInfo" style="display: none;">
@@ -80,7 +95,7 @@
                                 <div class="user-details">
                                     <h3 id="heroUsername"></h3>
                                     <div class="user-level">
-                                        <span>Livello <strong id="heroLevel"></strong></span>
+                                        <span data-i18n="common.level">Livello</span> <strong id="heroLevel"></strong>
                                         <div class="level-bar">
                                             <div class="level-progress" id="heroLevelProgress"></div>
                                         </div>
@@ -88,7 +103,7 @@
                                     <div class="user-rating">
                                         <i class="fas fa-star"></i>
                                         <span id="heroRating">0.0</span>
-                                        <span class="rating-count">(<span id="heroRatingCount">0</span> feedback)</span>
+                                        <span class="rating-count">(<span id="heroRatingCount">0</span> <span data-i18n="common.feedback">feedback</span>)</span>
                                     </div>
                                 </div>
                             </div>
@@ -99,22 +114,22 @@
                             <div class="feature-icon">
                                 <i class="fas fa-search"></i>
                             </div>
-                            <h3>Trova Giocatori</h3>
-                            <p>Cerca giocatori per ruolo, livello e piattaforma</p>
+                            <h3 data-i18n="home.feature1.title">Trova Giocatori</h3>
+                            <p data-i18n="home.feature1.desc">Cerca giocatori per ruolo, livello e piattaforma</p>
                         </div>
                         <div class="feature-card">
                             <div class="feature-icon">
                                 <i class="fas fa-users"></i>
                             </div>
-                            <h3>Crea Squadre</h3>
-                            <p>Forma la tua squadra e competi insieme</p>
+                            <h3 data-i18n="home.feature2.title">Crea Squadre</h3>
+                            <p data-i18n="home.feature2.desc">Forma la tua squadra e competi insieme</p>
                         </div>
                         <div class="feature-card">
                             <div class="feature-icon">
                                 <i class="fas fa-star"></i>
                             </div>
-                            <h3>Lascia Feedback</h3>
-                            <p>Valuta i giocatori e costruisci la tua reputazione</p>
+                            <h3 data-i18n="home.feature3.title">Lascia Feedback</h3>
+                            <p data-i18n="home.feature3.desc">Valuta i giocatori e costruisci la tua reputazione</p>
                         </div>
                     </div>
                 </div>
@@ -125,14 +140,14 @@
         <div id="playersPage" class="page" style="display: none;">
             <div class="container">
                 <div class="page-header">
-                    <h2><i class="fas fa-users"></i> Cerca Giocatori</h2>
+                    <h2><i class="fas fa-users"></i> <span data-i18n="players.title">Cerca Giocatori</span></h2>
                 </div>
                 
                 <div class="search-filters">
                     <div class="filter-row">
-                        <input type="text" id="playerSearchInput" class="input" placeholder="🔍 Cerca per nome...">
+                        <input type="text" id="playerSearchInput" class="input" data-i18n-placeholder="players.searchPlaceholder" placeholder="🔍 Cerca per nome...">
                         <select id="roleFilter" class="select">
-                            <option value="">Tutti i ruoli</option>
+                            <option value="" data-i18n="players.allRoles">Tutti i ruoli</option>
                             <option value="Portiere (POR)">Portiere (POR)</option>
                             <option value="Difensore Centrale (DC)">Difensore Centrale (DC)</option>
                             <option value="Terzino Destro (TD)">Terzino Destro (TD)</option>
@@ -147,24 +162,28 @@
                             <option value="Attaccante (ATT)">Attaccante (ATT)</option>
                         </select>
                         <select id="platformFilter" class="select">
-                            <option value="">Tutte le piattaforme</option>
+                            <option value="" data-i18n="players.allPlatforms">Tutte le piattaforme</option>
                             <option value="PlayStation">PlayStation</option>
                             <option value="Xbox">Xbox</option>
                             <option value="PC">PC</option>
                         </select>
                     </div>
                     <div class="filter-row">
+                        <input type="text" id="nationalityFilter" class="input" list="nationalitiesList" data-i18n-placeholder="players.nationality" placeholder="Nazionalità">
+                        <datalist id="nationalitiesList">
+                            <!-- Will be populated by JS -->
+                        </datalist>
                         <div class="level-filter">
-                            <label>Livello minimo:</label>
+                            <label data-i18n="players.minLevel">Livello minimo:</label>
                             <input type="number" id="minLevelFilter" class="input input-small" min="1" placeholder="1">
                         </div>
                         <div class="level-filter">
-                            <label>Livello massimo:</label>
+                            <label data-i18n="players.maxLevel">Livello massimo:</label>
                             <input type="number" id="maxLevelFilter" class="input input-small" min="1" placeholder="999">
                         </div>
                         <button class="btn btn-primary" id="searchPlayersBtn">
                             <i class="fas fa-search"></i>
-                            Cerca
+                            <span data-i18n="common.search">Cerca</span>
                         </button>
                     </div>
                 </div>
@@ -177,24 +196,28 @@
         <div id="teamsPage" class="page" style="display: none;">
             <div class="container">
                 <div class="page-header">
-                    <h2><i class="fas fa-shield-alt"></i> Squadre</h2>
+                    <h2><i class="fas fa-shield-alt"></i> <span data-i18n="teams.title">Squadre</span></h2>
                     <button class="btn btn-primary" id="createTeamBtn" style="display: none;">
                         <i class="fas fa-plus"></i>
-                        Crea Squadra
+                        <span data-i18n="teams.create">Crea Squadra</span>
                     </button>
                 </div>
 
                 <div class="search-filters">
-                    <input type="text" id="teamSearchInput" class="input" placeholder="🔍 Cerca squadra...">
+                    <input type="text" id="teamSearchInput" class="input" data-i18n-placeholder="teams.searchPlaceholder" placeholder="🔍 Cerca squadra...">
                     <select id="teamPlatformFilter" class="select">
-                        <option value="">Tutte le piattaforme</option>
+                        <option value="" data-i18n="teams.allPlatforms">Tutte le piattaforme</option>
                         <option value="PlayStation">PlayStation</option>
                         <option value="Xbox">Xbox</option>
                         <option value="PC">PC</option>
                     </select>
+                    <input type="text" id="teamNationalityFilter" class="input" list="teamNationalitiesList" data-i18n-placeholder="teams.nationality" placeholder="Nazionalità">
+                    <datalist id="teamNationalitiesList">
+                        <!-- Will be populated by JS -->
+                    </datalist>
                     <button class="btn btn-primary" id="searchTeamsBtn">
                         <i class="fas fa-search"></i>
-                        Cerca
+                        <span data-i18n="common.search">Cerca</span>
                     </button>
                 </div>
 
@@ -202,21 +225,107 @@
             </div>
         </div>
 
-        <!-- REQUESTS PAGE -->
+        <!-- ADMIN PAGE -->
+        <div id="adminPage" class="page" style="display: none;">
+            <div class="container">
+                <div class="admin-dashboard">
+                    <h2 class="admin-title">
+                        <i class="fas fa-crown"></i>
+                        <span data-i18n="admin.title">Pannello Amministrativo</span>
+                    </h2>
+
+                    <!-- Stats Cards -->
+                    <div class="admin-stats">
+                        <div class="stat-card">
+                            <div class="stat-icon"><i class="fas fa-users"></i></div>
+                            <div class="stat-info">
+                                <h3 id="totalUsers">0</h3>
+                                <p data-i18n="admin.stats.users">Utenti Totali</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon"><i class="fas fa-shield-alt"></i></div>
+                            <div class="stat-info">
+                                <h3 id="totalTeams">0</h3>
+                                <p data-i18n="admin.stats.teams">Squadre Totali</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon"><i class="fas fa-user-clock"></i></div>
+                            <div class="stat-info">
+                                <h3 id="inactiveUsers">0</h3>
+                                <p data-i18n="admin.stats.inactive">Utenti Inattivi</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon"><i class="fas fa-envelope"></i></div>
+                            <div class="stat-info">
+                                <h3 id="pendingRequests">0</h3>
+                                <p data-i18n="admin.stats.requests">Richieste Pendenti</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Admin Actions -->
+                    <div class="admin-section">
+                        <h3><i class="fas fa-cog"></i> <span data-i18n="admin.actions.title">Azioni Amministrative</span></h3>
+                        <div class="admin-actions">
+                            <button class="btn btn-danger btn-large" id="deleteAllTeamsBtn">
+                                <i class="fas fa-trash-alt"></i>
+                                <span data-i18n="admin.actions.deleteTeams">Elimina Tutte le Squadre</span>
+                            </button>
+                            <button class="btn btn-warning btn-large" id="resetProfilesBtn">
+                                <i class="fas fa-redo"></i>
+                                <span data-i18n="admin.actions.resetProfiles">Reset Profili Giocatori</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Newsletter -->
+                    <div class="admin-section">
+                        <h3><i class="fas fa-paper-plane"></i> <span data-i18n="admin.newsletter.title">Invia Newsletter</span></h3>
+                        <form id="newsletterForm" class="newsletter-form">
+                            <div class="form-group">
+                                <label data-i18n="admin.newsletter.subject">Oggetto</label>
+                                <input type="text" id="newsletterSubject" class="input" required>
+                            </div>
+                            <div class="form-group">
+                                <label data-i18n="admin.newsletter.message">Messaggio</label>
+                                <textarea id="newsletterMessage" class="textarea" rows="6" required></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-large">
+                                <i class="fas fa-send"></i>
+                                <span data-i18n="admin.newsletter.send">Invia a Tutti gli Utenti</span>
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Users Management -->
+                    <div class="admin-section">
+                        <h3><i class="fas fa-users-cog"></i> <span data-i18n="admin.users.title">Gestione Utenti</span></h3>
+                        <div id="usersList" class="users-list"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- REQUESTS, PROFILE pages... (continued in next message) -->
+    </main>
+    <!-- REQUESTS PAGE -->
         <div id="requestsPage" class="page" style="display: none;">
             <div class="container">
                 <div class="page-header">
-                    <h2><i class="fas fa-envelope"></i> Richieste</h2>
+                    <h2><i class="fas fa-envelope"></i> <span data-i18n="requests.title">Richieste</span></h2>
                 </div>
 
                 <div class="requests-tabs">
                     <button class="tab-btn active" data-tab="received">
                         <i class="fas fa-inbox"></i>
-                        Ricevute
+                        <span data-i18n="requests.received">Ricevute</span>
                     </button>
                     <button class="tab-btn" data-tab="sent">
                         <i class="fas fa-paper-plane"></i>
-                        Inviate
+                        <span data-i18n="requests.sent">Inviate</span>
                     </button>
                 </div>
 
@@ -236,7 +345,7 @@
                         <div class="profile-info">
                             <h2 id="profileUsername"></h2>
                             <div class="profile-level">
-                                <span>Livello <strong id="profileLevel"></strong></span>
+                                <span><span data-i18n="common.level">Livello</span> <strong id="profileLevel"></strong></span>
                                 <div class="level-bar level-bar-large">
                                     <div class="level-progress" id="profileLevelProgress"></div>
                                 </div>
@@ -244,42 +353,46 @@
                             <div class="profile-rating">
                                 <i class="fas fa-star"></i>
                                 <span id="profileRating">0.0</span>
-                                <span class="rating-count">(<span id="profileRatingCount">0</span> feedback)</span>
+                                <span class="rating-count">(<span id="profileRatingCount">0</span> <span data-i18n="common.feedback">feedback</span>)</span>
                             </div>
                         </div>
                         <button class="btn btn-secondary" id="editProfileBtn">
                             <i class="fas fa-edit"></i>
-                            Modifica Profilo
+                            <span data-i18n="profile.edit">Modifica Profilo</span>
                         </button>
                     </div>
 
                     <div class="profile-details">
                         <div class="detail-card">
-                            <h3><i class="fas fa-envelope"></i> Email</h3>
+                            <h3><i class="fas fa-envelope"></i> <span data-i18n="profile.email">Email</span></h3>
                             <p id="profileEmail"></p>
                         </div>
                         <div class="detail-card">
-                            <h3><i class="fas fa-gamepad"></i> Piattaforma</h3>
+                            <h3><i class="fas fa-gamepad"></i> <span data-i18n="profile.platform">Piattaforma</span></h3>
                             <p id="profilePlatform"></p>
                         </div>
                         <div class="detail-card">
-                            <h3><i class="fas fa-trophy"></i> Ruolo Principale</h3>
+                            <h3><i class="fas fa-flag"></i> <span data-i18n="profile.nationality">Nazionalità</span></h3>
+                            <p id="profileNationality"></p>
+                        </div>
+                        <div class="detail-card">
+                            <h3><i class="fas fa-trophy"></i> <span data-i18n="profile.primaryRole">Ruolo Principale</span></h3>
                             <p id="profilePrimaryRole"></p>
                         </div>
                         <div class="detail-card">
-                            <h3><i class="fas fa-users"></i> Ruoli Secondari</h3>
+                            <h3><i class="fas fa-users"></i> <span data-i18n="profile.secondaryRoles">Ruoli Secondari</span></h3>
                             <p id="profileSecondaryRoles">Nessuno</p>
                         </div>
                         <div class="detail-card">
-                            <h3><i class="fas fa-comment"></i> Bio</h3>
+                            <h3><i class="fas fa-comment"></i> <span data-i18n="profile.bio">Bio</span></h3>
                             <p id="profileBio">Nessuna bio</p>
                         </div>
                         <div class="detail-card">
-                            <h3><i class="fas fa-search"></i> Cerca Squadra</h3>
+                            <h3><i class="fas fa-search"></i> <span data-i18n="profile.lookingForTeam">Cerca Squadra</span></h3>
                             <p id="profileLookingForTeam">No</p>
                         </div>
                         <div class="detail-card" id="profileSocialCard" style="display: none;">
-                            <h3><i class="fas fa-share-alt"></i> Social</h3>
+                            <h3><i class="fas fa-share-alt"></i> <span data-i18n="profile.social">Social</span></h3>
                             <div class="social-links" id="profileSocialLinks"></div>
                         </div>
                     </div>
@@ -287,12 +400,12 @@
                     <div class="profile-actions">
                         <button class="btn btn-danger" id="resetPasswordBtn">
                             <i class="fas fa-key"></i>
-                            Cambia Password (via Email)
+                            <span data-i18n="profile.resetPassword">Cambia Password (via Email)</span>
                         </button>
                     </div>
 
                     <div class="feedback-section">
-                        <h3><i class="fas fa-star"></i> Feedback Ricevuti</h3>
+                        <h3><i class="fas fa-star"></i> <span data-i18n="profile.feedbackReceived">Feedback Ricevuti</span></h3>
                         <div id="profileFeedbackList"></div>
                     </div>
                 </div>
@@ -301,6 +414,7 @@
     </main>
 
     <!-- MODALS -->
+    <!-- AUTH MODAL -->
     <div id="authModal" class="modal">
         <div class="modal-content">
             <button class="modal-close" id="closeAuthModal">
@@ -308,49 +422,49 @@
             </button>
             
             <div id="loginForm" class="auth-form">
-                <h2><i class="fas fa-sign-in-alt"></i> Accedi</h2>
+                <h2><i class="fas fa-sign-in-alt"></i> <span data-i18n="auth.login">Accedi</span></h2>
                 <form id="loginFormElement">
                     <div class="form-group">
-                        <label>Email</label>
+                        <label data-i18n="auth.emailLabel">Email</label>
                         <input type="email" id="loginEmail" class="input" required>
                     </div>
                     <div class="form-group">
-                        <label>Password</label>
+                        <label data-i18n="auth.passwordLabel">Password</label>
                         <input type="password" id="loginPassword" class="input" required>
                     </div>
                     <button type="submit" class="btn btn-primary btn-block">
                         <i class="fas fa-sign-in-alt"></i>
-                        Accedi
+                        <span data-i18n="auth.login">Accedi</span>
                     </button>
                 </form>
                 <p class="auth-switch">
-                    Non hai un account? 
-                    <a href="#" id="showRegisterForm">Registrati</a>
+                    <span data-i18n="auth.noAccount">Non hai un account?</span>
+                    <a href="#" id="showRegisterForm" data-i18n="auth.registerLink">Registrati</a>
                 </p>
                 <p class="auth-switch">
-                    <a href="#" id="showForgotPassword">Password dimenticata?</a>
+                    <a href="#" id="showForgotPassword" data-i18n="auth.forgotPassword">Password dimenticata?</a>
                 </p>
             </div>
 
             <div id="registerForm" class="auth-form" style="display: none;">
-                <h2><i class="fas fa-user-plus"></i> Registrati</h2>
+                <h2><i class="fas fa-user-plus"></i> <span data-i18n="auth.register">Registrati</span></h2>
                 <form id="registerFormElement">
                     <div class="form-group">
-                        <label>Username</label>
+                        <label data-i18n="auth.usernameLabel">Username</label>
                         <input type="text" id="registerUsername" class="input" required minlength="3" maxlength="20">
                     </div>
                     <div class="form-group">
-                        <label>Email</label>
+                        <label data-i18n="auth.emailLabel">Email</label>
                         <input type="email" id="registerEmail" class="input" required>
                     </div>
                     <div class="form-group">
-                        <label>Password</label>
+                        <label data-i18n="auth.passwordLabel">Password</label>
                         <input type="password" id="registerPassword" class="input" required minlength="6">
                     </div>
                     <div class="form-group">
-                        <label>Ruolo Principale</label>
+                        <label data-i18n="auth.roleLabel">Ruolo Principale</label>
                         <select id="registerRole" class="select" required>
-                            <option value="">Seleziona ruolo</option>
+                            <option value="" data-i18n="auth.selectRole">Seleziona ruolo</option>
                             <option value="Portiere (POR)">Portiere (POR)</option>
                             <option value="Difensore Centrale (DC)">Difensore Centrale (DC)</option>
                             <option value="Terzino Destro (TD)">Terzino Destro (TD)</option>
@@ -366,68 +480,76 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>Piattaforma</label>
+                        <label data-i18n="auth.platformLabel">Piattaforma</label>
                         <select id="registerPlatform" class="select" required>
-                            <option value="">Seleziona piattaforma</option>
+                            <option value="" data-i18n="auth.selectPlatform">Seleziona piattaforma</option>
                             <option value="PlayStation">PlayStation</option>
                             <option value="Xbox">Xbox</option>
                             <option value="PC">PC</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>Livello Iniziale</label>
+                        <label data-i18n="auth.nationalityLabel">Nazionalità</label>
+                        <input type="text" id="registerNationality" class="input" list="registerNationalitiesList" required>
+                        <datalist id="registerNationalitiesList">
+                            <!-- Populated by JS -->
+                        </datalist>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="auth.levelLabel">Livello Iniziale</label>
                         <input type="number" id="registerLevel" class="input" min="1" value="1" required>
                     </div>
                     <button type="submit" class="btn btn-primary btn-block">
                         <i class="fas fa-user-plus"></i>
-                        Registrati
+                        <span data-i18n="auth.register">Registrati</span>
                     </button>
                 </form>
                 <p class="auth-switch">
-                    Hai già un account? 
-                    <a href="#" id="showLoginForm">Accedi</a>
+                    <span data-i18n="auth.haveAccount">Hai già un account?</span>
+                    <a href="#" id="showLoginForm" data-i18n="auth.loginLink">Accedi</a>
                 </p>
             </div>
 
             <div id="forgotPasswordForm" class="auth-form" style="display: none;">
-                <h2><i class="fas fa-key"></i> Recupera Password</h2>
-                <p style="color: #cbd5e1; margin-bottom: 1.5rem;">
+                <h2><i class="fas fa-key"></i> <span data-i18n="auth.recoverPassword">Recupera Password</span></h2>
+                <p style="color: #cbd5e1; margin-bottom: 1.5rem;" data-i18n="auth.recoverPasswordDesc">
                     Inserisci la tua email e ti invieremo un link per reimpostare la password.
                 </p>
                 <form id="forgotPasswordFormElement">
                     <div class="form-group">
-                        <label>Email</label>
+                        <label data-i18n="auth.emailLabel">Email</label>
                         <input type="email" id="forgotEmail" class="input" required>
                     </div>
                     <button type="submit" class="btn btn-primary btn-block">
                         <i class="fas fa-paper-plane"></i>
-                        Invia Link
+                        <span data-i18n="auth.sendLink">Invia Link</span>
                     </button>
                 </form>
                 <p class="auth-switch">
-                    <a href="#" id="backToLogin">Torna al login</a>
+                    <a href="#" id="backToLogin" data-i18n="auth.backToLogin">Torna al login</a>
                 </p>
             </div>
         </div>
     </div>
 
+    <!-- EDIT PROFILE MODAL -->
     <div id="editProfileModal" class="modal">
-        <div class="modal-content">
+        <div class="modal-content modal-scrollable">
             <button class="modal-close" id="closeEditModal">
                 <i class="fas fa-times"></i>
             </button>
-            <h2><i class="fas fa-edit"></i> Modifica Profilo</h2>
+            <h2><i class="fas fa-edit"></i> <span data-i18n="profile.editTitle">Modifica Profilo</span></h2>
             <form id="editProfileForm">
                 <div class="form-group">
-                    <label>Username</label>
+                    <label data-i18n="auth.usernameLabel">Username</label>
                     <input type="text" id="editUsername" class="input" required minlength="3" maxlength="20">
                 </div>
                 <div class="form-group">
-                    <label>Email</label>
+                    <label data-i18n="auth.emailLabel">Email</label>
                     <input type="email" id="editEmail" class="input" required>
                 </div>
                 <div class="form-group">
-                    <label>Ruolo Principale</label>
+                    <label data-i18n="auth.roleLabel">Ruolo Principale</label>
                     <select id="editPrimaryRole" class="select" required>
                         <option value="Portiere (POR)">Portiere (POR)</option>
                         <option value="Difensore Centrale (DC)">Difensore Centrale (DC)</option>
@@ -444,7 +566,7 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>Ruoli Secondari (max 2)</label>
+                    <label data-i18n="profile.secondaryRolesLabel">Ruoli Secondari (max 2)</label>
                     <div class="checkbox-group" id="secondaryRolesCheckboxes">
                         <label class="checkbox-label">
                             <input type="checkbox" value="Portiere (POR)"> Portiere (POR)
@@ -485,7 +607,7 @@
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>Piattaforma</label>
+                    <label data-i18n="auth.platformLabel">Piattaforma</label>
                     <select id="editPlatform" class="select" required>
                         <option value="PlayStation">PlayStation</option>
                         <option value="Xbox">Xbox</option>
@@ -493,147 +615,114 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>Livello</label>
+                    <label data-i18n="auth.nationalityLabel">Nazionalità</label>
+                    <input type="text" id="editNationality" class="input" list="editNationalitiesList" required>
+                    <datalist id="editNationalitiesList">
+                        <!-- Populated by JS -->
+                    </datalist>
+                </div>
+                <div class="form-group">
+                    <label data-i18n="auth.levelLabel">Livello</label>
                     <input type="number" id="editLevel" class="input" min="1" required>
                 </div>
                 <div class="form-group">
-                    <label>Instagram (username)</label>
+                    <label data-i18n="profile.instagramLabel">Instagram (username)</label>
                     <input type="text" id="editInstagram" class="input" placeholder="tuousername">
                 </div>
                 <div class="form-group">
-                    <label>TikTok (username)</label>
+                    <label data-i18n="profile.tiktokLabel">TikTok (username)</label>
                     <input type="text" id="editTiktok" class="input" placeholder="tuousername">
                 </div>
                 <div class="form-group">
-                    <label>Bio</label>
+                    <label data-i18n="profile.bioLabel">Bio</label>
                     <textarea id="editBio" class="textarea" rows="4" maxlength="500"></textarea>
                 </div>
                 <div class="form-group">
                     <label class="checkbox-label-single">
                         <input type="checkbox" id="editLookingForTeam">
-                        <span>Cerco squadra</span>
+                        <span data-i18n="profile.lookingForTeamCheckbox">Cerco squadra</span>
                     </label>
                 </div>
                 <button type="submit" class="btn btn-primary btn-block">
                     <i class="fas fa-save"></i>
-                    Salva Modifiche
+                    <span data-i18n="common.save">Salva Modifiche</span>
                 </button>
             </form>
         </div>
     </div>
 
+    <!-- CREATE TEAM MODAL -->
     <div id="createTeamModal" class="modal">
         <div class="modal-content">
             <button class="modal-close" id="closeCreateTeamModal">
                 <i class="fas fa-times"></i>
             </button>
-            <h2><i class="fas fa-plus"></i> Crea Squadra</h2>
+            <h2><i class="fas fa-plus"></i> <span data-i18n="teams.createTitle">Crea Squadra</span></h2>
             <form id="createTeamForm">
                 <div class="form-group">
-                    <label>Nome Squadra</label>
+                    <label data-i18n="teams.nameLabel">Nome Squadra</label>
                     <input type="text" id="teamName" class="input" required minlength="3" maxlength="30">
                 </div>
                 <div class="form-group">
-                    <label>Descrizione</label>
+                    <label data-i18n="teams.descriptionLabel">Descrizione</label>
                     <textarea id="teamDescription" class="textarea" rows="4" maxlength="500"></textarea>
                 </div>
                 <div class="form-group">
-                    <label>Piattaforma</label>
+                    <label data-i18n="teams.platformLabel">Piattaforma</label>
                     <select id="teamPlatform" class="select" required>
-                        <option value="">Seleziona piattaforma</option>
+                        <option value="" data-i18n="teams.selectPlatform">Seleziona piattaforma</option>
                         <option value="PlayStation">PlayStation</option>
                         <option value="Xbox">Xbox</option>
                         <option value="PC">PC</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>Instagram (username)</label>
+                    <label data-i18n="teams.nationalityLabel">Nazionalità</label>
+                    <input type="text" id="teamNationality" class="input" list="teamCreateNationalitiesList" required>
+                    <datalist id="teamCreateNationalitiesList">
+                        <!-- Populated by JS -->
+                    </datalist>
+                </div>
+                <div class="form-group">
+                    <label data-i18n="teams.instagramLabel">Instagram (username)</label>
                     <input type="text" id="teamInstagram" class="input" placeholder="squadra_instagram">
                 </div>
                 <div class="form-group">
-                    <label>TikTok (username)</label>
+                    <label data-i18n="teams.tiktokLabel">TikTok (username)</label>
                     <input type="text" id="teamTiktok" class="input" placeholder="squadra_tiktok">
                 </div>
                 <div class="form-group">
-                    <label>Link Live (Twitch/YouTube)</label>
+                    <label data-i18n="teams.liveLinkLabel">Link Live (Twitch/YouTube)</label>
                     <input type="url" id="teamLiveLink" class="input" placeholder="https://twitch.tv/tuocanale">
                 </div>
                 <div class="form-group">
                     <label class="checkbox-label-single">
                         <input type="checkbox" id="teamLookingForPlayers" checked>
-                        <span>Cerchiamo giocatori</span>
+                        <span data-i18n="teams.lookingForPlayersCheckbox">Cerchiamo giocatori</span>
                     </label>
                 </div>
                 <button type="submit" class="btn btn-primary btn-block">
                     <i class="fas fa-plus"></i>
-                    Crea Squadra
+                    <span data-i18n="teams.create">Crea Squadra</span>
                 </button>
             </form>
         </div>
     </div>
 
-    <div id="editTeamModal" class="modal">
-        <div class="modal-content">
-            <button class="modal-close" id="closeEditTeamModal">
-                <i class="fas fa-times"></i>
-            </button>
-            <h2><i class="fas fa-edit"></i> Modifica Squadra</h2>
-            <form id="editTeamForm">
-                <input type="hidden" id="editTeamId">
-                <div class="form-group">
-                    <label>Nome Squadra</label>
-                    <input type="text" id="editTeamName" class="input" required minlength="3" maxlength="30">
-                </div>
-                <div class="form-group">
-                    <label>Descrizione</label>
-                    <textarea id="editTeamDescription" class="textarea" rows="4" maxlength="500"></textarea>
-                </div>
-                <div class="form-group">
-                    <label>Piattaforma</label>
-                    <select id="editTeamPlatform" class="select" required>
-                        <option value="PlayStation">PlayStation</option>
-                        <option value="Xbox">Xbox</option>
-                        <option value="PC">PC</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Instagram (username)</label>
-                    <input type="text" id="editTeamInstagram" class="input" placeholder="squadra_instagram">
-                </div>
-                <div class="form-group">
-                    <label>TikTok (username)</label>
-                    <input type="text" id="editTeamTiktok" class="input" placeholder="squadra_tiktok">
-                </div>
-                <div class="form-group">
-                    <label>Link Live (Twitch/YouTube)</label>
-                    <input type="url" id="editTeamLiveLink" class="input" placeholder="https://twitch.tv/tuocanale">
-                </div>
-                <div class="form-group">
-                    <label class="checkbox-label-single">
-                        <input type="checkbox" id="editTeamLookingForPlayers">
-                        <span>Cerchiamo giocatori</span>
-                    </label>
-                </div>
-                <button type="submit" class="btn btn-primary btn-block">
-                    <i class="fas fa-save"></i>
-                    Salva Modifiche
-                </button>
-            </form>
-        </div>
-    </div>
-
+    <!-- EDIT TEAM MODAL (similar structure) -->
+    <!-- FEEDBACK MODAL -->
     <div id="feedbackModal" class="modal">
         <div class="modal-content">
             <button class="modal-close" id="closeFeedbackModal">
                 <i class="fas fa-times"></i>
             </button>
-            <h2><i class="fas fa-star"></i> Lascia Feedback</h2>
+            <h2><i class="fas fa-star"></i> <span data-i18n="feedback.title">Lascia Feedback</span></h2>
             <form id="feedbackForm">
                 <input type="hidden" id="feedbackTargetUserId">
                 <input type="hidden" id="feedbackTargetTeamId">
                 
                 <div class="form-group">
-                    <label>Valutazione</label>
+                    <label data-i18n="feedback.ratingLabel">Valutazione</label>
                     <div class="star-rating" id="starRating">
                         <i class="far fa-star" data-rating="1"></i>
                         <i class="far fa-star" data-rating="2"></i>
@@ -645,56 +734,57 @@
                 </div>
                 
                 <div class="form-group">
-                    <label>Tag (opzionale)</label>
+                    <label data-i18n="feedback.tagsLabel">Tag (opzionale)</label>
                     <div class="tag-selector" id="tagSelector">
                         <button type="button" class="tag-btn" data-tag="Serio">
-                            <i class="fas fa-user-tie"></i> Serio
+                            <i class="fas fa-user-tie"></i> <span data-i18n="feedback.tags.serious">Serio</span>
                         </button>
                         <button type="button" class="tag-btn" data-tag="Comunicativo">
-                            <i class="fas fa-comments"></i> Comunicativo
+                            <i class="fas fa-comments"></i> <span data-i18n="feedback.tags.communicative">Comunicativo</span>
                         </button>
                         <button type="button" class="tag-btn" data-tag="Divertente">
-                            <i class="fas fa-laugh"></i> Divertente
+                            <i class="fas fa-laugh"></i> <span data-i18n="feedback.tags.fun">Divertente</span>
                         </button>
                         <button type="button" class="tag-btn" data-tag="Tossico">
-                            <i class="fas fa-skull-crossbones"></i> Tossico
+                            <i class="fas fa-skull-crossbones"></i> <span data-i18n="feedback.tags.toxic">Tossico</span>
                         </button>
                         <button type="button" class="tag-btn" data-tag="Giocatore di squadra">
-                            <i class="fas fa-users"></i> Giocatore di squadra
+                            <i class="fas fa-users"></i> <span data-i18n="feedback.tags.teamPlayer">Giocatore di squadra</span>
                         </button>
                         <button type="button" class="tag-btn" data-tag="Leader">
-                            <i class="fas fa-crown"></i> Leader
+                            <i class="fas fa-crown"></i> <span data-i18n="feedback.tags.leader">Leader</span>
                         </button>
                         <button type="button" class="tag-btn" data-tag="Affidabile">
-                            <i class="fas fa-handshake"></i> Affidabile
+                            <i class="fas fa-handshake"></i> <span data-i18n="feedback.tags.reliable">Affidabile</span>
                         </button>
                         <button type="button" class="tag-btn" data-tag="Puntuale">
-                            <i class="fas fa-clock"></i> Puntuale
+                            <i class="fas fa-clock"></i> <span data-i18n="feedback.tags.punctual">Puntuale</span>
                         </button>
                         <button type="button" class="tag-btn" data-tag="Tecnico">
-                            <i class="fas fa-futbol"></i> Tecnico
+                            <i class="fas fa-futbol"></i> <span data-i18n="feedback.tags.technical">Tecnico</span>
                         </button>
                         <button type="button" class="tag-btn" data-tag="Tattico">
-                            <i class="fas fa-chess"></i> Tattico
+                            <i class="fas fa-chess"></i> <span data-i18n="feedback.tags.tactical">Tattico</span>
                         </button>
                     </div>
                 </div>
                 
                 <div class="form-group">
-                    <label>Commento (opzionale)</label>
+                    <label data-i18n="feedback.commentLabel">Commento (opzionale)</label>
                     <textarea id="feedbackComment" class="textarea" rows="4" maxlength="500"></textarea>
                 </div>
                 
                 <button type="submit" class="btn btn-primary btn-block">
                     <i class="fas fa-paper-plane"></i>
-                    Invia Feedback
+                    <span data-i18n="feedback.submit">Invia Feedback</span>
                 </button>
             </form>
         </div>
     </div>
 
+    <!-- PLAYER DETAIL MODAL -->
     <div id="playerDetailModal" class="modal">
-        <div class="modal-content modal-large">
+        <div class="modal-content modal-large modal-scrollable">
             <button class="modal-close" id="closePlayerDetailModal">
                 <i class="fas fa-times"></i>
             </button>
@@ -702,8 +792,9 @@
         </div>
     </div>
 
+    <!-- TEAM DETAIL MODAL -->
     <div id="teamDetailModal" class="modal">
-        <div class="modal-content modal-large">
+        <div class="modal-content modal-large modal-scrollable">
             <button class="modal-close" id="closeTeamDetailModal">
                 <i class="fas fa-times"></i>
             </button>
