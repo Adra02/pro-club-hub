@@ -37,6 +37,216 @@ let selectedTags = [];
 let selectedRating = 0;
 let currentTeam = null;
 
+
+// ============================================
+// AGGIUNGI QUESTO ALL'INIZIO DEL FILE app.js
+// SUBITO DOPO LE COSTANTI API_BASE E NATIONALITIES
+// ============================================
+
+// Global level limits (loaded from admin settings)
+let GLOBAL_MIN_LEVEL = 1;
+let GLOBAL_MAX_LEVEL = 999;
+
+// Load level limits on app init
+async function loadGlobalLevelLimits() {
+    try {
+        const response = await fetch(`${API_BASE}/admin?action=level-settings`);
+        if (response.ok) {
+            const data = await response.json();
+            GLOBAL_MIN_LEVEL = data.minLevel;
+            GLOBAL_MAX_LEVEL = data.maxLevel;
+            updateLevelInputLimits(data.minLevel, data.maxLevel);
+        }
+    } catch (error) {
+        console.error('Failed to load level limits:', error);
+        // Use defaults if fails
+        GLOBAL_MIN_LEVEL = 1;
+        GLOBAL_MAX_LEVEL = 999;
+    }
+}
+
+// ============================================
+// AGGIORNA LA FUNZIONE initApp() - AGGIUNGI QUESTA RIGA
+// ============================================
+
+async function initApp() {
+    populateNationalities();
+    setupLanguageSelector();
+    updatePageLanguage();
+    await loadGlobalLevelLimits(); // <-- AGGIUNGI QUESTA RIGA
+    checkAuth();
+    setupEventListeners();
+    navigateTo('home');
+}
+
+// ============================================
+// AGGIORNA handleRegister - TROVA E SOSTITUISCI LA VALIDAZIONE DEL LIVELLO
+// ============================================
+
+async function handleRegister(e) {
+    e.preventDefault();
+
+    const username = document.getElementById('registerUsername').value.trim();
+    const email = document.getElementById('registerEmail').value.trim();
+    const password = document.getElementById('registerPassword').value;
+    const primaryRole = document.getElementById('registerRole').value;
+    const platform = document.getElementById('registerPlatform').value;
+    const nationality = document.getElementById('registerNationality').value.trim();
+    const level = parseInt(document.getElementById('registerLevel').value);
+
+    if (!username || username.length < 3) {
+        showNotification('⚠️ Username deve essere almeno 3 caratteri', 'error');
+        return;
+    }
+
+    if (!email || !email.includes('@')) {
+        showNotification('⚠️ Inserisci un\'email valida', 'error');
+        return;
+    }
+
+    if (!password || password.length < 6) {
+        showNotification('⚠️ Password deve essere almeno 6 caratteri', 'error');
+        return;
+    }
+
+    if (!primaryRole || !platform || !nationality) {
+        showNotification('⚠️ Compila tutti i campi obbligatori', 'error');
+        return;
+    }
+
+    // VALIDAZIONE DINAMICA DEL LIVELLO
+    if (isNaN(level) || level < GLOBAL_MIN_LEVEL || level > GLOBAL_MAX_LEVEL) {
+        showNotification(`⚠️ Il livello deve essere tra ${GLOBAL_MIN_LEVEL} e ${GLOBAL_MAX_LEVEL}`, 'error');
+        return;
+    }
+
+    try {
+        showLoading();
+        const response = await fetch(`${API_BASE}/auth?action=register`, {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ 
+                username, 
+                email, 
+                password, 
+                primaryRole, 
+                platform,
+                nationality,
+                level 
+            })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            localStorage.setItem('token', data.token);
+            currentUser = data.user;
+            closeAuthModalFn();
+            updateUIForUser();
+            showNotification('🎉 Registrazione completata! Completa il tuo profilo per iniziare.', 'success');
+            navigateTo('profile');
+        } else {
+            showNotification('❌ ' + (data.error || 'Errore durante la registrazione'), 'error');
+        }
+    } catch (error) {
+        console.error('Registration error:', error);
+        showNotification('❌ Errore di connessione', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+// ============================================
+// AGGIORNA handleEditProfile - TROVA E SOSTITUISCI LA VALIDAZIONE DEL LIVELLO
+// ============================================
+
+async function handleEditProfile(e) {
+    e.preventDefault();
+
+    const username = document.getElementById('editUsername').value.trim();
+    const primaryRole = document.getElementById('editPrimaryRole').value;
+    const platform = document.getElementById('editPlatform').value;
+    const nationality = document.getElementById('editNationality').value.trim();
+    const level = parseInt(document.getElementById('editLevel').value);
+    const instagram = document.getElementById('editInstagram').value.trim();
+    const tiktok = document.getElementById('editTiktok').value.trim();
+    const bio = document.getElementById('editBio').value.trim();
+    const lookingForTeam = document.getElementById('editLookingForTeam').checked;
+
+    const secondaryRoles = Array.from(document.querySelectorAll('#secondaryRolesCheckboxes input[type="checkbox"]:checked'))
+        .map(cb => cb.value);
+
+    if (!username || username.length < 3) {
+        showNotification('⚠️ Username deve essere almeno 3 caratteri', 'error');
+        return;
+    }
+
+    // VALIDAZIONE DINAMICA DEL LIVELLO
+    if (isNaN(level) || level < GLOBAL_MIN_LEVEL || level > GLOBAL_MAX_LEVEL) {
+        showNotification(`⚠️ Il livello deve essere tra ${GLOBAL_MIN_LEVEL} e ${GLOBAL_MAX_LEVEL}`, 'error');
+        return;
+    }
+
+    if (secondaryRoles.length < 1) {
+        showNotification('⚠️ Almeno 1 ruolo secondario richiesto', 'error');
+        return;
+    }
+
+    if (secondaryRoles.length > 2) {
+        showNotification('⚠️ Massimo 2 ruoli secondari', 'error');
+        return;
+    }
+
+    if (!instagram && !tiktok) {
+        showNotification('⚠️ Almeno un contatto social richiesto (Instagram o TikTok)', 'error');
+        return;
+    }
+
+    const updates = {
+        username,
+        primaryRole,
+        secondaryRoles,
+        platform,
+        nationality,
+        level,
+        instagram,
+        tiktok,
+        bio,
+        lookingForTeam
+    };
+
+    try {
+        showLoading();
+        const response = await fetch(`${API_BASE}/auth?action=me`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify(updates)
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            currentUser = data.user;
+            closeEditProfileModal();
+            showNotification('✅ Profilo aggiornato con successo!', 'success');
+            loadProfile();
+            updateUIForUser();
+        } else {
+            showNotification('❌ ' + (data.error || 'Errore durante l\'aggiornamento'), 'error');
+        }
+    } catch (error) {
+        console.error('Edit profile error:', error);
+        showNotification('❌ Errore di connessione', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
 // ============================================
 // INITIALIZATION
 // ============================================
@@ -2454,5 +2664,6 @@ window.cancelRequest = cancelRequest;
 window.suspendUser = suspendUser;
 window.unsuspendUser = unsuspendUser;
 window.deleteUser = deleteUser;
+
 
 
