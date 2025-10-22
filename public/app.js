@@ -1,5 +1,6 @@
 // ============================================
 // PRO CLUB HUB - MAIN APPLICATION - VERSIONE COMPLETA E CORRETTA
+// FIX: Barra livello dinamica + Checkbox "Cerco squadra"
 // ============================================
 
 const API_BASE = '/api';
@@ -66,6 +67,7 @@ async function loadGlobalLevelLimits() {
             const data = await response.json();
             GLOBAL_MIN_LEVEL = data.minLevel;
             GLOBAL_MAX_LEVEL = data.maxLevel;
+            console.log(`✅ Level limits loaded: ${GLOBAL_MIN_LEVEL}-${GLOBAL_MAX_LEVEL}`);
             updateLevelInputLimits(data.minLevel, data.maxLevel);
         }
     } catch (error) {
@@ -97,6 +99,16 @@ function updateLevelInputLimits(minLevel, maxLevel) {
         maxLevelFilter.max = maxLevel;
         maxLevelFilter.placeholder = maxLevel.toString();
     }
+}
+
+// ============================================
+// CALCOLO CORRETTO BARRA LIVELLO
+// ============================================
+
+function calculateLevelPercentage(level) {
+    if (GLOBAL_MAX_LEVEL === GLOBAL_MIN_LEVEL) return 100;
+    const percentage = ((level - GLOBAL_MIN_LEVEL) / (GLOBAL_MAX_LEVEL - GLOBAL_MIN_LEVEL)) * 100;
+    return Math.min(Math.max(percentage, 0), 100);
 }
 
 function populateNationalities() {
@@ -248,8 +260,11 @@ function updateUIForUser() {
 
     document.getElementById('heroUsername').textContent = currentUser.username;
     document.getElementById('heroLevel').textContent = currentUser.level;
-    const levelPercent = Math.min((currentUser.level / 100) * 100, 100);
-    document.getElementById('heroLevelProgress').style.width = `${levelPercent}%`;
+    
+    // FIX BARRA LIVELLO DINAMICA
+    const heroLevelPercent = calculateLevelPercentage(currentUser.level);
+    document.getElementById('heroLevelProgress').style.width = `${heroLevelPercent}%`;
+    
     document.getElementById('heroRating').textContent = currentUser.averageRating.toFixed(1);
     document.getElementById('heroRatingCount').textContent = currentUser.feedbackCount;
 }
@@ -426,7 +441,6 @@ function setupEventListeners() {
     setupStarRating();
     setupTagSelector();
     setupSecondaryRolesLimit();
-    setupProfileCompletionCheck();
 
     // MODAL BACKGROUND CLOSE
     document.querySelectorAll('.modal').forEach(modal => {
@@ -496,44 +510,45 @@ function setupSecondaryRolesLimit() {
                 this.checked = false;
                 showNotification('⚠️ Puoi selezionare massimo 2 ruoli secondari', 'error');
             }
+            checkProfileCompletion();
         });
     });
 }
 
-function setupProfileCompletionCheck() {
+// ============================================
+// FIX CHECKBOX "CERCO SQUADRA"
+// ============================================
+
+function checkProfileCompletion() {
     const instagramInput = document.getElementById('editInstagram');
     const tiktokInput = document.getElementById('editTiktok');
     const lookingForTeamCheckbox = document.getElementById('editLookingForTeam');
     const secondaryRolesCheckboxes = document.querySelectorAll('#secondaryRolesCheckboxes input[type="checkbox"]');
 
-    function checkCompletion() {
-        const hasSecondaryRole = Array.from(secondaryRolesCheckboxes).some(cb => cb.checked);
-        const hasContact = (instagramInput && instagramInput.value.trim()) || (tiktokInput && tiktokInput.value.trim());
+    if (!instagramInput || !tiktokInput || !lookingForTeamCheckbox) return;
 
-        if (lookingForTeamCheckbox) {
-            if (hasSecondaryRole && hasContact) {
-                lookingForTeamCheckbox.disabled = false;
-                const container = lookingForTeamCheckbox.closest('.form-group');
-                const warningText = container.querySelector('.helper-text');
-                if (warningText) warningText.remove();
-            } else {
-                lookingForTeamCheckbox.disabled = true;
-                lookingForTeamCheckbox.checked = false;
-                const container = lookingForTeamCheckbox.closest('.form-group');
-                let warningText = container.querySelector('.helper-text');
-                if (!warningText) {
-                    warningText = document.createElement('p');
-                    warningText.className = 'helper-text';
-                    warningText.innerHTML = '⚠️ Per abilitare "Cerco squadra": aggiungi 1+ ruolo secondario + Instagram O TikTok';
-                    container.appendChild(warningText);
-                }
-            }
+    const hasSecondaryRole = Array.from(secondaryRolesCheckboxes).some(cb => cb.checked);
+    const hasContact = (instagramInput.value.trim() !== '') || (tiktokInput.value.trim() !== '');
+
+    const container = lookingForTeamCheckbox.closest('.form-group');
+    let warningText = container.querySelector('.helper-text');
+
+    if (hasSecondaryRole && hasContact) {
+        // PROFILO COMPLETO - ABILITA CHECKBOX
+        lookingForTeamCheckbox.disabled = false;
+        if (warningText) warningText.remove();
+    } else {
+        // PROFILO INCOMPLETO - DISABILITA CHECKBOX
+        lookingForTeamCheckbox.disabled = true;
+        lookingForTeamCheckbox.checked = false;
+        
+        if (!warningText) {
+            warningText = document.createElement('p');
+            warningText.className = 'helper-text';
+            warningText.innerHTML = '⚠️ Per abilitare "Cerco squadra": aggiungi 1+ ruolo secondario + Instagram O TikTok';
+            container.appendChild(warningText);
         }
     }
-
-    if (instagramInput) instagramInput.addEventListener('input', checkCompletion);
-    if (tiktokInput) tiktokInput.addEventListener('input', checkCompletion);
-    secondaryRolesCheckboxes.forEach(cb => cb.addEventListener('change', checkCompletion));
 }
 
 // ============================================
@@ -885,8 +900,11 @@ async function loadProfile() {
 
     document.getElementById('profileUsername').textContent = currentUser.username;
     document.getElementById('profileLevel').textContent = currentUser.level;
-    const levelPercent = Math.min((currentUser.level / 100) * 100, 100);
-    document.getElementById('profileLevelProgress').style.width = `${levelPercent}%`;
+    
+    // FIX BARRA LIVELLO DINAMICA
+    const profileLevelPercent = calculateLevelPercentage(currentUser.level);
+    document.getElementById('profileLevelProgress').style.width = `${profileLevelPercent}%`;
+    
     document.getElementById('profileRating').textContent = currentUser.averageRating.toFixed(1);
     document.getElementById('profileRatingCount').textContent = currentUser.feedbackCount;
 
@@ -996,6 +1014,16 @@ function openEditProfileModal() {
     checkboxes.forEach(checkbox => {
         checkbox.checked = currentUser.secondaryRoles && currentUser.secondaryRoles.includes(checkbox.value);
     });
+
+    // SETUP EVENT LISTENERS PER CHECKBOX "CERCO SQUADRA"
+    const instagramInput = document.getElementById('editInstagram');
+    const tiktokInput = document.getElementById('editTiktok');
+    
+    if (instagramInput) instagramInput.addEventListener('input', checkProfileCompletion);
+    if (tiktokInput) tiktokInput.addEventListener('input', checkProfileCompletion);
+    
+    // CHECK INIZIALE
+    checkProfileCompletion();
 
     document.getElementById('editProfileModal').classList.add('active');
 }
@@ -2172,6 +2200,11 @@ async function handleLevelSettingsUpdate(e) {
             GLOBAL_MIN_LEVEL = minLevel;
             GLOBAL_MAX_LEVEL = maxLevel;
             updateLevelInputLimits(minLevel, maxLevel);
+            
+            // Ricarica utente corrente per aggiornare la barra
+            if (currentUser) {
+                await fetchCurrentUser();
+            }
         } else {
             showNotification('❌ ' + (data.error || 'Errore'), 'error');
         }
