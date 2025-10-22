@@ -16,7 +16,8 @@ export const ROLES = [
   'Attaccante (ATT)'
 ];
 
-export const PLATFORMS = ['PlayStation', 'Xbox', 'PC'];
+// AGGIORNAMENTO: Piattaforme modificate
+export const PLATFORMS = ['PlayStation 5', 'Xbox Series X/S', 'PC'];
 
 export const NATIONALITIES = [
   'Afghanistan', 'Albania', 'Algeria', 'Andorra', 'Angola', 'Antigua e Barbuda', 'Arabia Saudita', 
@@ -103,7 +104,7 @@ export class UserModel {
   }
 
   async create(userData) {
-    const { username, email, password, primaryRole, platform, level = 1, nationality = 'Italia' } = userData;
+    const { username, email, password, primaryRole, platform, level = 1, nationality = 'Italia', fcmToken } = userData;
 
     const existingUser = await this.collection.findOne({
       $or: [{ email: email.toLowerCase() }, { username }]
@@ -113,11 +114,10 @@ export class UserModel {
       throw new Error('Email o username già in uso');
     }
 
-    // Validate level with dynamic limits
     const validatedLevel = await this.validateLevel(level);
-
     const hashedPassword = await bcrypt.hash(password, 12);
 
+    // NUOVO: Aggiungi campo preferiti
     const user = {
       username,
       email: email.toLowerCase(),
@@ -135,6 +135,16 @@ export class UserModel {
       averageRating: 0,
       lookingForTeam: false,
       profileCompleted: false,
+      // NUOVO: Sistema preferiti
+      preferiti: {
+        giocatori: [],
+        squadre: []
+      },
+      // NUOVO: FCM Token per notifiche push
+      fcmToken: fcmToken || null,
+      // NUOVO: Sistema anti-spam
+      lastRequestTimestamp: null,
+      requestCount: 0,
       resetToken: null,
       resetTokenExpiry: null,
       isAdmin: false,
@@ -178,7 +188,7 @@ export class UserModel {
     const allowedFields = [
       'username', 'primaryRole', 'secondaryRoles',
       'platform', 'level', 'instagram', 'tiktok', 'bio', 'lookingForTeam', 
-      'nationality', 'profileCompleted'
+      'nationality', 'profileCompleted', 'fcmToken'
     ];
 
     const filteredData = {};
@@ -188,7 +198,6 @@ export class UserModel {
       }
     }
 
-    // CRITICAL FIX: Auto-adjust level se fuori range invece di validare
     if (filteredData.level !== undefined) {
       const levelNum = parseInt(filteredData.level);
       
@@ -198,7 +207,6 @@ export class UserModel {
       
       const limits = await this.getLevelLimits();
       
-      // Auto-aggiusta invece di dare errore
       if (levelNum < limits.minLevel) {
         filteredData.level = limits.minLevel;
       } else if (levelNum > limits.maxLevel) {
@@ -222,6 +230,97 @@ export class UserModel {
     );
 
     return result;
+  }
+
+  // NUOVO: Metodi per gestire preferiti
+  async addPreferito(userId, targetId, type) {
+    if (!ObjectId.isValid(userId) || !ObjectId.isValid(targetId)) {
+      throw new Error('ID non valido');
+    }
+
+    if (userId === targetId && type === 'giocatori') {
+      throw new Error('Non puoi aggiungere te stesso ai preferiti');
+    }
+
+    const field = type === 'giocatori' ? 'preferiti.giocatori' : 'preferiti.squadre';
+    
+    const result = await this.collection.updateOne(
+      { _id: new ObjectId(userId) },
+      { 
+        $addToSet: { [field]: new ObjectId(targetId) },
+        $set: { updatedAt: new Date() }
+      }
+    );
+
+    return result.modifiedCount > 0;
+  }
+
+  async removePreferito(userId, targetId, type) {
+    if (!ObjectId.isValid(userId) || !ObjectId.isValid(targetId)) {
+      throw new Error('ID non valido');
+    }
+
+    const field = type === 'giocatori' ? 'preferiti.giocatori' : 'preferiti.squadre';
+    
+    const result = await this.collection.updateOne(
+      { _id: new ObjectId(userId) },
+      { 
+        $pull: { [field]: new ObjectId(targetId) },
+        $set: { updatedAt: new Date() }
+      }
+    );
+
+    return result.modifiedCount > 0;
+  }
+
+  async getPreferiti(userId) {
+    if (!ObjectId.isValid(userId)) return { giocatori: [], squadre: [] };
+
+    const user = await this.findById(userId);
+    return user?.preferiti || { giocatori: [], squadre: [] };
+  }
+
+  // NUOVO: Sistema anti-spam
+  async checkRateLimit(userId) {
+    if (!ObjectId.isValid(userId)) throw new Error('ID non valido');
+
+    const user = await this.findById(userId);
+    if (!user) throw new Error('Utente non trovato');
+
+    const now = Date.now();
+    const tenMinutesAgo = now - (10 * 60 * 1000);
+
+    // Reset se sono passati 10 minuti
+    if (!user.lastRequestTimestamp || user.lastRequestTimestamp < tenMinutesAgo) {
+      await this.collection.updateOne(
+        { _id: new ObjectId(userId) },
+        { 
+          $set: { 
+            lastRequestTimestamp: now,
+            requestCount: 1,
+            updatedAt: new Date()
+          }
+        }
+      );
+      return { allowed: true, remaining: 14 };
+    }
+
+    // Controlla se ha superato il limite
+    if (user.requestCount >= 15) {
+      const timeRemaining = Math.ceil((tenMinutesAgo + (10 * 60 * 1000) - now) / 1000 / 60);
+      throw new Error(`Hai raggiunto il limite massimo di 15 richieste ogni 10 minuti. Riprova tra ${timeRemaining} minuti.`);
+    }
+
+    // Incrementa il contatore
+    await this.collection.updateOne(
+      { _id: new ObjectId(userId) },
+      { 
+        $inc: { requestCount: 1 },
+        $set: { updatedAt: new Date() }
+      }
+    );
+
+    return { allowed: true, remaining: 15 - user.requestCount - 1 };
   }
 
   async setResetToken(userId, token, expiryDate) {
@@ -394,7 +493,6 @@ export class UserModel {
     return true;
   }
 
-  // CRITICAL FIX: getAllUsers must return ALL users including email
   async getAllUsers() {
     try {
       const users = await this.collection
@@ -428,7 +526,6 @@ export class UserModel {
   sanitizeUser(user) {
     if (!user) return null;
     const { password, resetToken, resetTokenExpiry, ...sanitized } = user;
-    // Don't remove email for admin view
     return sanitized;
   }
 }
