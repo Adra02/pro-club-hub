@@ -3,17 +3,8 @@ import { UserModel } from '../models/User.js';
 import { TeamModel } from '../models/Team.js';
 import { ObjectId } from 'mongodb';
 
-/**
- * API /api/share
- * 
- * Gestisce la condivisione di profili giocatori e squadre
- * Genera pagine di anteprima per deep linking
- * 
- * GET /api/share?type=player&id=xxx  - Pagina anteprima giocatore
- * GET /api/share?type=team&id=xxx    - Pagina anteprima squadra
- */
-
 export default async function handler(req, res) {
+  // CRITICAL: Permetti GET senza autenticazione
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -21,8 +12,10 @@ export default async function handler(req, res) {
   try {
     const { type, id } = req.query;
 
+    console.log('Share request:', { type, id, query: req.query });
+
     if (!type || !id) {
-      return res.status(400).json({ error: 'type e id sono richiesti' });
+      return renderNotFound(res, 'Parametri mancanti. Usa: /api/share?type=player&id=xxx');
     }
 
     // Verifica che l'ID sia valido
@@ -43,7 +36,7 @@ export default async function handler(req, res) {
       }
 
       const sanitized = userModel.sanitizeUser(user);
-      return renderPlayerPreview(res, sanitized);
+      return renderPlayerPreview(res, sanitized, req);
     }
 
     // Condivisione squadra
@@ -54,24 +47,40 @@ export default async function handler(req, res) {
         return renderNotFound(res, 'Squadra non trovata');
       }
 
-      return renderTeamPreview(res, team);
+      return renderTeamPreview(res, team, req);
     }
 
-    return res.status(400).json({ error: 'type deve essere "player" o "team"' });
+    return renderNotFound(res, 'Type deve essere "player" o "team"');
 
   } catch (error) {
     console.error('Share endpoint error:', error);
-    return res.status(500).json({ error: 'Errore durante l\'operazione' });
+    return res.status(500).send(`
+      <!DOCTYPE html>
+      <html>
+      <head><title>Errore - Pro Club Hub</title></head>
+      <body>
+        <h1>Errore del server</h1>
+        <p>${error.message}</p>
+      </body>
+      </html>
+    `);
   }
 }
 
-/**
- * Genera HTML di anteprima per un giocatore
- */
-function renderPlayerPreview(res, user) {
-  const baseUrl = process.env.VERCEL_URL 
-    ? `https://${process.env.VERCEL_URL}` 
-    : 'https://proclubhub.vercel.app';
+function getBaseUrl(req) {
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+  if (req.headers.host) {
+    const protocol = req.headers['x-forwarded-proto'] || 'https';
+    return `${protocol}://${req.headers.host}`;
+  }
+  return 'https://proclubhub.vercel.app';
+}
+
+function renderPlayerPreview(res, user, req) {
+  const baseUrl = getBaseUrl(req);
+  const shareUrl = `${baseUrl}/api/share?type=player&id=${user._id}`;
 
   const html = `
 <!DOCTYPE html>
@@ -85,7 +94,8 @@ function renderPlayerPreview(res, user) {
     <meta property="og:title" content="${user.username} - Pro Club Hub">
     <meta property="og:description" content="${user.primaryRole} • Livello ${user.level} • ${user.platform} • ⭐ ${user.averageRating.toFixed(1)}">
     <meta property="og:type" content="profile">
-    <meta property="og:url" content="${baseUrl}/api/share?type=player&id=${user._id}">
+    <meta property="og:url" content="${shareUrl}">
+    <meta property="og:site_name" content="Pro Club Hub">
     
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
@@ -105,7 +115,7 @@ function renderPlayerPreview(res, user) {
             padding: 2rem;
         }
         .container {
-            background: rgba(30, 41, 59, 0.9);
+            background: rgba(30, 41, 59, 0.95);
             border: 2px solid rgba(59, 130, 246, 0.3);
             border-radius: 24px;
             padding: 3rem;
@@ -124,6 +134,7 @@ function renderPlayerPreview(res, user) {
             background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
         .role {
             font-size: 1.2rem;
@@ -207,17 +218,13 @@ function renderPlayerPreview(res, user) {
 </html>
   `;
 
-  res.setHeader('Content-Type', 'text/html');
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
   return res.status(200).send(html);
 }
 
-/**
- * Genera HTML di anteprima per una squadra
- */
-function renderTeamPreview(res, team) {
-  const baseUrl = process.env.VERCEL_URL 
-    ? `https://${process.env.VERCEL_URL}` 
-    : 'https://proclubhub.vercel.app';
+function renderTeamPreview(res, team, req) {
+  const baseUrl = getBaseUrl(req);
+  const shareUrl = `${baseUrl}/api/share?type=team&id=${team._id}`;
 
   const html = `
 <!DOCTYPE html>
@@ -231,7 +238,8 @@ function renderTeamPreview(res, team) {
     <meta property="og:title" content="${team.name} - Pro Club Hub">
     <meta property="og:description" content="${team.platform} • ${team.members.length} membri • ⭐ ${team.averageRating.toFixed(1)}">
     <meta property="og:type" content="website">
-    <meta property="og:url" content="${baseUrl}/api/share?type=team&id=${team._id}">
+    <meta property="og:url" content="${shareUrl}">
+    <meta property="og:site_name" content="Pro Club Hub">
     
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
@@ -251,7 +259,7 @@ function renderTeamPreview(res, team) {
             padding: 2rem;
         }
         .container {
-            background: rgba(30, 41, 59, 0.9);
+            background: rgba(30, 41, 59, 0.95);
             border: 2px solid rgba(59, 130, 246, 0.3);
             border-radius: 24px;
             padding: 3rem;
@@ -270,6 +278,7 @@ function renderTeamPreview(res, team) {
             background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
         .description {
             font-size: 1.1rem;
@@ -354,13 +363,10 @@ function renderTeamPreview(res, team) {
 </html>
   `;
 
-  res.setHeader('Content-Type', 'text/html');
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
   return res.status(200).send(html);
 }
 
-/**
- * Pagina 404
- */
 function renderNotFound(res, message) {
   const baseUrl = process.env.VERCEL_URL 
     ? `https://${process.env.VERCEL_URL}` 
@@ -408,6 +414,6 @@ function renderNotFound(res, message) {
 </html>
   `;
 
-  res.setHeader('Content-Type', 'text/html');
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
   return res.status(404).send(html);
 }
