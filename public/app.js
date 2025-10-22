@@ -36,216 +36,8 @@ let currentUser = null;
 let selectedTags = [];
 let selectedRating = 0;
 let currentTeam = null;
-
-
-// ============================================
-// AGGIUNGI QUESTO ALL'INIZIO DEL FILE app.js
-// SUBITO DOPO LE COSTANTI API_BASE E NATIONALITIES
-// ============================================
-
-// Global level limits (loaded from admin settings)
 let GLOBAL_MIN_LEVEL = 1;
 let GLOBAL_MAX_LEVEL = 999;
-
-// Load level limits on app init
-async function loadGlobalLevelLimits() {
-    try {
-        const response = await fetch(`${API_BASE}/admin?action=level-settings`);
-        if (response.ok) {
-            const data = await response.json();
-            GLOBAL_MIN_LEVEL = data.minLevel;
-            GLOBAL_MAX_LEVEL = data.maxLevel;
-            updateLevelInputLimits(data.minLevel, data.maxLevel);
-        }
-    } catch (error) {
-        console.error('Failed to load level limits:', error);
-        // Use defaults if fails
-        GLOBAL_MIN_LEVEL = 1;
-        GLOBAL_MAX_LEVEL = 999;
-    }
-}
-
-// ============================================
-// AGGIORNA LA FUNZIONE initApp() - AGGIUNGI QUESTA RIGA
-// ============================================
-
-async function initApp() {
-    populateNationalities();
-    setupLanguageSelector();
-    updatePageLanguage();
-    await loadGlobalLevelLimits(); // <-- AGGIUNGI QUESTA RIGA
-    checkAuth();
-    setupEventListeners();
-    navigateTo('home');
-}
-
-// ============================================
-// AGGIORNA handleRegister - TROVA E SOSTITUISCI LA VALIDAZIONE DEL LIVELLO
-// ============================================
-
-async function handleRegister(e) {
-    e.preventDefault();
-
-    const username = document.getElementById('registerUsername').value.trim();
-    const email = document.getElementById('registerEmail').value.trim();
-    const password = document.getElementById('registerPassword').value;
-    const primaryRole = document.getElementById('registerRole').value;
-    const platform = document.getElementById('registerPlatform').value;
-    const nationality = document.getElementById('registerNationality').value.trim();
-    const level = parseInt(document.getElementById('registerLevel').value);
-
-    if (!username || username.length < 3) {
-        showNotification('⚠️ Username deve essere almeno 3 caratteri', 'error');
-        return;
-    }
-
-    if (!email || !email.includes('@')) {
-        showNotification('⚠️ Inserisci un\'email valida', 'error');
-        return;
-    }
-
-    if (!password || password.length < 6) {
-        showNotification('⚠️ Password deve essere almeno 6 caratteri', 'error');
-        return;
-    }
-
-    if (!primaryRole || !platform || !nationality) {
-        showNotification('⚠️ Compila tutti i campi obbligatori', 'error');
-        return;
-    }
-
-    // VALIDAZIONE DINAMICA DEL LIVELLO
-    if (isNaN(level) || level < GLOBAL_MIN_LEVEL || level > GLOBAL_MAX_LEVEL) {
-        showNotification(`⚠️ Il livello deve essere tra ${GLOBAL_MIN_LEVEL} e ${GLOBAL_MAX_LEVEL}`, 'error');
-        return;
-    }
-
-    try {
-        showLoading();
-        const response = await fetch(`${API_BASE}/auth?action=register`, {
-            method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ 
-                username, 
-                email, 
-                password, 
-                primaryRole, 
-                platform,
-                nationality,
-                level 
-            })
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-            localStorage.setItem('token', data.token);
-            currentUser = data.user;
-            closeAuthModalFn();
-            updateUIForUser();
-            showNotification('🎉 Registrazione completata! Completa il tuo profilo per iniziare.', 'success');
-            navigateTo('profile');
-        } else {
-            showNotification('❌ ' + (data.error || 'Errore durante la registrazione'), 'error');
-        }
-    } catch (error) {
-        console.error('Registration error:', error);
-        showNotification('❌ Errore di connessione', 'error');
-    } finally {
-        hideLoading();
-    }
-}
-
-// ============================================
-// AGGIORNA handleEditProfile - TROVA E SOSTITUISCI LA VALIDAZIONE DEL LIVELLO
-// ============================================
-
-async function handleEditProfile(e) {
-    e.preventDefault();
-
-    const username = document.getElementById('editUsername').value.trim();
-    const primaryRole = document.getElementById('editPrimaryRole').value;
-    const platform = document.getElementById('editPlatform').value;
-    const nationality = document.getElementById('editNationality').value.trim();
-    const level = parseInt(document.getElementById('editLevel').value);
-    const instagram = document.getElementById('editInstagram').value.trim();
-    const tiktok = document.getElementById('editTiktok').value.trim();
-    const bio = document.getElementById('editBio').value.trim();
-    const lookingForTeam = document.getElementById('editLookingForTeam').checked;
-
-    const secondaryRoles = Array.from(document.querySelectorAll('#secondaryRolesCheckboxes input[type="checkbox"]:checked'))
-        .map(cb => cb.value);
-
-    if (!username || username.length < 3) {
-        showNotification('⚠️ Username deve essere almeno 3 caratteri', 'error');
-        return;
-    }
-
-    // VALIDAZIONE DINAMICA DEL LIVELLO
-    if (isNaN(level) || level < GLOBAL_MIN_LEVEL || level > GLOBAL_MAX_LEVEL) {
-        showNotification(`⚠️ Il livello deve essere tra ${GLOBAL_MIN_LEVEL} e ${GLOBAL_MAX_LEVEL}`, 'error');
-        return;
-    }
-
-    if (secondaryRoles.length < 1) {
-        showNotification('⚠️ Almeno 1 ruolo secondario richiesto', 'error');
-        return;
-    }
-
-    if (secondaryRoles.length > 2) {
-        showNotification('⚠️ Massimo 2 ruoli secondari', 'error');
-        return;
-    }
-
-    if (!instagram && !tiktok) {
-        showNotification('⚠️ Almeno un contatto social richiesto (Instagram o TikTok)', 'error');
-        return;
-    }
-
-    const updates = {
-        username,
-        primaryRole,
-        secondaryRoles,
-        platform,
-        nationality,
-        level,
-        instagram,
-        tiktok,
-        bio,
-        lookingForTeam
-    };
-
-    try {
-        showLoading();
-        const response = await fetch(`${API_BASE}/auth?action=me`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            },
-            body: JSON.stringify(updates)
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-            currentUser = data.user;
-            closeEditProfileModal();
-            showNotification('✅ Profilo aggiornato con successo!', 'success');
-            loadProfile();
-            updateUIForUser();
-        } else {
-            showNotification('❌ ' + (data.error || 'Errore durante l\'aggiornamento'), 'error');
-        }
-    } catch (error) {
-        console.error('Edit profile error:', error);
-        showNotification('❌ Errore di connessione', 'error');
-    } finally {
-        hideLoading();
-    }
-}
 
 // ============================================
 // INITIALIZATION
@@ -260,9 +52,50 @@ async function initApp() {
     populateNationalities();
     setupLanguageSelector();
     updatePageLanguage();
+    await loadGlobalLevelLimits();
     checkAuth();
     setupEventListeners();
     navigateTo('home');
+}
+
+async function loadGlobalLevelLimits() {
+    try {
+        const response = await fetch(`${API_BASE}/admin?action=level-settings`);
+        if (response.ok) {
+            const data = await response.json();
+            GLOBAL_MIN_LEVEL = data.minLevel;
+            GLOBAL_MAX_LEVEL = data.maxLevel;
+            updateLevelInputLimits(data.minLevel, data.maxLevel);
+        }
+    } catch (error) {
+        console.error('Failed to load level limits:', error);
+        GLOBAL_MIN_LEVEL = 1;
+        GLOBAL_MAX_LEVEL = 999;
+    }
+}
+
+function updateLevelInputLimits(minLevel, maxLevel) {
+    const levelInputs = document.querySelectorAll('input[type="number"][id*="evel"], input[type="number"][id*="Level"]');
+    levelInputs.forEach(input => {
+        if (input.id !== 'adminMinLevel' && input.id !== 'adminMaxLevel') {
+            input.min = minLevel;
+            input.max = maxLevel;
+            input.placeholder = `${minLevel}-${maxLevel}`;
+        }
+    });
+
+    const minLevelFilter = document.getElementById('minLevelFilter');
+    const maxLevelFilter = document.getElementById('maxLevelFilter');
+    if (minLevelFilter) {
+        minLevelFilter.min = minLevel;
+        minLevelFilter.max = maxLevel;
+        minLevelFilter.placeholder = minLevel.toString();
+    }
+    if (maxLevelFilter) {
+        maxLevelFilter.min = minLevel;
+        maxLevelFilter.max = maxLevel;
+        maxLevelFilter.placeholder = maxLevel.toString();
+    }
 }
 
 function populateNationalities() {
@@ -563,9 +396,10 @@ function setupEventListeners() {
     if (resetProfilesBtn) resetProfilesBtn.addEventListener('click', handleResetProfiles);
 
     const newsletterForm = document.getElementById('newsletterForm');
-  const levelSettingsForm = document.getElementById('levelSettingsForm');
-if (levelSettingsForm) levelSettingsForm.addEventListener('submit', handleLevelSettingsUpdate);
     if (newsletterForm) newsletterForm.addEventListener('submit', handleSendNewsletter);
+
+    const levelSettingsForm = document.getElementById('levelSettingsForm');
+    if (levelSettingsForm) levelSettingsForm.addEventListener('submit', handleLevelSettingsUpdate);
 
     // Setup interactive elements
     setupStarRating();
@@ -845,6 +679,11 @@ async function handleRegister(e) {
 
     if (!primaryRole || !platform || !nationality) {
         showNotification('⚠️ Compila tutti i campi obbligatori', 'error');
+        return;
+    }
+
+    if (isNaN(level) || level < GLOBAL_MIN_LEVEL || level > GLOBAL_MAX_LEVEL) {
+        showNotification(`⚠️ Il livello deve essere tra ${GLOBAL_MIN_LEVEL} e ${GLOBAL_MAX_LEVEL}`, 'error');
         return;
     }
 
@@ -1946,8 +1785,8 @@ async function handleEditProfile(e) {
         return;
     }
 
-    if (!level || level < 1) {
-        showNotification('⚠️ Livello deve essere almeno 1', 'error');
+    if (isNaN(level) || level < GLOBAL_MIN_LEVEL || level > GLOBAL_MAX_LEVEL) {
+        showNotification(`⚠️ Il livello deve essere tra ${GLOBAL_MIN_LEVEL} e ${GLOBAL_MAX_LEVEL}`, 'error');
         return;
     }
 
@@ -2135,7 +1974,6 @@ async function handleSubmitFeedback(e) {
             closeFeedbackModalFn();
             showNotification('✅ Feedback inviato con successo!', 'success');
             
-            // Refresh the detail view if open
             if (targetUserId) {
                 const playerModal = document.getElementById('playerDetailModal');
                 if (playerModal.classList.contains('active')) {
@@ -2454,7 +2292,7 @@ async function cancelRequest(requestId) {
 }
 
 // ============================================
-// ADMIN DASHBOARD - AGGIORNA QUESTA SEZIONE COMPLETA
+// ADMIN DASHBOARD
 // ============================================
 
 async function loadAdminDashboard() {
@@ -2467,7 +2305,6 @@ async function loadAdminDashboard() {
     try {
         showLoading();
         
-        // Load stats
         const statsResponse = await fetch(`${API_BASE}/admin?action=stats`, {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -2482,7 +2319,6 @@ async function loadAdminDashboard() {
             document.getElementById('pendingRequests').textContent = stats.pendingRequests;
         }
 
-        // Load users list
         const usersResponse = await fetch(`${API_BASE}/admin?action=users`, {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -2494,7 +2330,6 @@ async function loadAdminDashboard() {
             displayUsersList(data.users);
         }
 
-        // Load level settings
         await loadLevelSettings();
 
     } catch (error) {
@@ -2518,41 +2353,13 @@ async function loadLevelSettings() {
             document.getElementById('adminMinLevel').value = data.minLevel;
             document.getElementById('adminMaxLevel').value = data.maxLevel;
             
-            // Update global variables for validation
-            window.GLOBAL_MIN_LEVEL = data.minLevel;
-            window.GLOBAL_MAX_LEVEL = data.maxLevel;
+            GLOBAL_MIN_LEVEL = data.minLevel;
+            GLOBAL_MAX_LEVEL = data.maxLevel;
             
-            // Update all level input fields
             updateLevelInputLimits(data.minLevel, data.maxLevel);
         }
     } catch (error) {
         console.error('Load level settings error:', error);
-    }
-}
-
-function updateLevelInputLimits(minLevel, maxLevel) {
-    // Update all level input fields in the page
-    const levelInputs = document.querySelectorAll('input[type="number"][id*="evel"], input[type="number"][id*="Level"]');
-    levelInputs.forEach(input => {
-        if (input.id !== 'adminMinLevel' && input.id !== 'adminMaxLevel') {
-            input.min = minLevel;
-            input.max = maxLevel;
-            input.placeholder = `${minLevel}-${maxLevel}`;
-        }
-    });
-
-    // Update filter inputs
-    const minLevelFilter = document.getElementById('minLevelFilter');
-    const maxLevelFilter = document.getElementById('maxLevelFilter');
-    if (minLevelFilter) {
-        minLevelFilter.min = minLevel;
-        minLevelFilter.max = maxLevel;
-        minLevelFilter.placeholder = minLevel.toString();
-    }
-    if (maxLevelFilter) {
-        maxLevelFilter.min = minLevel;
-        maxLevelFilter.max = maxLevel;
-        maxLevelFilter.placeholder = maxLevel.toString();
     }
 }
 
@@ -2582,7 +2389,7 @@ async function handleLevelSettingsUpdate(e) {
         return;
     }
 
-    if (!confirm(`Confermi di voler impostare i livelli tra ${minLevel} e ${maxLevel}?\n\nQuesto influenzerà tutti i form di registrazione e modifica profilo.`)) {
+    if (!confirm(`Confermi di voler impostare i livelli tra ${minLevel} e ${maxLevel}?`)) {
         return;
     }
 
@@ -2601,12 +2408,8 @@ async function handleLevelSettingsUpdate(e) {
 
         if (response.ok) {
             showNotification(`✅ ${data.message}`, 'success');
-            
-            // Update global variables
-            window.GLOBAL_MIN_LEVEL = minLevel;
-            window.GLOBAL_MAX_LEVEL = maxLevel;
-            
-            // Update all level inputs in the page
+            GLOBAL_MIN_LEVEL = minLevel;
+            GLOBAL_MAX_LEVEL = maxLevel;
             updateLevelInputLimits(minLevel, maxLevel);
         } else {
             showNotification('❌ ' + (data.error || 'Errore durante l\'aggiornamento'), 'error');
@@ -2619,6 +2422,250 @@ async function handleLevelSettingsUpdate(e) {
     }
 }
 
+async function handleDeleteAllTeams() {
+    if (!confirm('⚠️ ATTENZIONE! Vuoi davvero eliminare TUTTE le squadre? Questa azione è irreversibile!')) {
+        return;
+    }
+
+    if (!confirm('Sei ASSOLUTAMENTE sicuro? Tutti i dati delle squadre saranno persi per sempre!')) {
+        return;
+    }
+
+    try {
+        showLoading();
+        const response = await fetch(`${API_BASE}/admin?action=teams`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            showNotification(`✅ ${data.message} (${data.count} squadre eliminate)`, 'success');
+            loadAdminDashboard();
+        } else {
+            showNotification('❌ ' + (data.error || 'Errore durante l\'eliminazione'), 'error');
+        }
+    } catch (error) {
+        console.error('Delete all teams error:', error);
+        showNotification('❌ Errore di connessione', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+async function handleResetProfiles() {
+    if (!confirm('⚠️ ATTENZIONE! Vuoi resettare TUTTI i profili? Livelli, ruoli, bio, feedback verranno resettati!')) {
+        return;
+    }
+
+    if (!confirm('Sei ASSOLUTAMENTE sicuro? Questa azione è irreversibile!')) {
+        return;
+    }
+
+    try {
+        showLoading();
+        const response = await fetch(`${API_BASE}/admin?action=reset-profiles`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            showNotification(`✅ ${data.message}`, 'success');
+            loadAdminDashboard();
+        } else {
+            showNotification('❌ ' + (data.error || 'Errore durante il reset'), 'error');
+        }
+    } catch (error) {
+        console.error('Reset profiles error:', error);
+        showNotification('❌ Errore di connessione', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+async function handleSendNewsletter(e) {
+    e.preventDefault();
+
+    const subject = document.getElementById('newsletterSubject').value.trim();
+    const message = document.getElementById('newsletterMessage').value.trim();
+
+    if (!subject || !message) {
+        showNotification('⚠️ Oggetto e messaggio sono richiesti', 'error');
+        return;
+    }
+
+    if (!confirm('Vuoi inviare questa newsletter a TUTTI gli utenti?')) {
+        return;
+    }
+
+    try {
+        showLoading();
+        const response = await fetch(`${API_BASE}/admin?action=newsletter`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({ subject, message })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            showNotification(`✅ ${data.message} (${data.sent} email inviate)`, 'success');
+            document.getElementById('newsletterForm').reset();
+        } else {
+            showNotification('❌ ' + (data.error || 'Errore durante l\'invio'), 'error');
+        }
+    } catch (error) {
+        console.error('Send newsletter error:', error);
+        showNotification('❌ Errore di connessione', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+function displayUsersList(users) {
+    const container = document.getElementById('usersList');
+
+    if (users.length === 0) {
+        container.innerHTML = '<div class="empty-state"><i class="fas fa-users"></i><p>Nessun utente</p></div>';
+        return;
+    }
+
+    container.innerHTML = users.map(user => {
+        const statusBadge = user.isSuspended 
+            ? '<span class="request-status rejected">Sospeso</span>'
+            : '<span class="request-status approved">Attivo</span>';
+
+        return `
+            <div class="user-item">
+                <div class="user-item-info">
+                    <h4>${user.username}</h4>
+                    <p>${user.email} - ${user.platform} - Liv. ${user.level}</p>
+                    <p>Registrato il: ${new Date(user.createdAt).toLocaleDateString('it-IT')}</p>
+                    ${statusBadge}
+                </div>
+                <div class="user-item-actions">
+                    ${!user.isSuspended ? `
+                        <button class="btn btn-small btn-warning" onclick="suspendUser('${user._id}')">
+                            <i class="fas fa-ban"></i>
+                            Sospendi
+                        </button>
+                    ` : `
+                        <button class="btn btn-small btn-success" onclick="unsuspendUser('${user._id}')">
+                            <i class="fas fa-check"></i>
+                            Riabilita
+                        </button>
+                    `}
+                    <button class="btn btn-small btn-danger" onclick="deleteUser('${user._id}')">
+                        <i class="fas fa-trash"></i>
+                        Elimina
+                    </button>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+async function suspendUser(userId) {
+    if (!confirm('Vuoi sospendere questo utente?')) return;
+
+    try {
+        showLoading();
+        const response = await fetch(`${API_BASE}/admin?action=suspend`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({ userId })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            showNotification('✅ Utente sospeso', 'success');
+            loadAdminDashboard();
+        } else {
+            showNotification('❌ ' + (data.error || 'Errore durante la sospensione'), 'error');
+        }
+    } catch (error) {
+        console.error('Suspend user error:', error);
+        showNotification('❌ Errore di connessione', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+async function unsuspendUser(userId) {
+    if (!confirm('Vuoi riabilitare questo utente?')) return;
+
+    try {
+        showLoading();
+        const response = await fetch(`${API_BASE}/admin?action=unsuspend`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({ userId })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            showNotification('✅ Utente riabilitato', 'success');
+            loadAdminDashboard();
+        } else {
+            showNotification('❌ ' + (data.error || 'Errore durante la riabilitazione'), 'error');
+        }
+    } catch (error) {
+        console.error('Unsuspend user error:', error);
+        showNotification('❌ Errore di connessione', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+async function deleteUser(userId) {
+    if (!confirm('⚠️ ATTENZIONE! Vuoi eliminare questo utente? Questa azione è irreversibile!')) {
+        return;
+    }
+
+    try {
+        showLoading();
+        const response = await fetch(`${API_BASE}/admin?action=user`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({ userId })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            showNotification('✅ Utente eliminato', 'success');
+            loadAdminDashboard();
+        } else {
+            showNotification('❌ ' + (data.error || 'Errore durante l\'eliminazione'), 'error');
+        }
+    } catch (error) {
+        console.error('Delete user error:', error);
+        showNotification('❌ Errore di connessione', 'error');
+    } finally {
+        hideLoading();
+    }
+}
 
 // ============================================
 // UTILITY FUNCTIONS
@@ -2664,6 +2711,3 @@ window.cancelRequest = cancelRequest;
 window.suspendUser = suspendUser;
 window.unsuspendUser = unsuspendUser;
 window.deleteUser = deleteUser;
-
-
-
