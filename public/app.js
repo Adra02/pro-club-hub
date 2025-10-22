@@ -353,6 +353,8 @@ function setupEventListeners() {
     if (resetProfilesBtn) resetProfilesBtn.addEventListener('click', handleResetProfiles);
 
     const newsletterForm = document.getElementById('newsletterForm');
+  const levelSettingsForm = document.getElementById('levelSettingsForm');
+if (levelSettingsForm) levelSettingsForm.addEventListener('submit', handleLevelSettingsUpdate);
     if (newsletterForm) newsletterForm.addEventListener('submit', handleSendNewsletter);
 
     // Setup interactive elements
@@ -2452,4 +2454,5 @@ window.cancelRequest = cancelRequest;
 window.suspendUser = suspendUser;
 window.unsuspendUser = unsuspendUser;
 window.deleteUser = deleteUser;
+
 
