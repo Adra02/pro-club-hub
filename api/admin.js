@@ -57,20 +57,41 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'Livello minimo e massimo richiesti' });
       }
 
-      if (minLevel < 1 || maxLevel < minLevel) {
-        return res.status(400).json({ error: 'Livelli non validi' });
+      const min = parseInt(minLevel);
+      const max = parseInt(maxLevel);
+
+      if (isNaN(min) || isNaN(max)) {
+        return res.status(400).json({ error: 'I livelli devono essere numeri validi' });
+      }
+
+      if (min < 1) {
+        return res.status(400).json({ error: 'Il livello minimo deve essere almeno 1' });
+      }
+
+      if (max < min) {
+        return res.status(400).json({ error: 'Il livello massimo deve essere maggiore o uguale al minimo' });
+      }
+
+      if (max > 9999) {
+        return res.status(400).json({ error: 'Il livello massimo non può superare 9999' });
       }
 
       await settingsCollection.updateOne(
         { _id: 'level_limits' },
-        { $set: { minLevel: parseInt(minLevel), maxLevel: parseInt(maxLevel), updatedAt: new Date() } },
+        { 
+          $set: { 
+            minLevel: min, 
+            maxLevel: max, 
+            updatedAt: new Date() 
+          } 
+        },
         { upsert: true }
       );
 
       return res.status(200).json({
-        message: 'Limiti livello aggiornati',
-        minLevel: parseInt(minLevel),
-        maxLevel: parseInt(maxLevel)
+        message: 'Limiti livello aggiornati con successo',
+        minLevel: min,
+        maxLevel: max
       });
     }
 
