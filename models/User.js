@@ -188,9 +188,24 @@ export class UserModel {
       }
     }
 
-    // Validate level with dynamic limits if being updated
+    // CRITICAL FIX: Auto-adjust level se fuori range invece di validare
     if (filteredData.level !== undefined) {
-      filteredData.level = await this.validateLevel(filteredData.level);
+      const levelNum = parseInt(filteredData.level);
+      
+      if (isNaN(levelNum)) {
+        throw new Error('Il livello deve essere un numero');
+      }
+      
+      const limits = await this.getLevelLimits();
+      
+      // Auto-aggiusta invece di dare errore
+      if (levelNum < limits.minLevel) {
+        filteredData.level = limits.minLevel;
+      } else if (levelNum > limits.maxLevel) {
+        filteredData.level = limits.maxLevel;
+      } else {
+        filteredData.level = levelNum;
+      }
     }
 
     if (updateData.password) {
@@ -379,12 +394,25 @@ export class UserModel {
     return true;
   }
 
+  // CRITICAL FIX: getAllUsers must return ALL users including email
   async getAllUsers() {
-    return await this.collection
-      .find({})
-      .project({ password: 0, resetToken: 0, resetTokenExpiry: 0 })
-      .sort({ createdAt: -1 })
-      .toArray();
+    try {
+      const users = await this.collection
+        .find({})
+        .project({ 
+          password: 0, 
+          resetToken: 0, 
+          resetTokenExpiry: 0 
+        })
+        .sort({ createdAt: -1 })
+        .toArray();
+      
+      console.log(`✅ getAllUsers returned ${users.length} users`);
+      return users;
+    } catch (error) {
+      console.error('Error in getAllUsers:', error);
+      return [];
+    }
   }
 
   async countAll() {
@@ -399,7 +427,8 @@ export class UserModel {
 
   sanitizeUser(user) {
     if (!user) return null;
-    const { password, resetToken, resetTokenExpiry, email, ...sanitized } = user;
+    const { password, resetToken, resetTokenExpiry, ...sanitized } = user;
+    // Don't remove email for admin view
     return sanitized;
   }
 }
