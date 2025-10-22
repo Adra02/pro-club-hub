@@ -1,6 +1,7 @@
 import { connectToDatabase } from '../lib/mongodb.js';
 import { UserModel } from '../models/User.js';
 import { TeamModel } from '../models/Team.js';
+import { ObjectId } from 'mongodb';
 
 /**
  * API /api/share
@@ -22,6 +23,11 @@ export default async function handler(req, res) {
 
     if (!type || !id) {
       return res.status(400).json({ error: 'type e id sono richiesti' });
+    }
+
+    // Verifica che l'ID sia valido
+    if (!ObjectId.isValid(id)) {
+      return renderNotFound(res, 'ID non valido');
     }
 
     const { db } = await connectToDatabase();
@@ -63,6 +69,10 @@ export default async function handler(req, res) {
  * Genera HTML di anteprima per un giocatore
  */
 function renderPlayerPreview(res, user) {
+  const baseUrl = process.env.VERCEL_URL 
+    ? `https://${process.env.VERCEL_URL}` 
+    : 'https://proclubhub.vercel.app';
+
   const html = `
 <!DOCTYPE html>
 <html lang="it">
@@ -75,15 +85,12 @@ function renderPlayerPreview(res, user) {
     <meta property="og:title" content="${user.username} - Pro Club Hub">
     <meta property="og:description" content="${user.primaryRole} • Livello ${user.level} • ${user.platform} • ⭐ ${user.averageRating.toFixed(1)}">
     <meta property="og:type" content="profile">
-    <meta property="og:url" content="https://proclubhub.app/share/player/${user._id}">
+    <meta property="og:url" content="${baseUrl}/api/share?type=player&id=${user._id}">
     
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="${user.username} - Pro Club Hub">
     <meta name="twitter:description" content="${user.primaryRole} • Livello ${user.level}">
-    
-    <!-- Deep Link -->
-    <meta http-equiv="refresh" content="0; url=proclubhub://player/${user._id}">
     
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -188,26 +195,14 @@ function renderPlayerPreview(res, user) {
             </div>
         </div>
         
-        <a href="https://proclubhub.vercel.app" class="btn">
+        <a href="${baseUrl}" class="btn">
             Apri Pro Club Hub
         </a>
         
         <div class="redirect-msg">
-            Se hai l'app installata, verrai reindirizzato automaticamente...
+            Clicca il pulsante per visitare Pro Club Hub
         </div>
     </div>
-    
-    <script>
-        // Tenta di aprire l'app
-        setTimeout(() => {
-            window.location.href = 'proclubhub://player/${user._id}';
-        }, 100);
-        
-        // Fallback: se l'app non si apre, redirect alla web app dopo 2 secondi
-        setTimeout(() => {
-            window.location.href = 'https://proclubhub.vercel.app';
-        }, 2000);
-    </script>
 </body>
 </html>
   `;
@@ -220,6 +215,10 @@ function renderPlayerPreview(res, user) {
  * Genera HTML di anteprima per una squadra
  */
 function renderTeamPreview(res, team) {
+  const baseUrl = process.env.VERCEL_URL 
+    ? `https://${process.env.VERCEL_URL}` 
+    : 'https://proclubhub.vercel.app';
+
   const html = `
 <!DOCTYPE html>
 <html lang="it">
@@ -232,15 +231,12 @@ function renderTeamPreview(res, team) {
     <meta property="og:title" content="${team.name} - Pro Club Hub">
     <meta property="og:description" content="${team.platform} • ${team.members.length} membri • ⭐ ${team.averageRating.toFixed(1)}">
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://proclubhub.app/share/team/${team._id}">
+    <meta property="og:url" content="${baseUrl}/api/share?type=team&id=${team._id}">
     
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="${team.name} - Pro Club Hub">
     <meta name="twitter:description" content="${team.platform} • ${team.members.length} membri">
-    
-    <!-- Deep Link -->
-    <meta http-equiv="refresh" content="0; url=proclubhub://team/${team._id}">
     
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -346,26 +342,14 @@ function renderTeamPreview(res, team) {
             </div>
         </div>
         
-        <a href="https://proclubhub.vercel.app" class="btn">
+        <a href="${baseUrl}" class="btn">
             Apri Pro Club Hub
         </a>
         
         <div class="redirect-msg">
-            Se hai l'app installata, verrai reindirizzato automaticamente...
+            Clicca il pulsante per visitare Pro Club Hub
         </div>
     </div>
-    
-    <script>
-        // Tenta di aprire l'app
-        setTimeout(() => {
-            window.location.href = 'proclubhub://team/${team._id}';
-        }, 100);
-        
-        // Fallback: se l'app non si apre, redirect alla web app dopo 2 secondi
-        setTimeout(() => {
-            window.location.href = 'https://proclubhub.vercel.app';
-        }, 2000);
-    </script>
 </body>
 </html>
   `;
@@ -378,6 +362,10 @@ function renderTeamPreview(res, team) {
  * Pagina 404
  */
 function renderNotFound(res, message) {
+  const baseUrl = process.env.VERCEL_URL 
+    ? `https://${process.env.VERCEL_URL}` 
+    : 'https://proclubhub.vercel.app';
+
   const html = `
 <!DOCTYPE html>
 <html lang="it">
@@ -414,7 +402,7 @@ function renderNotFound(res, message) {
     <div>
         <h1>❌ ${message}</h1>
         <p>Il contenuto che stai cercando non esiste o è stato rimosso.</p>
-        <a href="https://proclubhub.vercel.app">Torna a Pro Club Hub</a>
+        <a href="${baseUrl}">Torna a Pro Club Hub</a>
     </div>
 </body>
 </html>
