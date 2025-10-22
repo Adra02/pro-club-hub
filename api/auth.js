@@ -182,7 +182,7 @@ export default async function handler(req, res) {
     }
   }
 
-  // UPDATE ME
+  // UPDATE ME - FIX CRITICO PER CHECKBOX "CERCO SQUADRA"
   if (req.method === 'PUT' && req.url === '/api/auth?action=me') {
     try {
       const userId = await authenticateRequest(req);
@@ -201,7 +201,7 @@ export default async function handler(req, res) {
         const levelNum = parseInt(updates.level);
         
         if (isNaN(levelNum)) {
-          return res.status(400).json({ error: 'Livello deve essere un numero' });
+          return res.status(400).json({ error: 'Il livello deve essere un numero' });
         }
 
         // Ottieni i limiti correnti
@@ -219,6 +219,7 @@ export default async function handler(req, res) {
         }
       }
 
+      // CRITICAL FIX: Validazione ruoli secondari
       if (updates.secondaryRoles) {
         if (!Array.isArray(updates.secondaryRoles)) {
           return res.status(400).json({ error: 'Ruoli secondari deve essere un array' });
@@ -231,17 +232,39 @@ export default async function handler(req, res) {
         }
       }
 
-      // Check profile completion
+      // CRITICAL FIX: Check profile completion CORRETTO
       const user = await userModel.findById(userId);
-      const hasSecondaryRoles = updates.secondaryRoles?.length >= 1 || user.secondaryRoles?.length >= 1;
-      const hasContact = updates.instagram || updates.tiktok || user.instagram || user.tiktok;
-
-      if (hasSecondaryRoles && hasContact) {
-        updates.profileCompleted = true;
-      } else {
-        updates.profileCompleted = false;
+      
+      // Controlla i ruoli secondari (devono essere almeno 1)
+      const secondaryRoles = updates.secondaryRoles || user.secondaryRoles || [];
+      const hasSecondaryRoles = secondaryRoles.length >= 1;
+      
+      // Controlla i social (deve esserci almeno Instagram O TikTok)
+      const instagram = updates.instagram !== undefined ? updates.instagram : user.instagram;
+      const tiktok = updates.tiktok !== undefined ? updates.tiktok : user.tiktok;
+      const hasContact = (instagram && instagram.trim() !== '') || (tiktok && tiktok.trim() !== '');
+      
+      // Profilo completo se ha 1+ ruoli secondari E almeno 1 social
+      const isProfileCompleted = hasSecondaryRoles && hasContact;
+      
+      console.log('Profile completion check:', {
+        secondaryRoles,
+        hasSecondaryRoles,
+        instagram,
+        tiktok,
+        hasContact,
+        isProfileCompleted
+      });
+      
+      // Imposta profileCompleted
+      updates.profileCompleted = isProfileCompleted;
+      
+      // Se il profilo NON è completo, disabilita "cerco squadra"
+      if (!isProfileCompleted) {
         updates.lookingForTeam = false;
       }
+      // Se il profilo È completo, rispetta la scelta dell'utente
+      // (updates.lookingForTeam viene già passato dal frontend se è stato cliccato)
 
       const updatedUser = await userModel.update(userId, updates);
       if (!updatedUser) {
