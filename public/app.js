@@ -1742,6 +1742,483 @@ function currentLang() {
 }
 
 // ============================================
+// TEAM ACTIONS - COMPLETE
+// ============================================
+
+async function requestJoinTeam(teamId) {
+    if (!currentUser.profileCompleted) {
+        showProfileIncompleteMessage();
+        navigateTo('profile');
+        return;
+    }
+
+    if (!confirm('Vuoi inviare la richiesta per unirti a questa squadra?')) return;
+
+    try {
+        showLoading();
+        const response = await fetch(`${API_BASE}/requests?action=create`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({ teamId })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            showNotification('✅ Richiesta inviata con successo!', 'success');
+            closeTeamDetailModalFn();
+        } else {
+            showNotification('❌ ' + (data.error || 'Errore durante l\'invio della richiesta'), 'error');
+        }
+    } catch (error) {
+        console.error('Request join team error:', error);
+        showNotification('❌ Errore di connessione', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+async function leaveTeam(teamId) {
+    if (!confirm('Sei sicuro di voler lasciare questa squadra?')) return;
+
+    try {
+        showLoading();
+        const response = await fetch(`${API_BASE}/teams`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({ teamId, action: 'leave' })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            showNotification('👋 Hai lasciato la squadra', 'info');
+            closeTeamDetailModalFn();
+            await fetchCurrentUser();
+            searchTeams();
+        } else {
+            showNotification('❌ ' + (data.error || 'Errore durante l\'operazione'), 'error');
+        }
+    } catch (error) {
+        console.error('Leave team error:', error);
+        showNotification('❌ Errore di connessione', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+async function removeMember(teamId, memberId) {
+    if (!confirm('Sei sicuro di voler espellere questo membro? (Solo il capitano può farlo)')) return;
+
+    try {
+        showLoading();
+        const response = await fetch(`${API_BASE}/teams`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({ teamId, action: 'removeMember', targetUserId: memberId })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            showNotification('✅ Membro espulso con successo', 'success');
+            showTeamDetail(teamId);
+        } else {
+            showNotification('❌ ' + (data.error || 'Errore durante l\'operazione'), 'error');
+        }
+    } catch (error) {
+        console.error('Remove member error:', error);
+        showNotification('❌ Errore di connessione', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+async function setViceCaptain(teamId, memberId) {
+    if (!confirm('Vuoi nominare questo giocatore come vice capitano?')) return;
+
+    try {
+        showLoading();
+        const response = await fetch(`${API_BASE}/teams`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({ teamId, action: 'setViceCaptain', targetUserId: memberId })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            showNotification('✅ Vice capitano nominato!', 'success');
+            showTeamDetail(teamId);
+        } else {
+            showNotification('❌ ' + (data.error || 'Errore durante l\'operazione'), 'error');
+        }
+    } catch (error) {
+        console.error('Set vice captain error:', error);
+        showNotification('❌ Errore di connessione', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+// ============================================
+// REQUESTS - COMPLETE
+// ============================================
+
+async function loadRequests() {
+    if (!currentUser || !currentTeam) {
+        showNotification('⚠️ Non hai i permessi per vedere le richieste', 'error');
+        navigateTo('home');
+        return;
+    }
+
+    loadReceivedRequests();
+    loadSentRequests();
+}
+
+function switchRequestsTab(tab) {
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
+
+    document.getElementById('receivedRequests').style.display = tab === 'received' ? 'grid' : 'none';
+    document.getElementById('sentRequests').style.display = tab === 'sent' ? 'grid' : 'none';
+
+    if (tab === 'received') {
+        loadReceivedRequests();
+    } else {
+        loadSentRequests();
+    }
+}
+
+async function loadReceivedRequests() {
+    if (!currentTeam) return;
+
+    try {
+        showLoading();
+        const response = await fetch(`${API_BASE}/requests?teamId=${currentTeam._id}`, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            displayReceivedRequests(data.requests);
+        } else {
+            showNotification('❌ Errore nel caricamento richieste', 'error');
+        }
+    } catch (error) {
+        console.error('Load received requests error:', error);
+        showNotification('❌ Errore di connessione', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+async function loadSentRequests() {
+    try {
+        showLoading();
+        const response = await fetch(`${API_BASE}/requests?playerId=${currentUser._id}`, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            displaySentRequests(data.requests);
+        } else {
+            showNotification('❌ Errore nel caricamento richieste', 'error');
+        }
+    } catch (error) {
+        console.error('Load sent requests error:', error);
+        showNotification('❌ Errore di connessione', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+function displayReceivedRequests(requests) {
+    const container = document.getElementById('receivedRequests');
+
+    if (requests.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-inbox"></i>
+                <p>Nessuna richiesta ricevuta</p>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = requests.map(req => {
+        const player = req.playerDetails;
+        if (!player) return '';
+
+        const date = new Date(req.createdAt).toLocaleDateString('it-IT');
+        const isPending = req.status === 'pending';
+
+        return `
+            <div class="request-card">
+                <div class="request-header">
+                    <div class="request-info">
+                        <div class="request-avatar">
+                            <i class="fas fa-user-circle"></i>
+                        </div>
+                        <div class="request-details">
+                            <h4>${player.username}</h4>
+                            <p class="request-meta">
+                                ${player.primaryRole} - Livello ${player.level} - ${player.platform}
+                            </p>
+                            <p class="request-meta">Richiesta inviata il ${date}</p>
+                        </div>
+                    </div>
+                    ${isPending ? `
+                        <div class="request-actions">
+                            <button class="btn btn-small btn-success" onclick="approveRequest('${req._id}')">
+                                <i class="fas fa-check"></i>
+                                Approva
+                            </button>
+                            <button class="btn btn-small btn-danger" onclick="rejectRequest('${req._id}')">
+                                <i class="fas fa-times"></i>
+                                Rifiuta
+                            </button>
+                            <button class="btn btn-small btn-primary" onclick="showPlayerDetail('${player._id}')">
+                                <i class="fas fa-eye"></i>
+                                Vedi
+                            </button>
+                        </div>
+                    ` : `
+                        <span class="request-status ${req.status}">${req.status === 'approved' ? 'Approvata' : 'Rifiutata'}</span>
+                    `}
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function displaySentRequests(requests) {
+    const container = document.getElementById('sentRequests');
+
+    if (requests.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-paper-plane"></i>
+                <p>Nessuna richiesta inviata</p>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = requests.map(req => {
+        const team = req.teamDetails;
+        if (!team) return '';
+
+        const date = new Date(req.createdAt).toLocaleDateString('it-IT');
+        const isPending = req.status === 'pending';
+
+        let statusText = 'In attesa';
+        let statusClass = 'pending';
+        
+        if (req.status === 'approved') {
+            statusText = 'Approvata';
+            statusClass = 'approved';
+        } else if (req.status === 'rejected') {
+            statusText = 'Rifiutata';
+            statusClass = 'rejected';
+        } else if (req.status === 'cancelled') {
+            statusText = 'Cancellata';
+            statusClass = 'rejected';
+        }
+
+        return `
+            <div class="request-card">
+                <div class="request-header">
+                    <div class="request-info">
+                        <div class="request-avatar">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <div class="request-details">
+                            <h4>${team.name}</h4>
+                            <p class="request-meta">${team.platform} - ${team.members.length} membri</p>
+                            <p class="request-meta">Richiesta inviata il ${date}</p>
+                        </div>
+                    </div>
+                    <div class="request-actions">
+                        <span class="request-status ${statusClass}">${statusText}</span>
+                        ${isPending ? `
+                            <button class="btn btn-small btn-danger" onclick="cancelRequest('${req._id}')">
+                                <i class="fas fa-times"></i>
+                                Cancella
+                            </button>
+                        ` : ''}
+                        <button class="btn btn-small btn-primary" onclick="showTeamDetail('${team._id}')">
+                            <i class="fas fa-eye"></i>
+                            Vedi
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+async function approveRequest(requestId) {
+    if (!confirm('Vuoi approvare questa richiesta?')) return;
+
+    try {
+        showLoading();
+        const response = await fetch(`${API_BASE}/requests?action=approve`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({ requestId })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            showNotification('✅ Richiesta approvata! Il giocatore è ora nella squadra.', 'success');
+            loadReceivedRequests();
+            await fetchCurrentUser();
+        } else {
+            showNotification('❌ ' + (data.error || 'Errore durante l\'approvazione'), 'error');
+        }
+    } catch (error) {
+        console.error('Approve request error:', error);
+        showNotification('❌ Errore di connessione', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+async function rejectRequest(requestId) {
+    if (!confirm('Vuoi rifiutare questa richiesta?')) return;
+
+    try {
+        showLoading();
+        const response = await fetch(`${API_BASE}/requests?action=reject`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({ requestId })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            showNotification('✅ Richiesta rifiutata', 'info');
+            loadReceivedRequests();
+        } else {
+            showNotification('❌ ' + (data.error || 'Errore durante il rifiuto'), 'error');
+        }
+    } catch (error) {
+        console.error('Reject request error:', error);
+        showNotification('❌ Errore di connessione', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+async function cancelRequest(requestId) {
+    if (!confirm('Vuoi cancellare questa richiesta?')) return;
+
+    try {
+        showLoading();
+        const response = await fetch(`${API_BASE}/requests`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({ requestId })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            showNotification('✅ Richiesta cancellata', 'info');
+            loadSentRequests();
+        } else {
+            showNotification('❌ ' + (data.error || 'Errore durante la cancellazione'), 'error');
+        }
+    } catch (error) {
+        console.error('Cancel request error:', error);
+        showNotification('❌ Errore di connessione', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+// ============================================
+// FEEDBACK MODAL (classico - non inline)
+// ============================================
+
+async function handleSubmitFeedback(e) {
+    e.preventDefault();
+
+    const targetUserId = document.getElementById('feedbackTargetUserId').value;
+    const targetTeamId = document.getElementById('feedbackTargetTeamId').value;
+    const rating = parseInt(document.getElementById('feedbackRating').value);
+    const comment = document.getElementById('feedbackComment').value.trim();
+
+    if (!rating || rating < 1 || rating > 5) {
+        showNotification('⚠️ Seleziona una valutazione da 1 a 5 stelle', 'error');
+        return;
+    }
+
+    try {
+        showLoading();
+        const response = await fetch(`${API_BASE}/feedback`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({
+                targetUserId: targetUserId || undefined,
+                targetTeamId: targetTeamId || undefined,
+                rating,
+                comment,
+                tags: selectedTags
+            })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            closeFeedbackModalFn();
+            showNotification('✅ Feedback inviato con successo!', 'success');
+        } else {
+            showNotification('❌ ' + (data.error || 'Errore durante l\'invio del feedback'), 'error');
+        }
+    } catch (error) {
+        console.error('Submit feedback error:', error);
+        showNotification('❌ Errore di connessione', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+// ============================================
 // GLOBAL FUNCTIONS FOR ONCLICK
 // ============================================
 
@@ -1767,3 +2244,4 @@ window.deleteUser = deleteUser;
 // precedenti che hai già (app.js parte 1-4 della chat precedente)
 // Unisci TUTTE le 5 parti in un unico file app.js
 // ============================================
+
