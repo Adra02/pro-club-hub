@@ -2065,25 +2065,25 @@ body {
 }
 
 /* ============================================
-   FIX DEFINITIVO BOTTONI - PRIORITÀ MASSIMA
+   FIX BOTTONI - VERSIONE SEMPLIFICATA
    ============================================ */
 
-/* Reset pointer-events per tutti i bottoni */
+/* Tutti i bottoni devono essere cliccabili */
 button,
 .btn,
 .nav-btn,
 a.btn,
 input[type="submit"],
-input[type="button"] {
+input[type="button"],
+[onclick] {
     pointer-events: auto !important;
     cursor: pointer !important;
-    position: relative;
-    z-index: 10;
     -webkit-tap-highlight-color: rgba(59, 130, 246, 0.3);
     touch-action: manipulation;
+    user-select: none;
 }
 
-/* Blocca gli elementi DENTRO i bottoni dal ricevere click */
+/* Gli elementi dentro i bottoni non devono interferire */
 button *,
 .btn *,
 .nav-btn *,
@@ -2091,94 +2091,19 @@ a.btn * {
     pointer-events: none !important;
 }
 
-/* Hero buttons - MASSIMA PRIORITÀ */
-#heroLoginBtn,
-#heroRegisterBtn {
-    pointer-events: auto !important;
-    cursor: pointer !important;
-    position: relative !important;
-    z-index: 100 !important;
-    display: inline-flex !important;
-}
-
-/* Navigation buttons */
-.header,
-.nav,
-.nav-btn,
-.btn-logout {
-    pointer-events: auto !important;
-}
-
-/* Auth modal */
-#authModal,
-.modal-content,
-#closeAuthModal {
-    pointer-events: auto !important;
-}
-
-/* Forms */
-form,
-form * {
-    pointer-events: auto !important;
-}
-
-form button,
-form .btn {
-    cursor: pointer !important;
-}
-
-/* Selects e inputs */
-input,
-select,
-textarea {
-    pointer-events: auto !important;
-    cursor: text !important;
-}
-
-select {
-    cursor: pointer !important;
-}
-
-/* Links */
-a {
-    pointer-events: auto !important;
-    cursor: pointer !important;
-}
-
-/* Modals close button */
-.modal-close {
-    pointer-events: auto !important;
-    cursor: pointer !important;
-    z-index: 2001 !important;
-}
-
-/* Loading overlay - quando attivo blocca tutto tranne se stesso */
-.loading-overlay:not(.active) {
-    pointer-events: none !important;
-    display: none !important;
+/* Loading overlay */
+.loading-overlay {
+    pointer-events: none;
 }
 
 .loading-overlay.active {
-    pointer-events: auto !important;
-    display: flex !important;
+    pointer-events: auto;
 }
 
-/* Player e Team cards */
+/* Cards cliccabili */
 .player-card,
 .team-card {
-    pointer-events: auto !important;
-    cursor: pointer !important;
-}
-
-.player-card > *:not(button):not(.btn),
-.team-card > *:not(button):not(.btn) {
-    pointer-events: none !important;
-}
-
-/* Detail actions */
-.detail-actions,
-.detail-actions * {
-    pointer-events: auto !important;
+    cursor: pointer;
 }
 
 /* Print styles */
