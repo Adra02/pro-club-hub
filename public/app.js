@@ -1,5 +1,5 @@
 // ============================================
-// PRO CLUB HUB - MAIN APPLICATION
+// PRO CLUB HUB - MAIN APPLICATION - COMPLETO
 // ============================================
 
 const API_BASE = '/api';
@@ -192,7 +192,6 @@ function updateUIForUser() {
     document.getElementById('heroActions').style.display = 'none';
     document.getElementById('heroUserInfo').style.display = 'block';
 
-    // Show create team button only if profile completed
     if (currentUser.profileCompleted) {
         document.getElementById('createTeamBtn').style.display = 'flex';
     }
@@ -220,6 +219,37 @@ function updateUIForGuest() {
 }
 
 // ============================================
+// PROFILE COMPLETE CHECK
+// ============================================
+
+function checkProfileComplete() {
+    if (!currentUser) return false;
+    
+    const hasSecondaryRole = currentUser.secondaryRoles && currentUser.secondaryRoles.length >= 1;
+    const hasContact = currentUser.instagram || currentUser.tiktok;
+    
+    return hasSecondaryRole && hasContact;
+}
+
+function showProfileIncompleteMessage() {
+    const missingFields = [];
+    
+    if (!currentUser.secondaryRoles || currentUser.secondaryRoles.length < 1) {
+        missingFields.push('• Almeno 1 ruolo secondario');
+    }
+    
+    if (!currentUser.instagram && !currentUser.tiktok) {
+        missingFields.push('• Instagram O TikTok');
+    }
+    
+    const message = `⚠️ Devi completare il profilo per questa azione!\n\nCampi obbligatori mancanti:\n${missingFields.join('\n')}\n\nVai su "Profilo" → "Modifica Profilo"`;
+    
+    alert(message);
+    showNotification('⚠️ Profilo incompleto! Completa: 1+ ruolo secondario + Instagram O TikTok', 'error');
+}
+
+// ============================================
+// CONTINUAZIONE app.js - PARTE 2/5
 // EVENT LISTENERS
 // ============================================
 
@@ -264,9 +294,36 @@ function setupEventListeners() {
         switchAuthForm('login');
     });
 
-    // Modal closes
+    // Modal closes - FIX con stopPropagation
     const closeAuthModal = document.getElementById('closeAuthModal');
     if (closeAuthModal) closeAuthModal.addEventListener('click', closeAuthModalFn);
+
+    const closePlayerDetailModal = document.getElementById('closePlayerDetailModal');
+    if (closePlayerDetailModal) {
+        closePlayerDetailModal.addEventListener('click', (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            closePlayerDetailModalFn();
+        });
+    }
+
+    const closeTeamDetailModal = document.getElementById('closeTeamDetailModal');
+    if (closeTeamDetailModal) {
+        closeTeamDetailModal.addEventListener('click', (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            closeTeamDetailModalFn();
+        });
+    }
+
+    const closeFeedbackModal = document.getElementById('closeFeedbackModal');
+    if (closeFeedbackModal) {
+        closeFeedbackModal.addEventListener('click', (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            closeFeedbackModalFn();
+        });
+    }
 
     // Forms
     const loginFormElement = document.getElementById('loginFormElement');
@@ -309,18 +366,8 @@ function setupEventListeners() {
     if (searchTeamsBtn) searchTeamsBtn.addEventListener('click', searchTeams);
 
     // Feedback
-    const closeFeedbackModal = document.getElementById('closeFeedbackModal');
-    if (closeFeedbackModal) closeFeedbackModal.addEventListener('click', closeFeedbackModalFn);
-
     const feedbackForm = document.getElementById('feedbackForm');
     if (feedbackForm) feedbackForm.addEventListener('submit', handleSubmitFeedback);
-
-    // Detail modals
-    const closePlayerDetailModal = document.getElementById('closePlayerDetailModal');
-    if (closePlayerDetailModal) closePlayerDetailModal.addEventListener('click', closePlayerDetailModalFn);
-
-    const closeTeamDetailModal = document.getElementById('closeTeamDetailModal');
-    if (closeTeamDetailModal) closeTeamDetailModal.addEventListener('click', closeTeamDetailModalFn);
 
     // Requests tabs
     document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -340,6 +387,9 @@ function setupEventListeners() {
     const newsletterForm = document.getElementById('newsletterForm');
     if (newsletterForm) newsletterForm.addEventListener('submit', handleSendNewsletter);
 
+    const levelSettingsForm = document.getElementById('levelSettingsForm');
+    if (levelSettingsForm) levelSettingsForm.addEventListener('submit', handleUpdateLevelSettings);
+
     // Setup interactive elements
     setupStarRating();
     setupTagSelector();
@@ -351,12 +401,40 @@ function setupEventListeners() {
         modal.addEventListener('click', (e) => {
             if (e.target === modal) {
                 modal.classList.remove('active');
+                
+                if (modal.id === 'playerDetailModal') {
+                    setTimeout(() => {
+                        document.getElementById('playerDetailContent').innerHTML = '';
+                    }, 300);
+                } else if (modal.id === 'teamDetailModal') {
+                    setTimeout(() => {
+                        document.getElementById('teamDetailContent').innerHTML = '';
+                    }, 300);
+                }
             }
         });
     });
+
+    // Close modals with ESC key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            document.querySelectorAll('.modal.active').forEach(modal => {
+                modal.classList.remove('active');
+                
+                if (modal.id === 'playerDetailModal') {
+                    setTimeout(() => {
+                        document.getElementById('playerDetailContent').innerHTML = '';
+                    }, 300);
+                } else if (modal.id === 'teamDetailModal') {
+                    setTimeout(() => {
+                        document.getElementById('teamDetailContent').innerHTML = '';
+                    }, 300);
+                }
+            });
+        }
+    });
 }
 
-// Check profile completion
 function setupProfileCompletionCheck() {
     const instagramInput = document.getElementById('editInstagram');
     const tiktokInput = document.getElementById('editTiktok');
@@ -381,6 +459,52 @@ function setupProfileCompletionCheck() {
 }
 
 // ============================================
+// MODAL CLOSE FUNCTIONS - FIX
+// ============================================
+
+function closePlayerDetailModalFn() {
+    const modal = document.getElementById('playerDetailModal');
+    if (modal) {
+        modal.classList.remove('active');
+        setTimeout(() => {
+            document.getElementById('playerDetailContent').innerHTML = '';
+        }, 300);
+    }
+}
+
+function closeTeamDetailModalFn() {
+    const modal = document.getElementById('teamDetailModal');
+    if (modal) {
+        modal.classList.remove('active');
+        setTimeout(() => {
+            document.getElementById('teamDetailContent').innerHTML = '';
+        }, 300);
+    }
+}
+
+function closeFeedbackModalFn() {
+    const modal = document.getElementById('feedbackModal');
+    if (modal) {
+        modal.classList.remove('active');
+    }
+    
+    selectedRating = 0;
+    selectedTags = [];
+    
+    const form = document.getElementById('feedbackForm');
+    if (form) form.reset();
+    
+    document.querySelectorAll('#starRating i').forEach(star => {
+        star.classList.remove('fas', 'active');
+        star.classList.add('far');
+    });
+    
+    document.querySelectorAll('#tagSelector .tag-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+}
+
+// ============================================
 // NAVIGATION
 // ============================================
 
@@ -401,8 +525,28 @@ function navigateTo(page) {
     if (page === 'profile' && currentUser) {
         loadProfile();
     } else if (page === 'players') {
+        if (!currentUser) {
+            showNotification('⚠️ Devi effettuare il login', 'error');
+            openAuthModal('login');
+            return;
+        }
+        if (!currentUser.profileCompleted) {
+            showProfileIncompleteMessage();
+            navigateTo('profile');
+            return;
+        }
         searchPlayers();
     } else if (page === 'teams') {
+        if (!currentUser) {
+            showNotification('⚠️ Devi effettuare il login', 'error');
+            openAuthModal('login');
+            return;
+        }
+        if (!currentUser.profileCompleted) {
+            showProfileIncompleteMessage();
+            navigateTo('profile');
+            return;
+        }
         searchTeams();
     } else if (page === 'requests') {
         loadRequests();
@@ -412,7 +556,8 @@ function navigateTo(page) {
 }
 
 // ============================================
-// AUTHENTICATION
+// CONTINUAZIONE app.js - PARTE 3/5
+// AUTHENTICATION & PROFILE
 // ============================================
 
 function openAuthModal(form) {
@@ -551,7 +696,6 @@ async function handleRegister(e) {
         hideLoading();
     }
 }
-// CONTINUAZIONE DI app.js - PARTE 2
 
 async function handleForgotPassword(e) {
     e.preventDefault();
@@ -706,7 +850,6 @@ async function loadProfile() {
         if (socialCard) socialCard.style.display = 'none';
     }
 
-    // Load feedback
     try {
         const response = await fetch(`${API_BASE}/feedback?userId=${currentUser._id}`, {
             headers: {
@@ -735,10 +878,10 @@ function displayProfileFeedback(feedback) {
     container.innerHTML = feedback.map(fb => {
         const stars = '⭐'.repeat(fb.rating);
         const tags = fb.tags && fb.tags.length > 0
-            ? `<div class="feedback-tags">${fb.tags.map(tag => `<span class="feedback-tag"><i class="fas fa-tag"></i> ${tag}</span>`).join('')}</div>`
+            ? `<div class="feedback-tags-compact">${fb.tags.map(tag => `<span class="feedback-tag-compact">${tag}</span>`).join(' ')}</div>`
             : '';
-        const comment = fb.comment ? `<p class="feedback-comment">${fb.comment}</p>` : '';
-        const date = new Date(fb.createdAt).toLocaleDateString(currentLang());
+        const comment = fb.comment ? `<p class="feedback-comment-compact">${fb.comment}</p>` : '';
+        const date = new Date(fb.createdAt).toLocaleDateString('it-IT');
         
         return `
             <div class="feedback-item-compact">
@@ -774,15 +917,30 @@ function openEditProfileModal() {
         cb.checked = currentUser.secondaryRoles && currentUser.secondaryRoles.includes(cb.value);
     });
 
-    // Check if profile can enable lookingForTeam
     const hasSecondaryRole = currentUser.secondaryRoles && currentUser.secondaryRoles.length >= 1;
     const hasContact = currentUser.instagram || currentUser.tiktok;
     
+    const lookingForTeamCheckbox = document.getElementById('editLookingForTeam');
+    const formGroup = lookingForTeamCheckbox.closest('.form-group');
+    
     if (hasSecondaryRole && hasContact) {
-        document.getElementById('editLookingForTeam').disabled = false;
+        lookingForTeamCheckbox.disabled = false;
+        const existingHelper = formGroup.querySelector('.helper-text');
+        if (existingHelper) existingHelper.remove();
     } else {
-        document.getElementById('editLookingForTeam').disabled = true;
-        document.getElementById('editLookingForTeam').checked = false;
+        lookingForTeamCheckbox.disabled = true;
+        lookingForTeamCheckbox.checked = false;
+        
+        let helperText = formGroup.querySelector('.helper-text');
+        if (!helperText) {
+            helperText = document.createElement('p');
+            helperText.className = 'helper-text';
+            helperText.style.color = '#fbbf24';
+            helperText.style.fontSize = '0.85rem';
+            helperText.style.marginTop = '0.5rem';
+            helperText.innerHTML = '⚠️ Per abilitare "Cerco squadra": aggiungi 1+ ruolo secondario + Instagram O TikTok';
+            formGroup.appendChild(helperText);
+        }
     }
 
     document.getElementById('editProfileModal').classList.add('active');
@@ -795,6 +953,11 @@ function closeEditProfileModal() {
     const form = document.getElementById('editProfileForm');
     if (form) form.reset();
 }
+
+// ============================================
+// CONTINUAZIONE app.js - PARTE 4/5
+// EDIT PROFILE, SEARCH, TEAMS
+// ============================================
 
 async function handleEditProfile(e) {
     e.preventDefault();
@@ -913,6 +1076,12 @@ async function searchPlayers() {
         return;
     }
 
+    if (!currentUser.profileCompleted) {
+        showProfileIncompleteMessage();
+        navigateTo('profile');
+        return;
+    }
+
     const search = document.getElementById('playerSearchInput').value.trim();
     const role = document.getElementById('roleFilter').value;
     const platform = document.getElementById('platformFilter').value;
@@ -1004,171 +1173,6 @@ function displayPlayers(players) {
 }
 
 // ============================================
-// PLAYER DETAIL (CON FEEDBACK INLINE)
-// ============================================
-
-async function showPlayerDetail(playerId) {
-    try {
-        showLoading();
-        const response = await fetch(`${API_BASE}/users?id=${playerId}`, {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-            const player = data.user;
-            const feedbackResponse = await fetch(`${API_BASE}/feedback?userId=${playerId}`, {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                }
-            });
-            const feedbackData = await feedbackResponse.json();
-
-            displayPlayerDetailModal(player, feedbackData);
-        } else {
-            showNotification('❌ ' + (data.error || 'Errore nel caricamento del profilo'), 'error');
-        }
-    } catch (error) {
-        console.error('Show player detail error:', error);
-        showNotification('❌ Errore di connessione', 'error');
-    } finally {
-        hideLoading();
-    }
-}
-
-function displayPlayerDetailModal(player, feedbackData) {
-    const levelPercent = Math.min((player.level / 100) * 100, 100);
-    const isOwnProfile = currentUser && currentUser._id === player._id;
-
-    const secondaryRoles = player.secondaryRoles && player.secondaryRoles.length > 0
-        ? player.secondaryRoles.map(r => `<span class="role-badge">${r}</span>`).join('')
-        : '<p style="color: #64748b;">Nessuno</p>';
-
-    const socialLinks = [];
-    if (player.instagram) {
-        socialLinks.push(`<a href="https://instagram.com/${player.instagram}" target="_blank" class="social-link instagram"><i class="fab fa-instagram"></i> ${player.instagram}</a>`);
-    }
-    if (player.tiktok) {
-        socialLinks.push(`<a href="https://tiktok.com/@${player.tiktok}" target="_blank" class="social-link tiktok"><i class="fab fa-tiktok"></i> ${player.tiktok}</a>`);
-    }
-
-    const feedbackList = feedbackData.feedback && feedbackData.feedback.length > 0
-        ? feedbackData.feedback.map(fb => {
-            const stars = '⭐'.repeat(fb.rating);
-            const tags = fb.tags && fb.tags.length > 0
-                ? `<div class="feedback-tags-compact">${fb.tags.map(tag => `<span class="feedback-tag-compact">${tag}</span>`).join(' ')}</div>`
-                : '';
-            const comment = fb.comment ? `<p class="feedback-comment-compact">${fb.comment}</p>` : '';
-            const date = new Date(fb.createdAt).toLocaleDateString(currentLang());
-            
-            return `
-                <div class="feedback-item-compact">
-                    <div class="feedback-header-compact">
-                        <span class="feedback-user-compact">
-                            <i class="fas fa-user-circle"></i> ${fb.fromUser.username}
-                        </span>
-                        <span class="feedback-rating-compact">${stars}</span>
-                    </div>
-                    ${tags}
-                    ${comment}
-                    <span class="feedback-date-compact">${date}</span>
-                </div>
-            `;
-        }).join('')
-        : '<div class="empty-state"><i class="fas fa-star"></i><p>Nessun feedback ancora</p></div>';
-
-    const lookingForTeam = player.lookingForTeam ? 'Sì' : 'No';
-
-    const content = `
-        <div class="player-detail-header">
-            <div class="detail-avatar">
-                <i class="fas fa-user-circle"></i>
-            </div>
-            <div class="detail-info">
-                <h2>${player.username}</h2>
-                <div class="detail-meta">
-                    <div class="meta-item">
-                        <i class="fas fa-trophy"></i>
-                        <span>Livello ${player.level}</span>
-                    </div>
-                    <div class="meta-item">
-                        <i class="fas fa-gamepad"></i>
-                        <span>${player.platform}</span>
-                    </div>
-                    <div class="meta-item">
-                        <i class="fas fa-flag"></i>
-                        <span>${player.nationality}</span>
-                    </div>
-                    <div class="meta-item">
-                        <i class="fas fa-star"></i>
-                        <span>${player.averageRating.toFixed(1)} (${player.feedbackCount} feedback)</span>
-                    </div>
-                    <div class="meta-item">
-                        <i class="fas fa-search"></i>
-                        <span>Cerca squadra: ${lookingForTeam}</span>
-                    </div>
-                </div>
-                <div class="level-bar level-bar-large" style="margin-top: 1rem;">
-                    <div class="level-progress" style="width: ${levelPercent}%"></div>
-                </div>
-            </div>
-        </div>
-
-        <div class="info-grid">
-            <div class="info-card">
-                <h4><i class="fas fa-trophy"></i> Ruolo Principale</h4>
-                <p>${player.primaryRole}</p>
-            </div>
-            <div class="info-card">
-                <h4><i class="fas fa-users"></i> Ruoli Secondari</h4>
-                <div class="roles-list">${secondaryRoles}</div>
-            </div>
-            ${player.bio ? `
-                <div class="info-card">
-                    <h4><i class="fas fa-comment"></i> Bio</h4>
-                    <p>${player.bio}</p>
-                </div>
-            ` : ''}
-            ${socialLinks.length > 0 ? `
-                <div class="info-card">
-                    <h4><i class="fas fa-share-alt"></i> Social</h4>
-                    <div class="social-links">${socialLinks.join('')}</div>
-                </div>
-            ` : ''}
-        </div>
-
-        ${!isOwnProfile ? `
-            <div class="detail-actions">
-                <button class="btn btn-primary" onclick="openFeedbackModalInline('${player._id}', 'user')">
-                    <i class="fas fa-star"></i>
-                    Lascia Feedback
-                </button>
-            </div>
-            <div id="inlineFeedbackForm" style="display: none; margin: 2rem 0;"></div>
-        ` : ''}
-
-        <div class="feedback-section-compact">
-            <h3><i class="fas fa-star"></i> Feedback Ricevuti</h3>
-            <div class="feedback-list-compact">
-                ${feedbackList}
-            </div>
-        </div>
-    `;
-
-    document.getElementById('playerDetailContent').innerHTML = content;
-    document.getElementById('playerDetailModal').classList.add('active');
-}
-
-function closePlayerDetailModalFn() {
-    const modal = document.getElementById('playerDetailModal');
-    if (modal) modal.classList.remove('active');
-}
-// CONTINUAZIONE DI app.js - PARTE 3
-
-// ============================================
 // TEAMS SEARCH
 // ============================================
 
@@ -1176,6 +1180,12 @@ async function searchTeams() {
     if (!currentUser) {
         showNotification('⚠️ Devi effettuare il login per cercare squadre', 'error');
         openAuthModal('login');
+        return;
+    }
+
+    if (!currentUser.profileCompleted) {
+        showProfileIncompleteMessage();
+        navigateTo('profile');
         return;
     }
 
@@ -1251,522 +1261,6 @@ function displayTeams(teams) {
     `).join('');
 }
 
-// ============================================
-// TEAM DETAIL
-// ============================================
-
-async function showTeamDetail(teamId) {
-    try {
-        showLoading();
-        const response = await fetch(`${API_BASE}/teams?id=${teamId}`, {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-            const team = data.team;
-            const feedbackResponse = await fetch(`${API_BASE}/feedback?teamId=${teamId}`, {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                }
-            });
-            const feedbackData = await feedbackResponse.json();
-
-            displayTeamDetailModal(team, feedbackData);
-        } else {
-            showNotification('❌ ' + (data.error || 'Errore nel caricamento della squadra'), 'error');
-        }
-    } catch (error) {
-        console.error('Show team detail error:', error);
-        showNotification('❌ Errore di connessione', 'error');
-    } finally {
-        hideLoading();
-    }
-}
-
-function displayTeamDetailModal(team, feedbackData) {
-    const isCaptain = currentUser && team.captain.toString() === currentUser._id;
-    const isViceCaptain = currentUser && team.viceCaptain && team.viceCaptain.toString() === currentUser._id;
-    const isMember = currentUser && team.members.some(m => m.toString() === currentUser._id);
-
-    const socialLinks = [];
-    if (team.instagram) {
-        socialLinks.push(`<a href="https://instagram.com/${team.instagram}" target="_blank" class="social-link instagram"><i class="fab fa-instagram"></i> ${team.instagram}</a>`);
-    }
-    if (team.tiktok) {
-        socialLinks.push(`<a href="https://tiktok.com/@${team.tiktok}" target="_blank" class="social-link tiktok"><i class="fab fa-tiktok"></i> ${team.tiktok}</a>`);
-    }
-    if (team.liveLink) {
-        socialLinks.push(`<a href="${team.liveLink}" target="_blank" class="btn btn-live"><i class="fas fa-video"></i> GUARDA LIVE</a>`);
-    }
-
-    const membersList = team.memberDetails && team.memberDetails.length > 0
-        ? team.memberDetails.map(member => {
-            const captainBadge = member._id === team.captain.toString() 
-                ? '<span class="captain-badge"><i class="fas fa-crown"></i> Capitano</span>' 
-                : '';
-            const viceCaptainBadge = team.viceCaptain && member._id === team.viceCaptain.toString()
-                ? '<span class="vice-captain-badge"><i class="fas fa-star"></i> Vice Capitano</span>'
-                : '';
-            
-            return `
-                <div class="member-item">
-                    <div class="member-info">
-                        <div class="member-avatar">
-                            <i class="fas fa-user-circle"></i>
-                        </div>
-                        <div class="member-details">
-                            <h5>${member.username} ${captainBadge} ${viceCaptainBadge}</h5>
-                            <p class="member-role">${member.primaryRole} - Liv. ${member.level}</p>
-                        </div>
-                    </div>
-                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                        <button class="btn btn-small btn-primary" onclick="showPlayerDetail('${member._id}')">
-                            <i class="fas fa-eye"></i>
-                            Vedi
-                        </button>
-                        ${isCaptain && member._id !== team.captain.toString() ? `
-                            <button class="btn btn-small btn-danger" onclick="removeMember('${team._id}', '${member._id}')">
-                                <i class="fas fa-times"></i>
-                                Espelli
-                            </button>
-                        ` : ''}
-                        ${isCaptain && member._id !== team.captain.toString() && (!team.viceCaptain || team.viceCaptain.toString() !== member._id) ? `
-                            <button class="btn btn-small btn-secondary" onclick="setViceCaptain('${team._id}', '${member._id}')">
-                                <i class="fas fa-star"></i> Vice
-                            </button>
-                        ` : ''}
-                    </div>
-                </div>
-            `;
-        }).join('')
-        : '<p style="color: #64748b;">Nessun membro</p>';
-
-    const feedbackList = feedbackData.feedback && feedbackData.feedback.length > 0
-        ? feedbackData.feedback.map(fb => {
-            const stars = '⭐'.repeat(fb.rating);
-            const tags = fb.tags && fb.tags.length > 0
-                ? `<div class="feedback-tags-compact">${fb.tags.map(tag => `<span class="feedback-tag-compact">${tag}</span>`).join(' ')}</div>`
-                : '';
-            const comment = fb.comment ? `<p class="feedback-comment-compact">${fb.comment}</p>` : '';
-            const date = new Date(fb.createdAt).toLocaleDateString(currentLang());
-            
-            return `
-                <div class="feedback-item-compact">
-                    <div class="feedback-header-compact">
-                        <span class="feedback-user-compact">
-                            <i class="fas fa-user-circle"></i> ${fb.fromUser.username}
-                        </span>
-                        <span class="feedback-rating-compact">${stars}</span>
-                    </div>
-                    ${tags}
-                    ${comment}
-                    <span class="feedback-date-compact">${date}</span>
-                </div>
-            `;
-        }).join('')
-        : '<div class="empty-state"><i class="fas fa-star"></i><p>Nessun feedback ancora</p></div>';
-
-    const actionButtons = [];
-    
-    if (!isMember && currentUser && !currentUser.team && team.lookingForPlayers && currentUser.profileCompleted) {
-        actionButtons.push(`
-            <button class="btn btn-success" onclick="requestJoinTeam('${team._id}')">
-                <i class="fas fa-paper-plane"></i>
-                Richiedi di Unirti
-            </button>
-        `);
-    }
-    
-    if (isMember && !isCaptain) {
-        actionButtons.push(`
-            <button class="btn btn-danger" onclick="leaveTeam('${team._id}')">
-                <i class="fas fa-sign-out-alt"></i>
-                Lascia Squadra
-            </button>
-        `);
-    }
-    
-    if (!isMember) {
-        actionButtons.push(`
-            <button class="btn btn-primary" onclick="openFeedbackModalInline('${team._id}', 'team')">
-                <i class="fas fa-star"></i>
-                Lascia Feedback
-            </button>
-        `);
-    }
-
-    const lookingForPlayers = team.lookingForPlayers ? 'Sì' : 'No';
-
-    const content = `
-        <div class="team-detail-header">
-            <div class="detail-avatar">
-                <i class="fas fa-shield-alt"></i>
-            </div>
-            <div class="detail-info">
-                <h2>${team.name}</h2>
-                <div class="detail-meta">
-                    <div class="meta-item">
-                        <i class="fas fa-gamepad"></i>
-                        <span>${team.platform}</span>
-                    </div>
-                    <div class="meta-item">
-                        <i class="fas fa-flag"></i>
-                        <span>${team.nationality}</span>
-                    </div>
-                    <div class="meta-item">
-                        <i class="fas fa-users"></i>
-                        <span>${team.members.length} membri</span>
-                    </div>
-                    <div class="meta-item">
-                        <i class="fas fa-star"></i>
-                        <span>${team.averageRating.toFixed(1)} (${team.feedbackCount} feedback)</span>
-                    </div>
-                    <div class="meta-item">
-                        <i class="fas fa-search"></i>
-                        <span>Cercano giocatori: ${lookingForPlayers}</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="info-grid">
-            ${team.description ? `
-                <div class="info-card">
-                    <h4><i class="fas fa-info-circle"></i> Descrizione</h4>
-                    <p>${team.description}</p>
-                </div>
-            ` : ''}
-            ${socialLinks.length > 0 ? `
-                <div class="info-card">
-                    <h4><i class="fas fa-share-alt"></i> Social & Live</h4>
-                    <div class="social-links">${socialLinks.join('')}</div>
-                </div>
-            ` : ''}
-        </div>
-
-        ${actionButtons.length > 0 ? `
-            <div class="detail-actions">
-                ${actionButtons.join('')}
-            </div>
-            <div id="inlineFeedbackForm" style="display: none; margin: 2rem 0;"></div>
-        ` : ''}
-
-        <div class="team-members">
-            <h4><i class="fas fa-users"></i> Membri della Squadra</h4>
-            <div class="member-list">
-                ${membersList}
-            </div>
-        </div>
-
-        <div class="feedback-section-compact">
-            <h3><i class="fas fa-star"></i> Feedback Ricevuti</h3>
-            <div class="feedback-list-compact">
-                ${feedbackList}
-            </div>
-        </div>
-    `;
-
-    document.getElementById('teamDetailContent').innerHTML = content;
-    document.getElementById('teamDetailModal').classList.add('active');
-}
-
-function closeTeamDetailModalFn() {
-    const modal = document.getElementById('teamDetailModal');
-    if (modal) modal.classList.remove('active');
-}
-
-// ============================================
-// FEEDBACK INLINE (NUOVO)
-// ============================================
-
-function openFeedbackModalInline(targetId, type) {
-    const container = document.getElementById('inlineFeedbackForm');
-    if (!container) return;
-
-    selectedTags = [];
-    selectedRating = 0;
-
-    const form = `
-        <div class="feedback-form-inline">
-            <h3><i class="fas fa-star"></i> Lascia il tuo Feedback</h3>
-            
-            <div class="form-group">
-                <label>Valutazione *</label>
-                <div class="star-rating" id="inlineStarRating">
-                    <i class="far fa-star" data-rating="1"></i>
-                    <i class="far fa-star" data-rating="2"></i>
-                    <i class="far fa-star" data-rating="3"></i>
-                    <i class="far fa-star" data-rating="4"></i>
-                    <i class="far fa-star" data-rating="5"></i>
-                </div>
-            </div>
-            
-            <div class="form-group">
-                <label>Tag (opzionale)</label>
-                <div class="tag-selector" id="inlineTagSelector">
-                    <button type="button" class="tag-btn" data-tag="Serio"><i class="fas fa-user-tie"></i> Serio</button>
-                    <button type="button" class="tag-btn" data-tag="Comunicativo"><i class="fas fa-comments"></i> Comunicativo</button>
-                    <button type="button" class="tag-btn" data-tag="Divertente"><i class="fas fa-laugh"></i> Divertente</button>
-                    <button type="button" class="tag-btn" data-tag="Tossico"><i class="fas fa-skull-crossbones"></i> Tossico</button>
-                    <button type="button" class="tag-btn" data-tag="Giocatore di squadra"><i class="fas fa-users"></i> Squadra</button>
-                    <button type="button" class="tag-btn" data-tag="Leader"><i class="fas fa-crown"></i> Leader</button>
-                    <button type="button" class="tag-btn" data-tag="Affidabile"><i class="fas fa-handshake"></i> Affidabile</button>
-                    <button type="button" class="tag-btn" data-tag="Puntuale"><i class="fas fa-clock"></i> Puntuale</button>
-                    <button type="button" class="tag-btn" data-tag="Tecnico"><i class="fas fa-futbol"></i> Tecnico</button>
-                    <button type="button" class="tag-btn" data-tag="Tattico"><i class="fas fa-chess"></i> Tattico</button>
-                </div>
-            </div>
-            
-            <div class="form-group">
-                <label>Commento (opzionale)</label>
-                <textarea id="inlineFeedbackComment" class="textarea" rows="3" maxlength="500"></textarea>
-            </div>
-            
-            <div style="display: flex; gap: 1rem;">
-                <button class="btn btn-primary" onclick="submitInlineFeedback('${targetId}', '${type}')">
-                    <i class="fas fa-paper-plane"></i> Invia Feedback
-                </button>
-                <button class="btn btn-secondary" onclick="closeInlineFeedback()">
-                    <i class="fas fa-times"></i> Annulla
-                </button>
-            </div>
-        </div>
-    `;
-
-    container.innerHTML = form;
-    container.style.display = 'block';
-
-    // Setup inline star rating
-    const stars = document.querySelectorAll('#inlineStarRating i');
-    stars.forEach((star, index) => {
-        star.addEventListener('click', () => {
-            selectedRating = index + 1;
-            stars.forEach((s, i) => {
-                if (i <= index) {
-                    s.classList.remove('far');
-                    s.classList.add('fas', 'active');
-                } else {
-                    s.classList.remove('fas', 'active');
-                    s.classList.add('far');
-                }
-            });
-        });
-    });
-
-    // Setup inline tag selector
-    const tagButtons = document.querySelectorAll('#inlineTagSelector .tag-btn');
-    tagButtons.forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.preventDefault();
-            const tag = btn.dataset.tag;
-            
-            if (selectedTags.includes(tag)) {
-                selectedTags = selectedTags.filter(t => t !== tag);
-                btn.classList.remove('active');
-            } else {
-                selectedTags.push(tag);
-                btn.classList.add('active');
-            }
-        });
-    });
-
-    container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-}
-
-function closeInlineFeedback() {
-    const container = document.getElementById('inlineFeedbackForm');
-    if (container) {
-        container.style.display = 'none';
-        container.innerHTML = '';
-    }
-    selectedTags = [];
-    selectedRating = 0;
-}
-
-async function submitInlineFeedback(targetId, type) {
-    if (!selectedRating || selectedRating < 1 || selectedRating > 5) {
-        showNotification('⚠️ Seleziona una valutazione (1-5 stelle)', 'error');
-        return;
-    }
-
-    const comment = document.getElementById('inlineFeedbackComment')?.value.trim() || '';
-
-    try {
-        showLoading();
-        const response = await fetch(`${API_BASE}/feedback`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            },
-            body: JSON.stringify({
-                targetUserId: type === 'user' ? targetId : undefined,
-                targetTeamId: type === 'team' ? targetId : undefined,
-                rating: selectedRating,
-                comment,
-                tags: selectedTags
-            })
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-            closeInlineFeedback();
-            showNotification('✅ Feedback inviato con successo!', 'success');
-            
-            // Refresh the detail view
-            if (type === 'user') {
-                showPlayerDetail(targetId);
-            } else if (type === 'team') {
-                showTeamDetail(targetId);
-            }
-        } else {
-            showNotification('❌ ' + (data.error || 'Errore durante l\'invio del feedback'), 'error');
-        }
-    } catch (error) {
-        console.error('Submit feedback error:', error);
-        showNotification('❌ Errore di connessione', 'error');
-    } finally {
-        hideLoading();
-    }
-}
-
-// ============================================
-// TEAM ACTIONS
-// ============================================
-
-async function requestJoinTeam(teamId) {
-    if (!currentUser.profileCompleted) {
-        showNotification('⚠️ Devi completare il profilo prima di unirti a una squadra', 'error');
-        navigateTo('profile');
-        return;
-    }
-
-    if (!confirm('Vuoi inviare la richiesta per unirti a questa squadra?')) return;
-
-    try {
-        showLoading();
-        const response = await fetch(`${API_BASE}/requests?action=create`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            },
-            body: JSON.stringify({ teamId })
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-            showNotification('✅ Richiesta inviata con successo!', 'success');
-            closeTeamDetailModalFn();
-        } else {
-            showNotification('❌ ' + (data.error || 'Errore durante l\'invio della richiesta'), 'error');
-        }
-    } catch (error) {
-        console.error('Request join team error:', error);
-        showNotification('❌ Errore di connessione', 'error');
-    } finally {
-        hideLoading();
-    }
-}
-
-async function leaveTeam(teamId) {
-    if (!confirm('Sei sicuro di voler lasciare questa squadra?')) return;
-
-    try {
-        showLoading();
-        const response = await fetch(`${API_BASE}/teams`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            },
-            body: JSON.stringify({ teamId, action: 'leave' })
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-            showNotification('👋 Hai lasciato la squadra', 'info');
-            closeTeamDetailModalFn();
-            await fetchCurrentUser();
-            searchTeams();
-        } else {
-            showNotification('❌ ' + (data.error || 'Errore durante l\'operazione'), 'error');
-        }
-    } catch (error) {
-        console.error('Leave team error:', error);
-        showNotification('❌ Errore di connessione', 'error');
-    } finally {
-        hideLoading();
-    }
-}
-
-async function removeMember(teamId, memberId) {
-    if (!confirm('Sei sicuro di voler espellere questo membro? (Solo il capitano può farlo)')) return;
-
-    try {
-        showLoading();
-        const response = await fetch(`${API_BASE}/teams`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            },
-            body: JSON.stringify({ teamId, action: 'removeMember', targetUserId: memberId })
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-            showNotification('✅ Membro espulso con successo', 'success');
-            showTeamDetail(teamId);
-        } else {
-            showNotification('❌ ' + (data.error || 'Errore durante l\'operazione'), 'error');
-        }
-    } catch (error) {
-        console.error('Remove member error:', error);
-        showNotification('❌ Errore di connessione', 'error');
-    } finally {
-        hideLoading();
-    }
-}
-
-async function setViceCaptain(teamId, memberId) {
-    if (!confirm('Vuoi nominare questo giocatore come vice capitano?')) return;
-
-    try {
-        showLoading();
-        const response = await fetch(`${API_BASE}/teams`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            },
-            body: JSON.stringify({ teamId, action: 'setViceCaptain', targetUserId: memberId })
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-            showNotification('✅ Vice capitano nominato!', 'success');
-            showTeamDetail(teamId);
-        } else {
-            showNotification('❌ ' + (data.error || 'Errore durante l\'operazione'), 'error');
-        }
-    } catch (error) {
-        console.error('Set vice captain error:', error);
-        showNotification('❌ Errore di connessione', 'error');
-    } finally {
-        hideLoading();
-    }
-}
-
 // CREATE TEAM
 function openCreateTeamModal() {
     if (!currentUser) {
@@ -1775,7 +1269,7 @@ function openCreateTeamModal() {
     }
 
     if (!currentUser.profileCompleted) {
-        showNotification('⚠️ Devi completare il profilo prima di creare una squadra', 'error');
+        showProfileIncompleteMessage();
         navigateTo('profile');
         return;
     }
@@ -1843,381 +1337,9 @@ async function handleCreateTeam(e) {
 }
 
 // ============================================
-// UTILITY FUNCTIONS
+// CONTINUAZIONE app.js - PARTE 5/5 FINALE
+// ADMIN DASHBOARD + UTILITY FUNCTIONS
 // ============================================
-
-function setupStarRating() {
-    const stars = document.querySelectorAll('.star-rating i');
-    
-    stars.forEach((star, index) => {
-        star.addEventListener('click', () => {
-            selectedRating = index + 1;
-            document.getElementById('feedbackRating').value = selectedRating;
-            
-            stars.forEach((s, i) => {
-                if (i <= index) {
-                    s.classList.remove('far');
-                    s.classList.add('fas', 'active');
-                } else {
-                    s.classList.remove('fas', 'active');
-                    s.classList.add('far');
-                }
-            });
-        });
-    });
-}
-
-function setupTagSelector() {
-    const tagButtons = document.querySelectorAll('.tag-btn');
-    
-    tagButtons.forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.preventDefault();
-            const tag = btn.dataset.tag;
-            
-            if (selectedTags.includes(tag)) {
-                selectedTags = selectedTags.filter(t => t !== tag);
-                btn.classList.remove('active');
-            } else {
-                selectedTags.push(tag);
-                btn.classList.add('active');
-            }
-        });
-    });
-}
-
-function showNotification(message, type = 'info') {
-    const notification = document.getElementById('notification');
-    if (!notification) return;
-    
-    notification.textContent = message;
-    notification.className = `notification ${type}`;
-    notification.style.display = 'block';
-
-    setTimeout(() => {
-        notification.style.display = 'none';
-    }, 5000);
-}
-
-function showLoading() {
-    const overlay = document.getElementById('loadingOverlay');
-    if (overlay) overlay.classList.add('active');
-}
-
-function hideLoading() {
-    const overlay = document.getElementById('loadingOverlay');
-    if (overlay) overlay.classList.remove('active');
-}
-
-// ============================================
-// GLOBAL FUNCTIONS FOR ONCLICK
-// ============================================
-
-window.showPlayerDetail = showPlayerDetail;
-window.showTeamDetail = showTeamDetail;
-window.openFeedbackModalInline = openFeedbackModalInline;
-window.submitInlineFeedback = submitInlineFeedback;
-window.closeInlineFeedback = closeInlineFeedback;
-window.requestJoinTeam = requestJoinTeam;
-window.leaveTeam = leaveTeam;
-window.removeMember = removeMember;
-window.setViceCaptain = setViceCaptain;
-// CONTINUAZIONE DI app.js - PARTE 4 FINALE
-
-// ============================================
-// REQUESTS
-// ============================================
-
-async function loadRequests() {
-    if (!currentUser || !currentTeam) {
-        showNotification('⚠️ Non hai i permessi per vedere le richieste', 'error');
-        navigateTo('home');
-        return;
-    }
-
-    loadReceivedRequests();
-    loadSentRequests();
-}
-
-function switchRequestsTab(tab) {
-    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-    document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
-
-    document.getElementById('receivedRequests').style.display = tab === 'received' ? 'grid' : 'none';
-    document.getElementById('sentRequests').style.display = tab === 'sent' ? 'grid' : 'none';
-
-    if (tab === 'received') {
-        loadReceivedRequests();
-    } else {
-        loadSentRequests();
-    }
-}
-
-async function loadReceivedRequests() {
-    if (!currentTeam) return;
-
-    try {
-        showLoading();
-        const response = await fetch(`${API_BASE}/requests?teamId=${currentTeam._id}`, {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-            displayReceivedRequests(data.requests);
-        } else {
-            showNotification('❌ Errore nel caricamento richieste', 'error');
-        }
-    } catch (error) {
-        console.error('Load received requests error:', error);
-        showNotification('❌ Errore di connessione', 'error');
-    } finally {
-        hideLoading();
-    }
-}
-
-async function loadSentRequests() {
-    try {
-        showLoading();
-        const response = await fetch(`${API_BASE}/requests?playerId=${currentUser._id}`, {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-            displaySentRequests(data.requests);
-        } else {
-            showNotification('❌ Errore nel caricamento richieste', 'error');
-        }
-    } catch (error) {
-        console.error('Load sent requests error:', error);
-        showNotification('❌ Errore di connessione', 'error');
-    } finally {
-        hideLoading();
-    }
-}
-
-function displayReceivedRequests(requests) {
-    const container = document.getElementById('receivedRequests');
-
-    if (requests.length === 0) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <i class="fas fa-inbox"></i>
-                <p>Nessuna richiesta ricevuta</p>
-            </div>
-        `;
-        return;
-    }
-
-    container.innerHTML = requests.map(req => {
-        const player = req.playerDetails;
-        if (!player) return '';
-
-        const date = new Date(req.createdAt).toLocaleDateString(currentLang());
-        const isPending = req.status === 'pending';
-
-        return `
-            <div class="request-card">
-                <div class="request-header">
-                    <div class="request-info">
-                        <div class="request-avatar">
-                            <i class="fas fa-user-circle"></i>
-                        </div>
-                        <div class="request-details">
-                            <h4>${player.username}</h4>
-                            <p class="request-meta">
-                                ${player.primaryRole} - Livello ${player.level} - ${player.platform}
-                            </p>
-                            <p class="request-meta">Richiesta inviata il ${date}</p>
-                        </div>
-                    </div>
-                    ${isPending ? `
-                        <div class="request-actions">
-                            <button class="btn btn-small btn-success" onclick="approveRequest('${req._id}')">
-                                <i class="fas fa-check"></i>
-                                Approva
-                            </button>
-                            <button class="btn btn-small btn-danger" onclick="rejectRequest('${req._id}')">
-                                <i class="fas fa-times"></i>
-                                Rifiuta
-                            </button>
-                            <button class="btn btn-small btn-primary" onclick="showPlayerDetail('${player._id}')">
-                                <i class="fas fa-eye"></i>
-                                Vedi
-                            </button>
-                        </div>
-                    ` : `
-                        <span class="request-status ${req.status}">${req.status === 'approved' ? 'Approvata' : 'Rifiutata'}</span>
-                    `}
-                </div>
-            </div>
-        `;
-    }).join('');
-}
-
-function displaySentRequests(requests) {
-    const container = document.getElementById('sentRequests');
-
-    if (requests.length === 0) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <i class="fas fa-paper-plane"></i>
-                <p>Nessuna richiesta inviata</p>
-            </div>
-        `;
-        return;
-    }
-
-    container.innerHTML = requests.map(req => {
-        const team = req.teamDetails;
-        if (!team) return '';
-
-        const date = new Date(req.createdAt).toLocaleDateString(currentLang());
-        const isPending = req.status === 'pending';
-
-        let statusText = 'In attesa';
-        let statusClass = 'pending';
-        
-        if (req.status === 'approved') {
-            statusText = 'Approvata';
-            statusClass = 'approved';
-        } else if (req.status === 'rejected') {
-            statusText = 'Rifiutata';
-            statusClass = 'rejected';
-        } else if (req.status === 'cancelled') {
-            statusText = 'Cancellata';
-            statusClass = 'rejected';
-        }
-
-        return `
-            <div class="request-card">
-                <div class="request-header">
-                    <div class="request-info">
-                        <div class="request-avatar">
-                            <i class="fas fa-shield-alt"></i>
-                        </div>
-                        <div class="request-details">
-                            <h4>${team.name}</h4>
-                            <p class="request-meta">${team.platform} - ${team.members.length} membri</p>
-                            <p class="request-meta">Richiesta inviata il ${date}</p>
-                        </div>
-                    </div>
-                    <div class="request-actions">
-                        <span class="request-status ${statusClass}">${statusText}</span>
-                        ${isPending ? `
-                            <button class="btn btn-small btn-danger" onclick="cancelRequest('${req._id}')">
-                                <i class="fas fa-times"></i>
-                                Cancella
-                            </button>
-                        ` : ''}
-                        <button class="btn btn-small btn-primary" onclick="showTeamDetail('${team._id}')">
-                            <i class="fas fa-eye"></i>
-                            Vedi
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `;
-    }).join('');
-}
-
-async function approveRequest(requestId) {
-    if (!confirm('Vuoi approvare questa richiesta?')) return;
-
-    try {
-        showLoading();
-        const response = await fetch(`${API_BASE}/requests?action=approve`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            },
-            body: JSON.stringify({ requestId })
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-            showNotification('✅ Richiesta approvata! Il giocatore è ora nella squadra.', 'success');
-            loadReceivedRequests();
-            await fetchCurrentUser();
-        } else {
-            showNotification('❌ ' + (data.error || 'Errore durante l\'approvazione'), 'error');
-        }
-    } catch (error) {
-        console.error('Approve request error:', error);
-        showNotification('❌ Errore di connessione', 'error');
-    } finally {
-        hideLoading();
-    }
-}
-
-async function rejectRequest(requestId) {
-    if (!confirm('Vuoi rifiutare questa richiesta?')) return;
-
-    try {
-        showLoading();
-        const response = await fetch(`${API_BASE}/requests?action=reject`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            },
-            body: JSON.stringify({ requestId })
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-            showNotification('✅ Richiesta rifiutata', 'info');
-            loadReceivedRequests();
-        } else {
-            showNotification('❌ ' + (data.error || 'Errore durante il rifiuto'), 'error');
-        }
-    } catch (error) {
-        console.error('Reject request error:', error);
-        showNotification('❌ Errore di connessione', 'error');
-    } finally {
-        hideLoading();
-    }
-}
-
-async function cancelRequest(requestId) {
-    if (!confirm('Vuoi cancellare questa richiesta?')) return;
-
-    try {
-        showLoading();
-        const response = await fetch(`${API_BASE}/requests`, {
-            method: 'DELETE',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            },
-            body: JSON.stringify({ requestId })
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-            showNotification('✅ Richiesta cancellata', 'info');
-            loadSentRequests();
-        } else {
-            showNotification('❌ ' + (data.error || 'Errore durante la cancellazione'), 'error');
-        }
-    } catch (error) {
-        console.error('Cancel request error:', error);
-        showNotification('❌ Errore di connessione', 'error');
-    } finally {
-        hideLoading();
-    }
-}
 
 // ============================================
 // ADMIN DASHBOARD
@@ -2247,6 +1369,18 @@ async function loadAdminDashboard() {
             document.getElementById('pendingRequests').textContent = stats.pendingRequests;
         }
 
+        const levelResponse = await fetch(`${API_BASE}/admin?action=level-settings`, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+
+        if (levelResponse.ok) {
+            const levelSettings = await levelResponse.json();
+            document.getElementById('adminMinLevel').value = levelSettings.minLevel;
+            document.getElementById('adminMaxLevel').value = levelSettings.maxLevel;
+        }
+
         const usersResponse = await fetch(`${API_BASE}/admin?action=users`, {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -2261,6 +1395,52 @@ async function loadAdminDashboard() {
     } catch (error) {
         console.error('Load admin dashboard error:', error);
         showNotification('❌ Errore nel caricamento dashboard', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+async function handleUpdateLevelSettings(e) {
+    e.preventDefault();
+
+    const minLevel = parseInt(document.getElementById('adminMinLevel').value);
+    const maxLevel = parseInt(document.getElementById('adminMaxLevel').value);
+
+    if (minLevel < 1) {
+        showNotification('⚠️ Il livello minimo deve essere almeno 1', 'error');
+        return;
+    }
+
+    if (maxLevel < minLevel) {
+        showNotification('⚠️ Il livello massimo deve essere maggiore del minimo', 'error');
+        return;
+    }
+
+    if (!confirm(`Vuoi impostare i limiti:\nMinimo: ${minLevel}\nMassimo: ${maxLevel}\n\nGli utenti potranno impostare solo livelli in questo range.`)) {
+        return;
+    }
+
+    try {
+        showLoading();
+        const response = await fetch(`${API_BASE}/admin?action=level-settings`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({ minLevel, maxLevel })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            showNotification(`✅ Limiti aggiornati: ${minLevel} - ${maxLevel}`, 'success');
+        } else {
+            showNotification('❌ ' + (data.error || 'Errore durante l\'aggiornamento'), 'error');
+        }
+    } catch (error) {
+        console.error('Update level settings error:', error);
+        showNotification('❌ Errore di connessione', 'error');
     } finally {
         hideLoading();
     }
@@ -2284,7 +1464,7 @@ function displayUsersList(users) {
             <div class="user-item">
                 <div class="user-item-info">
                     <h4>${user.username} ${statusBadge}</h4>
-                    <p>${user.email} - ${user.platform} - Livello ${user.level}</p>
+                    <p>${user.platform} - Livello ${user.level} - ${user.nationality}</p>
                 </div>
                 <div class="user-item-actions">
                     ${isSuspended ? `
@@ -2491,12 +1671,99 @@ async function handleSendNewsletter(e) {
 }
 
 // ============================================
-// GLOBAL FUNCTIONS EXPORTS
+// UTILITY FUNCTIONS
 // ============================================
 
+function setupStarRating() {
+    const stars = document.querySelectorAll('.star-rating i');
+    
+    stars.forEach((star, index) => {
+        star.addEventListener('click', () => {
+            selectedRating = index + 1;
+            document.getElementById('feedbackRating').value = selectedRating;
+            
+            stars.forEach((s, i) => {
+                if (i <= index) {
+                    s.classList.remove('far');
+                    s.classList.add('fas', 'active');
+                } else {
+                    s.classList.remove('fas', 'active');
+                    s.classList.add('far');
+                }
+            });
+        });
+    });
+}
+
+function setupTagSelector() {
+    const tagButtons = document.querySelectorAll('.tag-btn');
+    
+    tagButtons.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const tag = btn.dataset.tag;
+            
+            if (selectedTags.includes(tag)) {
+                selectedTags = selectedTags.filter(t => t !== tag);
+                btn.classList.remove('active');
+            } else {
+                selectedTags.push(tag);
+                btn.classList.add('active');
+            }
+        });
+    });
+}
+
+function showNotification(message, type = 'info') {
+    const notification = document.getElementById('notification');
+    if (!notification) return;
+    
+    notification.textContent = message;
+    notification.className = `notification ${type}`;
+    notification.style.display = 'block';
+
+    setTimeout(() => {
+        notification.style.display = 'none';
+    }, 5000);
+}
+
+function showLoading() {
+    const overlay = document.getElementById('loadingOverlay');
+    if (overlay) overlay.classList.add('active');
+}
+
+function hideLoading() {
+    const overlay = document.getElementById('loadingOverlay');
+    if (overlay) overlay.classList.remove('active');
+}
+
+function currentLang() {
+    return localStorage.getItem('language') || 'it';
+}
+
+// ============================================
+// GLOBAL FUNCTIONS FOR ONCLICK
+// ============================================
+
+window.showPlayerDetail = showPlayerDetail;
+window.showTeamDetail = showTeamDetail;
+window.openFeedbackModalInline = openFeedbackModalInline;
+window.submitInlineFeedback = submitInlineFeedback;
+window.closeInlineFeedback = closeInlineFeedback;
+window.requestJoinTeam = requestJoinTeam;
+window.leaveTeam = leaveTeam;
+window.removeMember = removeMember;
+window.setViceCaptain = setViceCaptain;
 window.approveRequest = approveRequest;
 window.rejectRequest = rejectRequest;
 window.cancelRequest = cancelRequest;
 window.suspendUser = suspendUser;
 window.unsuspendUser = unsuspendUser;
 window.deleteUser = deleteUser;
+
+// ============================================
+// NOTA: Le funzioni showPlayerDetail, showTeamDetail, 
+// feedback inline, requests, etc. sono nelle parti 
+// precedenti che hai già (app.js parte 1-4 della chat precedente)
+// Unisci TUTTE le 5 parti in un unico file app.js
+// ============================================
