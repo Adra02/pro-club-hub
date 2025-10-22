@@ -268,14 +268,235 @@ function updateUIForGuest() {
 // ============================================
 
 function setupEventListeners() {
-    // Navigation
+    console.log('🔧 Setting up event listeners...');
+    
+    // Navigation - con log
     document.querySelectorAll('.nav-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
             const page = e.currentTarget.dataset.page;
+            console.log('Nav clicked:', page);
             navigateTo(page);
         });
     });
 
+    // Auth buttons - CON FIX CRITICO
+    const heroLoginBtn = document.getElementById('heroLoginBtn');
+    const heroRegisterBtn = document.getElementById('heroRegisterBtn');
+    
+    if (heroLoginBtn) {
+        console.log('✅ heroLoginBtn found');
+        heroLoginBtn.style.pointerEvents = 'auto';
+        heroLoginBtn.style.cursor = 'pointer';
+        heroLoginBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('🔵 Login button clicked!');
+            openAuthModal('login');
+        }, true); // USE CAPTURE
+    } else {
+        console.error('❌ heroLoginBtn NOT FOUND');
+    }
+    
+    if (heroRegisterBtn) {
+        console.log('✅ heroRegisterBtn found');
+        heroRegisterBtn.style.pointerEvents = 'auto';
+        heroRegisterBtn.style.cursor = 'pointer';
+        heroRegisterBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('🟢 Register button clicked!');
+            openAuthModal('register');
+        }, true); // USE CAPTURE
+    } else {
+        console.error('❌ heroRegisterBtn NOT FOUND');
+    }
+    
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            logout();
+        }, true);
+    }
+
+    // Auth form switches
+    const showRegisterForm = document.getElementById('showRegisterForm');
+    const showLoginForm = document.getElementById('showLoginForm');
+    const showForgotPassword = document.getElementById('showForgotPassword');
+    const backToLogin = document.getElementById('backToLogin');
+    
+    if (showRegisterForm) {
+        showRegisterForm.addEventListener('click', (e) => {
+            e.preventDefault();
+            switchAuthForm('register');
+        });
+    }
+    if (showLoginForm) {
+        showLoginForm.addEventListener('click', (e) => {
+            e.preventDefault();
+            switchAuthForm('login');
+        });
+    }
+    if (showForgotPassword) {
+        showForgotPassword.addEventListener('click', (e) => {
+            e.preventDefault();
+            switchAuthForm('forgot');
+        });
+    }
+    if (backToLogin) {
+        backToLogin.addEventListener('click', (e) => {
+            e.preventDefault();
+            switchAuthForm('login');
+        });
+    }
+
+    // Modal closes
+    const closeAuthModal = document.getElementById('closeAuthModal');
+    if (closeAuthModal) {
+        closeAuthModal.addEventListener('click', (e) => {
+            e.stopPropagation();
+            closeAuthModalFn();
+        });
+    }
+
+    const closePlayerDetailModal = document.getElementById('closePlayerDetailModal');
+    if (closePlayerDetailModal) {
+        closePlayerDetailModal.addEventListener('click', (e) => {
+            e.stopPropagation();
+            closePlayerDetailModalFn();
+        });
+    }
+
+    const closeTeamDetailModal = document.getElementById('closeTeamDetailModal');
+    if (closeTeamDetailModal) {
+        closeTeamDetailModal.addEventListener('click', (e) => {
+            e.stopPropagation();
+            closeTeamDetailModalFn();
+        });
+    }
+
+    const closeFeedbackModal = document.getElementById('closeFeedbackModal');
+    if (closeFeedbackModal) {
+        closeFeedbackModal.addEventListener('click', (e) => {
+            e.stopPropagation();
+            closeFeedbackModalFn();
+        });
+    }
+
+    // Forms
+    const loginFormElement = document.getElementById('loginFormElement');
+    if (loginFormElement) loginFormElement.addEventListener('submit', handleLogin);
+
+    const registerFormElement = document.getElementById('registerFormElement');
+    if (registerFormElement) registerFormElement.addEventListener('submit', handleRegister);
+
+    const forgotPasswordFormElement = document.getElementById('forgotPasswordFormElement');
+    if (forgotPasswordFormElement) forgotPasswordFormElement.addEventListener('submit', handleForgotPassword);
+
+    // Profile
+    const editProfileBtn = document.getElementById('editProfileBtn');
+    if (editProfileBtn) editProfileBtn.addEventListener('click', openEditProfileModal);
+
+    const closeEditModal = document.getElementById('closeEditModal');
+    if (closeEditModal) closeEditModal.addEventListener('click', closeEditProfileModal);
+
+    const editProfileForm = document.getElementById('editProfileForm');
+    if (editProfileForm) editProfileForm.addEventListener('submit', handleEditProfile);
+
+    const resetPasswordBtn = document.getElementById('resetPasswordBtn');
+    if (resetPasswordBtn) resetPasswordBtn.addEventListener('click', handleRequestPasswordReset);
+
+    // Teams
+    const createTeamBtn = document.getElementById('createTeamBtn');
+    if (createTeamBtn) createTeamBtn.addEventListener('click', openCreateTeamModal);
+
+    const closeCreateTeamModal = document.getElementById('closeCreateTeamModal');
+    if (closeCreateTeamModal) closeCreateTeamModal.addEventListener('click', closeCreateTeamModalFn);
+
+    const createTeamForm = document.getElementById('createTeamForm');
+    if (createTeamForm) createTeamForm.addEventListener('submit', handleCreateTeam);
+
+    // Search
+    const searchPlayersBtn = document.getElementById('searchPlayersBtn');
+    if (searchPlayersBtn) searchPlayersBtn.addEventListener('click', searchPlayers);
+
+    const searchTeamsBtn = document.getElementById('searchTeamsBtn');
+    if (searchTeamsBtn) searchTeamsBtn.addEventListener('click', searchTeams);
+
+    // Feedback
+    const feedbackForm = document.getElementById('feedbackForm');
+    if (feedbackForm) feedbackForm.addEventListener('submit', handleSubmitFeedback);
+
+    // Requests tabs
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const tab = e.currentTarget.dataset.tab;
+            switchRequestsTab(tab);
+        });
+    });
+
+    // Admin
+    const deleteAllTeamsBtn = document.getElementById('deleteAllTeamsBtn');
+    if (deleteAllTeamsBtn) deleteAllTeamsBtn.addEventListener('click', handleDeleteAllTeams);
+
+    const resetProfilesBtn = document.getElementById('resetProfilesBtn');
+    if (resetProfilesBtn) resetProfilesBtn.addEventListener('click', handleResetProfiles);
+
+    const newsletterForm = document.getElementById('newsletterForm');
+    if (newsletterForm) newsletterForm.addEventListener('submit', handleSendNewsletter);
+
+    const levelSettingsForm = document.getElementById('levelSettingsForm');
+    if (levelSettingsForm) levelSettingsForm.addEventListener('submit', handleLevelSettingsUpdate);
+
+    // Setup interactive elements
+    setupStarRating();
+    setupTagSelector();
+    setupSecondaryRolesLimit();
+    setupProfileCompletionCheck();
+
+    // Close modals on background click
+    document.querySelectorAll('.modal').forEach(modal => {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.classList.remove('active');
+                
+                if (modal.id === 'playerDetailModal') {
+                    setTimeout(() => {
+                        document.getElementById('playerDetailContent').innerHTML = '';
+                    }, 300);
+                } else if (modal.id === 'teamDetailModal') {
+                    setTimeout(() => {
+                        document.getElementById('teamDetailContent').innerHTML = '';
+                    }, 300);
+                }
+            }
+        });
+    });
+
+    // Close modals with ESC key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            document.querySelectorAll('.modal.active').forEach(modal => {
+                modal.classList.remove('active');
+                
+                if (modal.id === 'playerDetailModal') {
+                    setTimeout(() => {
+                        document.getElementById('playerDetailContent').innerHTML = '';
+                    }, 300);
+                } else if (modal.id === 'teamDetailModal') {
+                    setTimeout(() => {
+                        document.getElementById('teamDetailContent').innerHTML = '';
+                    }, 300);
+                }
+            });
+        }
+    });
+    
+    console.log('✅ Event listeners setup complete');
+}
     // Auth buttons
     const heroLoginBtn = document.getElementById('heroLoginBtn');
     const heroRegisterBtn = document.getElementById('heroRegisterBtn');
@@ -2711,3 +2932,4 @@ window.cancelRequest = cancelRequest;
 window.suspendUser = suspendUser;
 window.unsuspendUser = unsuspendUser;
 window.deleteUser = deleteUser;
+
