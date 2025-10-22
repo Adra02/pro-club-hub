@@ -320,62 +320,104 @@
 
         <!-- ADMIN PAGE -->
 
-<div class="admin-section">
-    <h3><i class="fas fa-cog"></i> <span data-i18n="admin.settings.title">Impostazioni Livelli</span></h3>
-    <form id="levelSettingsForm" class="level-settings-form">
-        <div class="form-row">
-            <div class="form-group">
-                <label data-i18n="admin.settings.minLevel">Livello Minimo Consentito</label>
-                <input type="number" id="adminMinLevel" class="input" min="1" value="1" required>
+        <div id="adminPage" class="page" style="display: none;">
+            <div class="container">
+                <div class="admin-dashboard">
+                    <h2 class="admin-title">
+                        <i class="fas fa-crown"></i>
+                        <span data-i18n="admin.title">Pannello Amministrativo</span>
+                    </h2>
+
+                    <div class="admin-stats">
+                        <div class="stat-card">
+                            <div class="stat-icon"><i class="fas fa-users"></i></div>
+                            <div class="stat-info">
+                                <h3 id="totalUsers">0</h3>
+                                <p data-i18n="admin.stats.users">Utenti Totali</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon"><i class="fas fa-shield-alt"></i></div>
+                            <div class="stat-info">
+                                <h3 id="totalTeams">0</h3>
+                                <p data-i18n="admin.stats.teams">Squadre Totali</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon"><i class="fas fa-user-clock"></i></div>
+                            <div class="stat-info">
+                                <h3 id="inactiveUsers">0</h3>
+                                <p data-i18n="admin.stats.inactive">Utenti Inattivi</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon"><i class="fas fa-envelope"></i></div>
+                            <div class="stat-info">
+                                <h3 id="pendingRequests">0</h3>
+                                <p data-i18n="admin.stats.requests">Richieste Pendenti</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="admin-section">
+                        <h3><i class="fas fa-sliders-h"></i> <span data-i18n="admin.settings.title">Impostazioni Livelli</span></h3>
+                        <form id="levelSettingsForm" class="level-settings-form">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label data-i18n="admin.settings.minLevel">Livello Minimo Consentito</label>
+                                    <input type="number" id="adminMinLevel" class="input" min="1" value="1" required>
+                                </div>
+                                <div class="form-group">
+                                    <label data-i18n="admin.settings.maxLevel">Livello Massimo Consentito</label>
+                                    <input type="number" id="adminMaxLevel" class="input" min="1" value="999" required>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i>
+                                <span data-i18n="admin.settings.save">Salva Limiti</span>
+                            </button>
+                        </form>
+                    </div>
+
+                    <div class="admin-section">
+                        <h3><i class="fas fa-tools"></i> <span data-i18n="admin.actions.title">Azioni Amministrative</span></h3>
+                        <div class="admin-actions">
+                            <button class="btn btn-danger btn-large" id="deleteAllTeamsBtn">
+                                <i class="fas fa-trash-alt"></i>
+                                <span data-i18n="admin.actions.deleteTeams">Elimina Tutte le Squadre</span>
+                            </button>
+                            <button class="btn btn-warning btn-large" id="resetProfilesBtn">
+                                <i class="fas fa-redo"></i>
+                                <span data-i18n="admin.actions.resetProfiles">Reset Profili Giocatori</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="admin-section">
+                        <h3><i class="fas fa-paper-plane"></i> <span data-i18n="admin.newsletter.title">Invia Newsletter</span></h3>
+                        <form id="newsletterForm" class="newsletter-form">
+                            <div class="form-group">
+                                <label data-i18n="admin.newsletter.subject">Oggetto</label>
+                                <input type="text" id="newsletterSubject" class="input" required>
+                            </div>
+                            <div class="form-group">
+                                <label data-i18n="admin.newsletter.message">Messaggio</label>
+                                <textarea id="newsletterMessage" class="textarea" rows="6" required></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-large">
+                                <i class="fas fa-send"></i>
+                                <span data-i18n="admin.newsletter.send">Invia a Tutti gli Utenti</span>
+                            </button>
+                        </form>
+                    </div>
+
+                    <div class="admin-section">
+                        <h3><i class="fas fa-users-cog"></i> <span data-i18n="admin.users.title">Gestione Utenti</span></h3>
+                        <div id="usersList" class="users-list"></div>
+                    </div>
+                </div>
             </div>
-            <div class="form-group">
-                <label data-i18n="admin.settings.maxLevel">Livello Massimo Consentito</label>
-                <input type="number" id="adminMaxLevel" class="input" min="1" value="999" required>
-            </div>
         </div>
-        <button type="submit" class="btn btn-primary">
-            <i class="fas fa-save"></i>
-            <span data-i18n="admin.settings.save">Salva Limiti</span>
-        </button>
-    </form>
-</div>
-
-<div class="admin-section">
-    <h3><i class="fas fa-tools"></i> <span data-i18n="admin.actions.title">Azioni Amministrative</span></h3>
-    <div class="admin-actions">
-        <button class="btn btn-danger btn-large" id="deleteAllTeamsBtn">
-            <i class="fas fa-trash-alt"></i>
-            <span data-i18n="admin.actions.deleteTeams">Elimina Tutte le Squadre</span>
-        </button>
-        <button class="btn btn-warning btn-large" id="resetProfilesBtn">
-            <i class="fas fa-redo"></i>
-            <span data-i18n="admin.actions.resetProfiles">Reset Profili Giocatori</span>
-        </button>
-    </div>
-</div>
-
-<div class="admin-section">
-    <h3><i class="fas fa-paper-plane"></i> <span data-i18n="admin.newsletter.title">Invia Newsletter</span></h3>
-    <form id="newsletterForm" class="newsletter-form">
-        <div class="form-group">
-            <label data-i18n="admin.newsletter.subject">Oggetto</label>
-            <input type="text" id="newsletterSubject" class="input" required>
-        </div>
-        <div class="form-group">
-            <label data-i18n="admin.newsletter.message">Messaggio</label>
-            <textarea id="newsletterMessage" class="textarea" rows="6" required></textarea>
-        </div>
-        <button type="submit" class="btn btn-primary btn-large">
-            <i class="fas fa-send"></i>
-            <span data-i18n="admin.newsletter.send">Invia a Tutti gli Utenti</span>
-        </button>
-    </form>
-</div>
-
-<div class="admin-section">
-    <h3><i class="fas fa-users-cog"></i> <span data-i18n="admin.users.title">Gestione Utenti</span></h3>
-    <div id="usersList" class="users-list"></div>
-</div>
 
     <!-- MODALS -->
     <div id="authModal" class="modal">
@@ -758,4 +800,5 @@
     <script src="/app.js"></script>
 </body>
 </html>
+
 
