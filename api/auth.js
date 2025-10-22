@@ -196,12 +196,27 @@ export default async function handler(req, res) {
 
       const updates = req.body;
 
+      // CRITICAL FIX: Validazione livello con auto-aggiustamento
       if (updates.level !== undefined) {
-        const level = parseInt(updates.level);
-        if (isNaN(level) || level < 1) {
-          return res.status(400).json({ error: 'Livello deve essere almeno 1' });
+        const levelNum = parseInt(updates.level);
+        
+        if (isNaN(levelNum)) {
+          return res.status(400).json({ error: 'Livello deve essere un numero' });
         }
-        updates.level = level;
+
+        // Ottieni i limiti correnti
+        const limits = await userModel.getLevelLimits();
+        
+        // Auto-aggiusta il livello se fuori range invece di dare errore
+        if (levelNum < limits.minLevel) {
+          updates.level = limits.minLevel;
+          console.log(`Level adjusted from ${levelNum} to ${limits.minLevel}`);
+        } else if (levelNum > limits.maxLevel) {
+          updates.level = limits.maxLevel;
+          console.log(`Level adjusted from ${levelNum} to ${limits.maxLevel}`);
+        } else {
+          updates.level = levelNum;
+        }
       }
 
       if (updates.secondaryRoles) {
