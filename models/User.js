@@ -49,7 +49,9 @@ export const NATIONALITIES = [
 
 export class UserModel {
   constructor(db) {
+    this.db = db;
     this.collection = db.collection('users');
+    this.settingsCollection = db.collection('settings');
     this.createIndexes();
   }
 
@@ -68,6 +70,38 @@ export class UserModel {
     }
   }
 
+  async getLevelLimits() {
+    try {
+      const settings = await this.settingsCollection.findOne({ _id: 'level_limits' });
+      return {
+        minLevel: settings?.minLevel || 1,
+        maxLevel: settings?.maxLevel || 999
+      };
+    } catch (error) {
+      console.error('Error getting level limits:', error);
+      return { minLevel: 1, maxLevel: 999 };
+    }
+  }
+
+  async validateLevel(level) {
+    const limits = await this.getLevelLimits();
+    const levelNum = parseInt(level);
+    
+    if (isNaN(levelNum)) {
+      throw new Error('Il livello deve essere un numero');
+    }
+    
+    if (levelNum < limits.minLevel) {
+      throw new Error(`Il livello minimo è ${limits.minLevel}`);
+    }
+    
+    if (levelNum > limits.maxLevel) {
+      throw new Error(`Il livello massimo è ${limits.maxLevel}`);
+    }
+    
+    return levelNum;
+  }
+
   async create(userData) {
     const { username, email, password, primaryRole, platform, level = 1, nationality = 'Italia' } = userData;
 
@@ -79,6 +113,9 @@ export class UserModel {
       throw new Error('Email o username già in uso');
     }
 
+    // Validate level with dynamic limits
+    const validatedLevel = await this.validateLevel(level);
+
     const hashedPassword = await bcrypt.hash(password, 12);
 
     const user = {
@@ -89,7 +126,7 @@ export class UserModel {
       secondaryRoles: [],
       platform,
       nationality,
-      level: Math.max(1, level),
+      level: validatedLevel,
       instagram: '',
       tiktok: '',
       bio: '',
@@ -151,8 +188,9 @@ export class UserModel {
       }
     }
 
+    // Validate level with dynamic limits if being updated
     if (filteredData.level !== undefined) {
-      filteredData.level = Math.max(1, filteredData.level);
+      filteredData.level = await this.validateLevel(filteredData.level);
     }
 
     if (updateData.password) {
