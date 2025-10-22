@@ -189,7 +189,7 @@ async function fetchCurrentUser() {
 }
 
 // ============================================
-// NUOVO: SISTEMA PREFERITI
+// SISTEMA PREFERITI - VERSIONE CORRETTA
 // ============================================
 
 async function loadUserFavorites() {
@@ -209,6 +209,7 @@ async function loadUserFavorites() {
         }
     } catch (error) {
         console.error('Error loading favorites:', error);
+        userFavorites = { giocatori: [], squadre: [] };
     }
 }
 
@@ -244,8 +245,18 @@ async function toggleFavorite(targetId, type) {
                 'success'
             );
             
-            // Aggiorna l'icona
-            updateFavoriteIcon(targetId, type);
+            // Aggiorna l'icona ovunque appaia
+            updateAllFavoriteIcons(targetId, type);
+            
+            // Se siamo nella pagina preferiti, ricarica la lista
+            const currentPage = document.querySelector('.page[style*="block"]');
+            if (currentPage && currentPage.id === 'favoritesPage') {
+                if (type === 'giocatori') {
+                    renderFavoritePlayers();
+                } else {
+                    renderFavoriteTeams();
+                }
+            }
         } else {
             const data = await response.json();
             showNotification('❌ ' + (data.error || 'Errore'), 'error');
@@ -258,16 +269,17 @@ async function toggleFavorite(targetId, type) {
     }
 }
 
-function updateFavoriteIcon(targetId, type) {
+function updateAllFavoriteIcons(targetId, type) {
     const isFavorite = type === 'giocatori'
         ? userFavorites.giocatori.some(g => g._id === targetId)
         : userFavorites.squadre.some(s => s._id === targetId);
 
-    const icon = document.querySelector(`[data-favorite-id="${targetId}"]`);
-    if (icon) {
+    // Trova TUTTE le icone con questo ID
+    const icons = document.querySelectorAll(`[data-favorite-id="${targetId}"]`);
+    icons.forEach(icon => {
         icon.className = isFavorite ? 'fas fa-heart' : 'far fa-heart';
         icon.style.color = isFavorite ? '#ef4444' : '#94a3b8';
-    }
+    });
 }
 
 async function loadFavoritesPage() {
@@ -278,7 +290,9 @@ async function loadFavoritesPage() {
     }
 
     await loadUserFavorites();
-    renderFavoritePlayers();
+    
+    // Inizia sempre con i giocatori
+    switchFavoritesTab('favorite-players');
 }
 
 function renderFavoritePlayers() {
@@ -290,6 +304,9 @@ function renderFavoritePlayers() {
             <div class="empty-state">
                 <i class="fas fa-heart-broken"></i>
                 <p>Nessun giocatore nei preferiti</p>
+                <p style="color: #64748b; font-size: 0.9rem; margin-top: 0.5rem;">
+                    Aggiungi giocatori ai preferiti dalla pagina di ricerca
+                </p>
             </div>
         `;
         return;
@@ -302,7 +319,14 @@ function renderFavoritePlayers() {
                     <i class="fas fa-user-circle"></i>
                 </div>
                 <div class="player-info">
-                    <h3>${player.username}</h3>
+                    <h3>
+                        ${player.username}
+                        <i class="fas fa-heart" 
+                           style="color: #ef4444; cursor: pointer; margin-left: 0.5rem;" 
+                           data-favorite-id="${player._id}"
+                           onclick="event.stopPropagation(); toggleFavorite('${player._id}', 'giocatori');">
+                        </i>
+                    </h3>
                     <p class="player-role">${player.primaryRole}</p>
                 </div>
             </div>
@@ -330,6 +354,9 @@ function renderFavoriteTeams() {
             <div class="empty-state">
                 <i class="fas fa-heart-broken"></i>
                 <p>Nessuna squadra nei preferiti</p>
+                <p style="color: #64748b; font-size: 0.9rem; margin-top: 0.5rem;">
+                    Aggiungi squadre ai preferiti dalla pagina di ricerca
+                </p>
             </div>
         `;
         return;
@@ -342,7 +369,14 @@ function renderFavoriteTeams() {
                     <i class="fas fa-shield-alt"></i>
                 </div>
                 <div class="team-info">
-                    <h3>${team.name}</h3>
+                    <h3>
+                        ${team.name}
+                        <i class="fas fa-heart" 
+                           style="color: #ef4444; cursor: pointer; margin-left: 0.5rem;" 
+                           data-favorite-id="${team._id}"
+                           onclick="event.stopPropagation(); toggleFavorite('${team._id}', 'squadre');">
+                        </i>
+                    </h3>
                     <p class="team-platform">${team.platform}</p>
                 </div>
             </div>
@@ -2727,3 +2761,4 @@ window.unsuspendUser = unsuspendUser;
 window.deleteUser = deleteUser;
 window.toggleFavorite = toggleFavorite;
 window.shareProfile = shareProfile;
+
