@@ -173,4 +173,14 @@ export class TeamRequestModel {
 
     return true;
   }
+
+  // CRITICAL FIX: Add countPending method
+  async countPending() {
+    try {
+      return await this.collection.countDocuments({ status: 'pending' });
+    } catch (error) {
+      console.error('Error counting pending requests:', error);
+      return 0;
+    }
+  }
 }
