@@ -765,8 +765,7 @@ async function resetPassword(token, newPassword) {
             showNotification('✅ Password reimpostata con successo! Ora puoi effettuare il login.', 'success');
             openAuthModal('login');
         } else {
-            showNotification('❌ ' + (data.error || '
-   Errore durante il reset'), 'error');
+            showNotification('❌ ' + (data.error || 'Errore durante il reset'), 'error');
         }
     } catch (error) {
         console.error('Reset password error:', error);
@@ -1548,8 +1547,7 @@ async function handleCreateTeam(e) {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             },
-            body: JSON.stringify({ name, description, platform, nationality, instagram, tiktok, liveLink, looking   
-              ForPlayers })
+            body: JSON.stringify({ name, description, platform, nationality, instagram, tiktok, liveLink, lookingForPlayers })
         });
 
         const data = await response.json();
@@ -2395,7 +2393,7 @@ async function deleteUser(userId) {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',
-              'Authorization': `Bearer ${localStorage.getItem('token')}`
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
             },
             body: JSON.stringify({ userId })
         });
