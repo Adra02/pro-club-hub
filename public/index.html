@@ -47,6 +47,10 @@
                             <i class="fas fa-shield-alt"></i>
                             <span data-i18n="nav.teams">Squadre</span>
                         </button>
+                        <button class="nav-btn" data-page="favorites" id="favoritesNavBtn" style="display: none;">
+                            <i class="fas fa-heart"></i>
+                            <span data-i18n="nav.favorites">Preferiti</span>
+                        </button>
                         <button class="nav-btn" data-page="requests" id="requestsNavBtn" style="display: none;">
                             <i class="fas fa-envelope"></i>
                             <span data-i18n="nav.requests">Richieste</span>
@@ -164,8 +168,8 @@
                         </select>
                         <select id="platformFilter" class="select">
                             <option value="" data-i18n="players.allPlatforms">Tutte le piattaforme</option>
-                            <option value="PlayStation">PlayStation</option>
-                            <option value="Xbox">Xbox</option>
+                            <option value="PlayStation 5">PlayStation 5</option>
+                            <option value="Xbox Series X/S">Xbox Series X/S</option>
                             <option value="PC">PC</option>
                         </select>
                     </div>
@@ -206,8 +210,8 @@
                     <input type="text" id="teamSearchInput" class="input" data-i18n-placeholder="teams.searchPlaceholder" placeholder="🔍 Cerca squadra...">
                     <select id="teamPlatformFilter" class="select">
                         <option value="" data-i18n="teams.allPlatforms">Tutte le piattaforme</option>
-                        <option value="PlayStation">PlayStation</option>
-                        <option value="Xbox">Xbox</option>
+                        <option value="PlayStation 5">PlayStation 5</option>
+                        <option value="Xbox Series X/S">Xbox Series X/S</option>
                         <option value="PC">PC</option>
                     </select>
                     <input type="text" id="teamNationalityFilter" class="input" list="teamNationalitiesList" data-i18n-placeholder="teams.nationality" placeholder="Nazionalità">
@@ -219,6 +223,29 @@
                 </div>
 
                 <div id="teamsResults" class="results-grid"></div>
+            </div>
+        </div>
+
+        <!-- FAVORITES PAGE -->
+        <div id="favoritesPage" class="page" style="display: none;">
+            <div class="container">
+                <div class="page-header">
+                    <h2><i class="fas fa-heart"></i> I Miei Preferiti</h2>
+                </div>
+
+                <div class="requests-tabs">
+                    <button class="tab-btn active" data-tab="favorite-players">
+                        <i class="fas fa-users"></i>
+                        Giocatori Preferiti
+                    </button>
+                    <button class="tab-btn" data-tab="favorite-teams">
+                        <i class="fas fa-shield-alt"></i>
+                        Squadre Preferite
+                    </button>
+                </div>
+
+                <div id="favoritePlayersContainer" class="results-grid"></div>
+                <div id="favoriteTeamsContainer" class="results-grid" style="display: none;"></div>
             </div>
         </div>
 
@@ -494,8 +521,8 @@
                         <label data-i18n="auth.platformLabel">Piattaforma</label>
                         <select id="registerPlatform" class="select" required>
                             <option value="" data-i18n="auth.selectPlatform">Seleziona piattaforma</option>
-                            <option value="PlayStation">PlayStation</option>
-                            <option value="Xbox">Xbox</option>
+                            <option value="PlayStation 5">PlayStation 5</option>
+                            <option value="Xbox Series X/S">Xbox Series X/S</option>
                             <option value="PC">PC</option>
                         </select>
                     </div>
@@ -613,8 +640,8 @@
                 <div class="form-group">
                     <label data-i18n="auth.platformLabel">Piattaforma</label>
                     <select id="editPlatform" class="select" required>
-                        <option value="PlayStation">PlayStation</option>
-                        <option value="Xbox">Xbox</option>
+                        <option value="PlayStation 5">PlayStation 5</option>
+                        <option value="Xbox Series X/S">Xbox Series X/S</option>
                         <option value="PC">PC</option>
                     </select>
                 </div>
@@ -673,8 +700,8 @@
                     <label data-i18n="teams.platformLabel">Piattaforma</label>
                     <select id="teamPlatform" class="select" required>
                         <option value="" data-i18n="teams.selectPlatform">Seleziona piattaforma</option>
-                        <option value="PlayStation">PlayStation</option>
-                        <option value="Xbox">Xbox</option>
+                        <option value="PlayStation 5">PlayStation 5</option>
+                        <option value="Xbox Series X/S">Xbox Series X/S</option>
                         <option value="PC">PC</option>
                     </select>
                 </div>
