@@ -5,27 +5,11 @@ import { TeamRequestModel } from '../models/TeamRequest.js';
 import { authenticateRequest } from '../lib/auth.js';
 import { sendNewsletterEmail } from '../lib/email.js';
 
-async function isAdmin(req) {
-  const userId = await authenticateRequest(req);
-  if (!userId) return false;
-
-  const { db } = await connectToDatabase();
-  const userModel = new UserModel(db);
-  const user = await userModel.findById(userId);
-
-  if (!user) return false;
-
-  const adminEmail = process.env.ADMIN_EMAIL;
-  const adminPassword = process.env.ADMIN_PASSWORD;
-
-  return user.email === adminEmail;
-}
-
 export default async function handler(req, res) {
   try {
-    const isAdminUser = await isAdmin(req);
+    const userId = await authenticateRequest(req);
     
-    if (!isAdminUser) {
+    if (!userId || userId !== 'admin') {
       return res.status(403).json({ error: 'Accesso negato' });
     }
 
@@ -33,13 +17,14 @@ export default async function handler(req, res) {
     const userModel = new UserModel(db);
     const teamModel = new TeamModel(db);
     const requestModel = new TeamRequestModel(db);
+    const settingsCollection = db.collection('settings');
 
     // GET STATS
-    if (req.method === 'GET' && req.query.action === 'stats') {
+    if (req.method === 'GET' && req.url.includes('action=stats')) {
       const totalUsers = await userModel.countAll();
       const totalTeams = await teamModel.countAll();
       const inactiveUsers = await userModel.countInactive();
-      const pendingRequests = (await requestModel.getTeamRequests('')).filter(r => r.status === 'pending').length;
+      const pendingRequests = await requestModel.countPending();
 
       return res.status(200).json({
         totalUsers,
@@ -49,91 +34,131 @@ export default async function handler(req, res) {
       });
     }
 
-    // GET ALL USERS
-    if (req.method === 'GET' && req.query.action === 'users') {
+    // GET USERS LIST
+    if (req.method === 'GET' && req.url.includes('action=users')) {
       const users = await userModel.getAllUsers();
       return res.status(200).json({ users });
     }
 
+    // GET LEVEL SETTINGS
+    if (req.method === 'GET' && req.url.includes('action=level-settings')) {
+      const settings = await settingsCollection.findOne({ _id: 'level_limits' });
+      return res.status(200).json({
+        minLevel: settings?.minLevel || 1,
+        maxLevel: settings?.maxLevel || 999
+      });
+    }
+
+    // UPDATE LEVEL SETTINGS
+    if (req.method === 'POST' && req.url.includes('action=level-settings')) {
+      const { minLevel, maxLevel } = req.body;
+
+      if (!minLevel || !maxLevel) {
+        return res.status(400).json({ error: 'Livello minimo e massimo richiesti' });
+      }
+
+      if (minLevel < 1 || maxLevel < minLevel) {
+        return res.status(400).json({ error: 'Livelli non validi' });
+      }
+
+      await settingsCollection.updateOne(
+        { _id: 'level_limits' },
+        { $set: { minLevel: parseInt(minLevel), maxLevel: parseInt(maxLevel), updatedAt: new Date() } },
+        { upsert: true }
+      );
+
+      return res.status(200).json({
+        message: 'Limiti livello aggiornati',
+        minLevel: parseInt(minLevel),
+        maxLevel: parseInt(maxLevel)
+      });
+    }
+
     // SUSPEND USER
-    if (req.method === 'POST' && req.query.action === 'suspend') {
-      const { userId } = req.body;
-      await userModel.suspendUser(userId, true);
+    if (req.method === 'POST' && req.url.includes('action=suspend')) {
+      const { userId: targetUserId } = req.body;
+      await userModel.suspendUser(targetUserId, true);
       return res.status(200).json({ message: 'Utente sospeso' });
     }
 
     // UNSUSPEND USER
-    if (req.method === 'POST' && req.query.action === 'unsuspend') {
-      const { userId } = req.body;
-      await userModel.suspendUser(userId, false);
+    if (req.method === 'POST' && req.url.includes('action=unsuspend')) {
+      const { userId: targetUserId } = req.body;
+      await userModel.suspendUser(targetUserId, false);
       return res.status(200).json({ message: 'Utente riabilitato' });
     }
 
     // DELETE USER
-    if (req.method === 'DELETE' && req.query.action === 'user') {
-      const { userId } = req.body;
-      await userModel.deleteUser(userId);
+    if (req.method === 'DELETE' && req.url.includes('action=user')) {
+      const { userId: targetUserId } = req.body;
+      await userModel.deleteUser(targetUserId);
       return res.status(200).json({ message: 'Utente eliminato' });
     }
 
     // DELETE ALL TEAMS
-    if (req.method === 'DELETE' && req.query.action === 'teams') {
+    if (req.method === 'DELETE' && req.url.includes('action=teams')) {
       const count = await teamModel.deleteAll();
       
-      // Reset all users teams
+      // Reset team field for all users
       await db.collection('users').updateMany(
         {},
-        { $set: { team: null, lookingForTeam: true } }
+        { $set: { team: null, lookingForTeam: false } }
       );
 
-      return res.status(200).json({ message: `${count} squadre eliminate`, count });
+      return res.status(200).json({
+        message: 'Tutte le squadre eliminate',
+        count
+      });
     }
 
-    // RESET PLAYER PROFILES
-    if (req.method === 'POST' && req.query.action === 'reset-profiles') {
+    // RESET PROFILES
+    if (req.method === 'POST' && req.url.includes('action=reset-profiles')) {
       await db.collection('users').updateMany(
         {},
         {
           $set: {
             level: 1,
-            primaryRole: 'Centrocampista (CC)',
             secondaryRoles: [],
             bio: '',
-            instagram: '',
-            tiktok: '',
+            lookingForTeam: false,
+            profileCompleted: false,
             team: null,
-            lookingForTeam: true,
+            averageRating: 0,
             feedbackCount: 0,
-            averageRating: 0
+            updatedAt: new Date()
           }
         }
       );
+
+      // Delete all feedback
+      await db.collection('feedback').deleteMany({});
 
       return res.status(200).json({ message: 'Profili resettati con successo' });
     }
 
     // SEND NEWSLETTER
-    if (req.method === 'POST' && req.query.action === 'newsletter') {
+    if (req.method === 'POST' && req.url.includes('action=newsletter')) {
       const { subject, message } = req.body;
-      
+
       if (!subject || !message) {
-        return res.status(400).json({ error: 'Subject e message richiesti' });
+        return res.status(400).json({ error: 'Oggetto e messaggio richiesti' });
       }
 
       const users = await userModel.getAllUsers();
       let sent = 0;
-      let failed = 0;
 
       for (const user of users) {
-        const success = await sendNewsletterEmail(user.email, user.username, subject, message);
-        if (success) sent++;
-        else failed++;
+        try {
+          await sendNewsletterEmail(user.email, user.username, subject, message);
+          sent++;
+        } catch (error) {
+          console.error(`Failed to send to ${user.email}:`, error);
+        }
       }
 
-      return res.status(200).json({ 
-        message: `Newsletter inviata a ${sent} utenti`,
-        sent,
-        failed
+      return res.status(200).json({
+        message: 'Newsletter inviata',
+        sent
       });
     }
 
@@ -141,8 +166,6 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error('Admin endpoint error:', error);
-    return res.status(500).json({ 
-      error: error.message || 'Errore durante l\'operazione' 
-    });
+    return res.status(500).json({ error: 'Errore del server' });
   }
 }
