@@ -1,6 +1,6 @@
 // ============================================
-// PRO CLUB HUB - MAIN APPLICATION - VERSIONE COMPLETA E CORRETTA
-// FIX: Barra livello dinamica + Checkbox "Cerco squadra"
+// PRO CLUB HUB - MAIN APPLICATION - VERSIONE COMPLETA
+// Con: Preferiti, Condivisione, Notifiche, Anti-Spam
 // ============================================
 
 const API_BASE = '/api';
@@ -39,6 +39,7 @@ let selectedRating = 0;
 let currentTeam = null;
 let GLOBAL_MIN_LEVEL = 1;
 let GLOBAL_MAX_LEVEL = 999;
+let userFavorites = { giocatori: [], squadre: [] }; // NUOVO: Preferiti
 
 // ============================================
 // INITIALIZATION
@@ -100,10 +101,6 @@ function updateLevelInputLimits(minLevel, maxLevel) {
         maxLevelFilter.placeholder = maxLevel.toString();
     }
 }
-
-// ============================================
-// CALCOLO CORRETTO BARRA LIVELLO
-// ============================================
 
 function calculateLevelPercentage(level) {
     if (GLOBAL_MAX_LEVEL === GLOBAL_MIN_LEVEL) return 100;
@@ -172,6 +169,9 @@ async function fetchCurrentUser() {
             currentUser = data.user;
             updateUIForUser();
             
+            // NUOVO: Carica preferiti
+            await loadUserFavorites();
+            
             if (currentUser.team) {
                 loadCurrentTeam();
             }
@@ -187,6 +187,264 @@ async function fetchCurrentUser() {
         hideLoading();
     }
 }
+
+// ============================================
+// NUOVO: SISTEMA PREFERITI
+// ============================================
+
+async function loadUserFavorites() {
+    if (!currentUser) return;
+    
+    try {
+        const response = await fetch(`${API_BASE}/preferiti`, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            userFavorites = data.preferiti || { giocatori: [], squadre: [] };
+            console.log('✅ Preferiti caricati:', userFavorites);
+        }
+    } catch (error) {
+        console.error('Error loading favorites:', error);
+    }
+}
+
+async function toggleFavorite(targetId, type) {
+    if (!currentUser) {
+        showNotification('⚠️ Devi effettuare il login', 'error');
+        return;
+    }
+
+    try {
+        showLoading();
+        
+        const isFavorite = type === 'giocatori' 
+            ? userFavorites.giocatori.some(g => g._id === targetId)
+            : userFavorites.squadre.some(s => s._id === targetId);
+
+        const method = isFavorite ? 'DELETE' : 'POST';
+        const action = isFavorite ? 'remove' : 'add';
+
+        const response = await fetch(`${API_BASE}/preferiti?action=${action}`, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({ targetId, type })
+        });
+
+        if (response.ok) {
+            await loadUserFavorites();
+            showNotification(
+                isFavorite ? '❤️ Rimosso dai preferiti' : '⭐ Aggiunto ai preferiti',
+                'success'
+            );
+            
+            // Aggiorna l'icona
+            updateFavoriteIcon(targetId, type);
+        } else {
+            const data = await response.json();
+            showNotification('❌ ' + (data.error || 'Errore'), 'error');
+        }
+    } catch (error) {
+        console.error('Toggle favorite error:', error);
+        showNotification('❌ Errore di connessione', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+function updateFavoriteIcon(targetId, type) {
+    const isFavorite = type === 'giocatori'
+        ? userFavorites.giocatori.some(g => g._id === targetId)
+        : userFavorites.squadre.some(s => s._id === targetId);
+
+    const icon = document.querySelector(`[data-favorite-id="${targetId}"]`);
+    if (icon) {
+        icon.className = isFavorite ? 'fas fa-heart' : 'far fa-heart';
+        icon.style.color = isFavorite ? '#ef4444' : '#94a3b8';
+    }
+}
+
+async function loadFavoritesPage() {
+    if (!currentUser) {
+        showNotification('⚠️ Devi effettuare il login', 'error');
+        navigateTo('home');
+        return;
+    }
+
+    await loadUserFavorites();
+    renderFavoritePlayers();
+}
+
+function renderFavoritePlayers() {
+    const container = document.getElementById('favoritePlayersContainer');
+    const players = userFavorites.giocatori || [];
+
+    if (players.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-heart-broken"></i>
+                <p>Nessun giocatore nei preferiti</p>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = players.map(player => `
+        <div class="player-card" onclick="showPlayerDetail('${player._id}')">
+            <div class="player-card-header">
+                <div class="player-avatar">
+                    <i class="fas fa-user-circle"></i>
+                </div>
+                <div class="player-info">
+                    <h3>${player.username}</h3>
+                    <p class="player-role">${player.primaryRole}</p>
+                </div>
+            </div>
+            <div class="player-stats">
+                <span class="stat">
+                    <i class="fas fa-trophy"></i> ${player.level}
+                </span>
+                <span class="stat">
+                    <i class="fas fa-gamepad"></i> ${player.platform}
+                </span>
+                <span class="stat star">
+                    <i class="fas fa-star"></i> ${player.averageRating.toFixed(1)} (${player.feedbackCount})
+                </span>
+            </div>
+        </div>
+    `).join('');
+}
+
+function renderFavoriteTeams() {
+    const container = document.getElementById('favoriteTeamsContainer');
+    const teams = userFavorites.squadre || [];
+
+    if (teams.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-heart-broken"></i>
+                <p>Nessuna squadra nei preferiti</p>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = teams.map(team => `
+        <div class="team-card" onclick="showTeamDetail('${team._id}')">
+            <div class="team-card-header">
+                <div class="team-avatar">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <div class="team-info">
+                    <h3>${team.name}</h3>
+                    <p class="team-platform">${team.platform}</p>
+                </div>
+            </div>
+            ${team.description ? `<p class="team-description">${team.description}</p>` : ''}
+            <div class="team-stats">
+                <span class="stat">
+                    <i class="fas fa-users"></i> ${team.members.length} membri
+                </span>
+                <span class="stat">
+                    <i class="fas fa-flag"></i> ${team.nationality || 'N/A'}
+                </span>
+                <span class="stat star">
+                    <i class="fas fa-star"></i> ${team.averageRating.toFixed(1)} (${team.feedbackCount})
+                </span>
+            </div>
+        </div>
+    `).join('');
+}
+
+function switchFavoritesTab(tab) {
+    const playerTab = document.querySelector('[data-tab="favorite-players"]');
+    const teamTab = document.querySelector('[data-tab="favorite-teams"]');
+    const playerContainer = document.getElementById('favoritePlayersContainer');
+    const teamContainer = document.getElementById('favoriteTeamsContainer');
+
+    if (tab === 'favorite-players') {
+        playerTab.classList.add('active');
+        teamTab.classList.remove('active');
+        playerContainer.style.display = 'grid';
+        teamContainer.style.display = 'none';
+        renderFavoritePlayers();
+    } else {
+        playerTab.classList.remove('active');
+        teamTab.classList.add('active');
+        playerContainer.style.display = 'none';
+        teamContainer.style.display = 'grid';
+        renderFavoriteTeams();
+    }
+}
+
+// ============================================
+// NUOVO: SISTEMA CONDIVISIONE
+// ============================================
+
+async function shareProfile(type, id, name) {
+    const shareData = {
+        title: `${name} - Pro Club Hub`,
+        text: type === 'player' 
+            ? `Guarda il profilo di ${name} su Pro Club Hub!`
+            : `Scopri la squadra ${name} su Pro Club Hub!`,
+        url: `https://proclubhub.vercel.app/api/share?type=${type}&id=${id}`
+    };
+
+    try {
+        // Se disponibile Web Share API (mobile)
+        if (navigator.share) {
+            await navigator.share(shareData);
+            showNotification('✅ Condiviso con successo!', 'success');
+        } else {
+            // Fallback: copia link
+            await navigator.clipboard.writeText(shareData.url);
+            showNotification('📋 Link copiato negli appunti!', 'success');
+        }
+    } catch (error) {
+        console.error('Share error:', error);
+        // Fallback manuale
+        const input = document.createElement('input');
+        input.value = shareData.url;
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand('copy');
+        document.body.removeChild(input);
+        showNotification('📋 Link copiato negli appunti!', 'success');
+    }
+}
+
+// ============================================
+// GESTIONE ERRORI ANTI-SPAM
+// ============================================
+
+function handleRateLimitError(errorMessage) {
+    // Estrai il numero di minuti dal messaggio di errore
+    const match = errorMessage.match(/(\d+) minut/);
+    const minutes = match ? match[1] : '10';
+    
+    showNotification(
+        `🚫 ${errorMessage}`,
+        'error'
+    );
+    
+    // Mostra un messaggio più dettagliato
+    setTimeout(() => {
+        showNotification(
+            `⏱️ Puoi inviare massimo 15 richieste ogni 10 minuti. Attendi ${minutes} minuti.`,
+            'info'
+        );
+    }, 3000);
+}
+
+// ============================================
+// CURRENT TEAM & REQUESTS
+// ============================================
 
 async function loadCurrentTeam() {
     if (!currentUser.team) return;
@@ -247,6 +505,9 @@ function updateUIForUser() {
     document.getElementById('logoutBtn').style.display = 'flex';
     document.getElementById('heroActions').style.display = 'none';
     document.getElementById('heroUserInfo').style.display = 'block';
+    
+    // NUOVO: Mostra tab preferiti
+    document.getElementById('favoritesNavBtn').style.display = 'flex';
 
     if (currentUser.profileCompleted) {
         document.getElementById('createTeamBtn').style.display = 'flex';
@@ -261,7 +522,6 @@ function updateUIForUser() {
     document.getElementById('heroUsername').textContent = currentUser.username;
     document.getElementById('heroLevel').textContent = currentUser.level;
     
-    // FIX BARRA LIVELLO DINAMICA
     const heroLevelPercent = calculateLevelPercentage(currentUser.level);
     document.getElementById('heroLevelProgress').style.width = `${heroLevelPercent}%`;
     
@@ -274,13 +534,14 @@ function updateUIForGuest() {
     document.getElementById('logoutBtn').style.display = 'none';
     document.getElementById('requestsNavBtn').style.display = 'none';
     document.getElementById('adminNavBtn').style.display = 'none';
+    document.getElementById('favoritesNavBtn').style.display = 'none';
     document.getElementById('heroActions').style.display = 'flex';
     document.getElementById('heroUserInfo').style.display = 'none';
     document.getElementById('createTeamBtn').style.display = 'none';
 }
 
 // ============================================
-// EVENT LISTENERS - FIX DEFINITIVO
+// EVENT LISTENERS
 // ============================================
 
 function setupEventListeners() {
@@ -296,29 +557,25 @@ function setupEventListeners() {
         });
     });
 
-    // HERO LOGIN BUTTON - FIX CRITICO
+    // HERO BUTTONS
     const heroLoginBtn = document.getElementById('heroLoginBtn');
     if (heroLoginBtn) {
         heroLoginBtn.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            console.log('🔵 Login button clicked');
             openAuthModal('login');
         });
     }
     
-    // HERO REGISTER BUTTON - FIX CRITICO
     const heroRegisterBtn = document.getElementById('heroRegisterBtn');
     if (heroRegisterBtn) {
         heroRegisterBtn.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            console.log('🟢 Register button clicked');
             openAuthModal('register');
         });
     }
     
-    // LOGOUT
     const logoutBtn = document.getElementById('logoutBtn');
     if (logoutBtn) {
         logoutBtn.addEventListener('click', function(e) {
@@ -334,30 +591,10 @@ function setupEventListeners() {
     const showForgotPassword = document.getElementById('showForgotPassword');
     const backToLogin = document.getElementById('backToLogin');
     
-    if (showRegisterForm) {
-        showRegisterForm.addEventListener('click', (e) => {
-            e.preventDefault();
-            switchAuthForm('register');
-        });
-    }
-    if (showLoginForm) {
-        showLoginForm.addEventListener('click', (e) => {
-            e.preventDefault();
-            switchAuthForm('login');
-        });
-    }
-    if (showForgotPassword) {
-        showForgotPassword.addEventListener('click', (e) => {
-            e.preventDefault();
-            switchAuthForm('forgot');
-        });
-    }
-    if (backToLogin) {
-        backToLogin.addEventListener('click', (e) => {
-            e.preventDefault();
-            switchAuthForm('login');
-        });
-    }
+    if (showRegisterForm) showRegisterForm.addEventListener('click', (e) => { e.preventDefault(); switchAuthForm('register'); });
+    if (showLoginForm) showLoginForm.addEventListener('click', (e) => { e.preventDefault(); switchAuthForm('login'); });
+    if (showForgotPassword) showForgotPassword.addEventListener('click', (e) => { e.preventDefault(); switchAuthForm('forgot'); });
+    if (backToLogin) backToLogin.addEventListener('click', (e) => { e.preventDefault(); switchAuthForm('login'); });
 
     // MODAL CLOSES
     const closeAuthModal = document.getElementById('closeAuthModal');
@@ -420,7 +657,11 @@ function setupEventListeners() {
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const tab = e.currentTarget.dataset.tab;
-            switchRequestsTab(tab);
+            if (tab === 'favorite-players' || tab === 'favorite-teams') {
+                switchFavoritesTab(tab);
+            } else {
+                switchRequestsTab(tab);
+            }
         });
     });
 
@@ -515,10 +756,6 @@ function setupSecondaryRolesLimit() {
     });
 }
 
-// ============================================
-// FIX CHECKBOX "CERCO SQUADRA"
-// ============================================
-
 function checkProfileCompletion() {
     const instagramInput = document.getElementById('editInstagram');
     const tiktokInput = document.getElementById('editTiktok');
@@ -534,11 +771,9 @@ function checkProfileCompletion() {
     let warningText = container.querySelector('.helper-text');
 
     if (hasSecondaryRole && hasContact) {
-        // PROFILO COMPLETO - ABILITA CHECKBOX
         lookingForTeamCheckbox.disabled = false;
         if (warningText) warningText.remove();
     } else {
-        // PROFILO INCOMPLETO - DISABILITA CHECKBOX
         lookingForTeamCheckbox.disabled = true;
         lookingForTeamCheckbox.checked = false;
         
@@ -635,6 +870,8 @@ function navigateTo(page) {
             return;
         }
         searchTeams();
+    } else if (page === 'favorites') {
+        loadFavoritesPage();
     } else if (page === 'requests') {
         loadRequests();
     } else if (page === 'admin' && currentUser && currentUser.isAdmin) {
@@ -886,6 +1123,7 @@ function logout() {
     localStorage.removeItem('token');
     currentUser = null;
     currentTeam = null;
+    userFavorites = { giocatori: [], squadre: [] };
     updateUIForGuest();
     showNotification('👋 Logout effettuato', 'info');
     navigateTo('home');
@@ -901,7 +1139,6 @@ async function loadProfile() {
     document.getElementById('profileUsername').textContent = currentUser.username;
     document.getElementById('profileLevel').textContent = currentUser.level;
     
-    // FIX BARRA LIVELLO DINAMICA
     const profileLevelPercent = calculateLevelPercentage(currentUser.level);
     document.getElementById('profileLevelProgress').style.width = `${profileLevelPercent}%`;
     
@@ -918,7 +1155,6 @@ async function loadProfile() {
     document.getElementById('profileBio').textContent = currentUser.bio || 'Nessuna bio';
     document.getElementById('profileLookingForTeam').textContent = currentUser.lookingForTeam ? 'Sì' : 'No';
 
-    // Social
     const socialCard = document.getElementById('profileSocialCard');
     const socialLinks = document.getElementById('profileSocialLinks');
     
@@ -945,7 +1181,6 @@ async function loadProfile() {
         socialCard.style.display = 'none';
     }
 
-    // Load feedback
     try {
         const response = await fetch(`${API_BASE}/feedback?userId=${currentUser._id}`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
@@ -1009,20 +1244,17 @@ function openEditProfileModal() {
     document.getElementById('editBio').value = currentUser.bio || '';
     document.getElementById('editLookingForTeam').checked = currentUser.lookingForTeam || false;
 
-    // Set secondary roles
     const checkboxes = document.querySelectorAll('#secondaryRolesCheckboxes input[type="checkbox"]');
     checkboxes.forEach(checkbox => {
         checkbox.checked = currentUser.secondaryRoles && currentUser.secondaryRoles.includes(checkbox.value);
     });
 
-    // SETUP EVENT LISTENERS PER CHECKBOX "CERCO SQUADRA"
     const instagramInput = document.getElementById('editInstagram');
     const tiktokInput = document.getElementById('editTiktok');
     
     if (instagramInput) instagramInput.addEventListener('input', checkProfileCompletion);
     if (tiktokInput) tiktokInput.addEventListener('input', checkProfileCompletion);
     
-    // CHECK INIZIALE
     checkProfileCompletion();
 
     document.getElementById('editProfileModal').classList.add('active');
@@ -1153,30 +1385,42 @@ function renderPlayers(players) {
         return;
     }
 
-    container.innerHTML = players.map(player => `
-        <div class="player-card" onclick="showPlayerDetail('${player._id}')">
-            <div class="player-card-header">
-                <div class="player-avatar">
-                    <i class="fas fa-user-circle"></i>
+    container.innerHTML = players.map(player => {
+        const isFavorite = userFavorites.giocatori.some(g => g._id === player._id);
+        return `
+            <div class="player-card" onclick="showPlayerDetail('${player._id}')">
+                <div class="player-card-header">
+                    <div class="player-avatar">
+                        <i class="fas fa-user-circle"></i>
+                    </div>
+                    <div class="player-info">
+                        <h3>
+                            ${player.username}
+                            ${currentUser && player._id !== currentUser._id ? `
+                                <i class="${isFavorite ? 'fas' : 'far'} fa-heart" 
+                                   style="color: ${isFavorite ? '#ef4444' : '#94a3b8'}; cursor: pointer; margin-left: 0.5rem;" 
+                                   data-favorite-id="${player._id}"
+                                   onclick="event.stopPropagation(); toggleFavorite('${player._id}', 'giocatori');">
+                                </i>
+                            ` : ''}
+                        </h3>
+                        <p class="player-role">${player.primaryRole}</p>
+                    </div>
                 </div>
-                <div class="player-info">
-                    <h3>${player.username}</h3>
-                    <p class="player-role">${player.primaryRole}</p>
+                <div class="player-stats">
+                    <span class="stat">
+                        <i class="fas fa-trophy"></i> ${player.level}
+                    </span>
+                    <span class="stat">
+                        <i class="fas fa-gamepad"></i> ${player.platform}
+                    </span>
+                    <span class="stat star">
+                        <i class="fas fa-star"></i> ${player.averageRating.toFixed(1)} (${player.feedbackCount})
+                    </span>
                 </div>
             </div>
-            <div class="player-stats">
-                <span class="stat">
-                    <i class="fas fa-trophy"></i> ${player.level}
-                </span>
-                <span class="stat">
-                    <i class="fas fa-gamepad"></i> ${player.platform}
-                </span>
-                <span class="stat star">
-                    <i class="fas fa-star"></i> ${player.averageRating.toFixed(1)} (${player.feedbackCount})
-                </span>
-            </div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
 }
 
 async function showPlayerDetail(playerId) {
@@ -1190,7 +1434,6 @@ async function showPlayerDetail(playerId) {
             const data = await response.json();
             const player = data.user;
 
-            // Load feedback
             const feedbackResponse = await fetch(`${API_BASE}/feedback?userId=${playerId}`, {
                 headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
             });
@@ -1214,6 +1457,7 @@ async function showPlayerDetail(playerId) {
 
 function renderPlayerDetail(player, feedback) {
     const content = document.getElementById('playerDetailContent');
+    const isFavorite = userFavorites.giocatori.some(g => g._id === player._id);
 
     content.innerHTML = `
         <div class="player-detail-header">
@@ -1221,7 +1465,16 @@ function renderPlayerDetail(player, feedback) {
                 <i class="fas fa-user-circle"></i>
             </div>
             <div class="detail-info">
-                <h2>${player.username}</h2>
+                <h2>
+                    ${player.username}
+                    ${currentUser && currentUser._id !== player._id ? `
+                        <i class="${isFavorite ? 'fas' : 'far'} fa-heart" 
+                           style="color: ${isFavorite ? '#ef4444' : '#94a3b8'}; cursor: pointer; margin-left: 0.5rem;" 
+                           data-favorite-id="${player._id}"
+                           onclick="toggleFavorite('${player._id}', 'giocatori');">
+                        </i>
+                    ` : ''}
+                </h2>
                 <div class="detail-meta">
                     <span class="meta-item">
                         <i class="fas fa-trophy"></i> Livello ${player.level}
@@ -1282,6 +1535,9 @@ function renderPlayerDetail(player, feedback) {
             <div class="detail-actions">
                 <button class="btn btn-primary" onclick="openFeedbackModal('${player._id}')">
                     <i class="fas fa-star"></i> Lascia Feedback
+                </button>
+                <button class="btn btn-secondary" onclick="shareProfile('player', '${player._id}', '${player.username}')">
+                    <i class="fas fa-share-alt"></i> Condividi
                 </button>
             </div>
         ` : ''}
@@ -1374,31 +1630,43 @@ function renderTeams(teams) {
         return;
     }
 
-    container.innerHTML = teams.map(team => `
-        <div class="team-card" onclick="showTeamDetail('${team._id}')">
-            <div class="team-card-header">
-                <div class="team-avatar">
-                    <i class="fas fa-shield-alt"></i>
+    container.innerHTML = teams.map(team => {
+        const isFavorite = userFavorites.squadre.some(s => s._id === team._id);
+        return `
+            <div class="team-card" onclick="showTeamDetail('${team._id}')">
+                <div class="team-card-header">
+                    <div class="team-avatar">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <div class="team-info">
+                        <h3>
+                            ${team.name}
+                            ${currentUser ? `
+                                <i class="${isFavorite ? 'fas' : 'far'} fa-heart" 
+                                   style="color: ${isFavorite ? '#ef4444' : '#94a3b8'}; cursor: pointer; margin-left: 0.5rem;" 
+                                   data-favorite-id="${team._id}"
+                                   onclick="event.stopPropagation(); toggleFavorite('${team._id}', 'squadre');">
+                                </i>
+                            ` : ''}
+                        </h3>
+                        <p class="team-platform">${team.platform}</p>
+                    </div>
                 </div>
-                <div class="team-info">
-                    <h3>${team.name}</h3>
-                    <p class="team-platform">${team.platform}</p>
+                ${team.description ? `<p class="team-description">${team.description}</p>` : ''}
+                <div class="team-stats">
+                    <span class="stat">
+                        <i class="fas fa-users"></i> ${team.members.length} membri
+                    </span>
+                    <span class="stat">
+                        <i class="fas fa-flag"></i> ${team.nationality || 'N/A'}
+                    </span>
+                    <span class="stat star">
+                        <i class="fas fa-star"></i> ${team.averageRating.toFixed(1)} (${team.feedbackCount})
+                    </span>
                 </div>
             </div>
-            ${team.description ? `<p class="team-description">${team.description}</p>` : ''}
-            <div class="team-stats">
-                <span class="stat">
-                    <i class="fas fa-users"></i> ${team.members.length} membri
-                </span>
-                <span class="stat">
-                    <i class="fas fa-flag"></i> ${team.nationality || 'N/A'}
-                </span>
-                <span class="stat star">
-                    <i class="fas fa-star"></i> ${team.averageRating.toFixed(1)} (${team.feedbackCount})
-                </span>
-            </div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
 }
 
 async function showTeamDetail(teamId) {
@@ -1412,7 +1680,6 @@ async function showTeamDetail(teamId) {
             const data = await response.json();
             const team = data.team;
 
-            // Load feedback
             const feedbackResponse = await fetch(`${API_BASE}/feedback?teamId=${teamId}`, {
                 headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
             });
@@ -1436,10 +1703,10 @@ async function showTeamDetail(teamId) {
 
 function renderTeamDetail(team, feedback) {
     const content = document.getElementById('teamDetailContent');
-
     const isCaptain = currentUser && team.captain.toString() === currentUser._id;
     const isViceCaptain = currentUser && team.viceCaptain && team.viceCaptain.toString() === currentUser._id;
     const isMember = currentUser && team.members.some(m => m.toString() === currentUser._id);
+    const isFavorite = userFavorites.squadre.some(s => s._id === team._id);
 
     content.innerHTML = `
         <div class="team-detail-header">
@@ -1447,7 +1714,16 @@ function renderTeamDetail(team, feedback) {
                 <i class="fas fa-shield-alt"></i>
             </div>
             <div class="detail-info">
-                <h2>${team.name}</h2>
+                <h2>
+                    ${team.name}
+                    ${currentUser ? `
+                        <i class="${isFavorite ? 'fas' : 'far'} fa-heart" 
+                           style="color: ${isFavorite ? '#ef4444' : '#94a3b8'}; cursor: pointer; margin-left: 0.5rem;" 
+                           data-favorite-id="${team._id}"
+                           onclick="toggleFavorite('${team._id}', 'squadre');">
+                        </i>
+                    ` : ''}
+                </h2>
                 <div class="detail-meta">
                     <span class="meta-item">
                         <i class="fas fa-gamepad"></i> ${team.platform}
@@ -1547,6 +1823,9 @@ function renderTeamDetail(team, feedback) {
                         <i class="fas fa-star"></i> Lascia Feedback
                     </button>
                 ` : ''}
+                <button class="btn btn-secondary" onclick="shareProfile('team', '${team._id}', '${team.name}')">
+                    <i class="fas fa-share-alt"></i> Condividi
+                </button>
             </div>
         ` : ''}
 
@@ -1656,6 +1935,9 @@ async function requestJoinTeam(teamId) {
         if (response.ok) {
             showNotification('✅ Richiesta inviata!', 'success');
             closeTeamDetailModalFn();
+        } else if (response.status === 429) {
+            // NUOVO: Gestione errore anti-spam
+            handleRateLimitError(data.error);
         } else {
             showNotification('❌ ' + (data.error || 'Errore'), 'error');
         }
@@ -2073,7 +2355,7 @@ async function cancelRequest(requestId) {
 }
 
 // ============================================
-// ADMIN
+// ADMIN (mantenuto invariato per brevità)
 // ============================================
 
 async function loadAdminDashboard() {
@@ -2082,7 +2364,6 @@ async function loadAdminDashboard() {
     try {
         showLoading();
         
-        // Load stats
         const statsResponse = await fetch(`${API_BASE}/admin?action=stats`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
@@ -2095,7 +2376,6 @@ async function loadAdminDashboard() {
             document.getElementById('pendingRequests').textContent = stats.pendingRequests;
         }
 
-        // Load level settings
         const levelResponse = await fetch(`${API_BASE}/admin?action=level-settings`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
@@ -2106,7 +2386,6 @@ async function loadAdminDashboard() {
             document.getElementById('adminMaxLevel').value = levelData.maxLevel;
         }
 
-        // Load users
         const usersResponse = await fetch(`${API_BASE}/admin?action=users`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
@@ -2201,7 +2480,6 @@ async function handleLevelSettingsUpdate(e) {
             GLOBAL_MAX_LEVEL = maxLevel;
             updateLevelInputLimits(minLevel, maxLevel);
             
-            // Ricarica utente corrente per aggiornare la barra
             if (currentUser) {
                 await fetchCurrentUser();
             }
@@ -2447,3 +2725,5 @@ window.cancelRequest = cancelRequest;
 window.suspendUser = suspendUser;
 window.unsuspendUser = unsuspendUser;
 window.deleteUser = deleteUser;
+window.toggleFavorite = toggleFavorite;
+window.shareProfile = shareProfile;
