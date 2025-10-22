@@ -780,7 +780,7 @@ body {
     color: #fbbf24;
 }
 
-/* ============ COMPACT FEEDBACK (NEW) ============ */
+/* ============ FEEDBACK ============ */
 .feedback-item {
     background: rgba(15, 23, 42, 0.9);
     border: 2px solid rgba(59, 130, 246, 0.2);
@@ -1293,10 +1293,16 @@ body {
     flex-wrap: wrap;
 }
 
-.newsletter-form {
+.newsletter-form, .level-settings-form {
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
 }
 
 .users-list {
@@ -1452,6 +1458,16 @@ body {
     color: #94a3b8;
     font-size: clamp(0.95rem, 2vw, 1.05rem);
     font-weight: 600;
+}
+
+.detail-card h4 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    color: var(--primary);
+    font-size: clamp(1rem, 2vw, 1.1rem);
+    font-weight: 700;
 }
 
 .detail-card p {
@@ -1672,7 +1688,124 @@ body {
     border: 1px solid #ef4444;
 }
 
-/* ============ TEAM MEMBERS ============ */
+/* ============ TEAM DETAIL ============ */
+.player-detail-header,
+.team-detail-header {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(51, 65, 85, 0.95) 100%);
+    backdrop-filter: blur(20px);
+    border: 2px solid rgba(59, 130, 246, 0.3);
+    border-radius: 24px;
+    padding: clamp(1.5rem, 4vw, 3rem);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow-xl);
+    position: relative;
+    overflow: hidden;
+}
+
+.player-detail-header::before,
+.team-detail-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--gradient-blue);
+}
+
+.detail-avatar {
+    font-size: clamp(4rem, 10vw, 6rem);
+    background: var(--gradient-blue);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    filter: drop-shadow(0 0 20px rgba(59, 130, 246, 0.5));
+}
+
+.detail-info {
+    flex: 1;
+    text-align: center;
+}
+
+.detail-info h2 {
+    font-size: clamp(1.75rem, 5vw, 2.5rem);
+    margin-bottom: 1rem;
+    font-weight: 800;
+}
+
+.detail-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    justify-content: center;
+    margin-top: 1rem;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    border-radius: 12px;
+    font-size: clamp(0.85rem, 2vw, 0.95rem);
+    font-weight: 600;
+}
+
+.meta-item i {
+    color: var(--primary);
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
+    gap: 1.5rem;
+    margin: 2rem 0;
+}
+
+.info-card {
+    background: rgba(15, 23, 42, 0.8);
+    border: 2px solid rgba(59, 130, 246, 0.2);
+    border-radius: 16px;
+    padding: clamp(1rem, 3vw, 1.5rem);
+    transition: all 0.3s ease;
+}
+
+.info-card:hover {
+    border-color: var(--primary);
+    transform: translateY(-3px);
+}
+
+.roles-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.role-badge {
+    padding: 0.5rem 1rem;
+    background: rgba(59, 130, 246, 0.15);
+    border: 1px solid var(--primary);
+    border-radius: 12px;
+    font-size: clamp(0.8rem, 1.8vw, 0.9rem);
+    color: var(--primary);
+    font-weight: 600;
+    display: inline-block;
+}
+
+.detail-actions {
+    display: flex;
+    gap: 1rem;
+    margin: 2rem 0;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
 .team-members {
     margin-top: 2rem;
 }
@@ -1726,6 +1859,10 @@ body {
 .member-details h5 {
     margin-bottom: 0.25rem;
     font-size: clamp(1rem, 2vw, 1.2rem);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
 }
 
 .member-role {
@@ -1733,21 +1870,32 @@ body {
     font-size: clamp(0.85rem, 1.8vw, 1rem);
 }
 
-.captain-badge, .vice-captain-badge {
+.captain-badge,
+.vice-captain-badge {
     background: var(--gradient-blue);
     color: white;
-    padding: 0.4rem 0.75rem;
-    border-radius: 12px;
-    font-size: clamp(0.75rem, 1.5vw, 0.85rem);
+    padding: 0.3rem 0.6rem;
+    border-radius: 8px;
+    font-size: clamp(0.7rem, 1.5vw, 0.8rem);
     font-weight: 700;
     display: inline-flex;
     align-items: center;
-    gap: 0.35rem;
+    gap: 0.3rem;
     box-shadow: var(--shadow-glow);
 }
 
 .vice-captain-badge {
     background: var(--gradient-primary);
+}
+
+.helper-text {
+    color: #fbbf24;
+    font-size: clamp(0.75rem, 1.8vw, 0.85rem);
+    margin-top: 0.5rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    line-height: 1.4;
 }
 
 /* ============ RESPONSIVE ============ */
@@ -1838,6 +1986,26 @@ body {
     .requests-tabs {
         flex-direction: column;
     }
+
+    .player-detail-header,
+    .team-detail-header {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .detail-actions {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .detail-actions .btn {
+        width: 100%;
+    }
+
+    .member-item {
+        flex-direction: column;
+        align-items: stretch;
+    }
 }
 
 @media (max-width: 480px) {
@@ -1859,6 +2027,10 @@ body {
 
     .tag-selector {
         gap: 0.35rem;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
     }
 }
 
@@ -1892,27 +2064,124 @@ body {
     outline-offset: 3px;
 }
 
-/* ============ UTILITY CLASSES ============ */
-.text-center {
-    text-align: center;
+/* ============================================
+   FIX DEFINITIVO BOTTONI - PRIORITÀ MASSIMA
+   ============================================ */
+
+/* Reset pointer-events per tutti i bottoni */
+button,
+.btn,
+.nav-btn,
+a.btn,
+input[type="submit"],
+input[type="button"] {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    position: relative;
+    z-index: 10;
+    -webkit-tap-highlight-color: rgba(59, 130, 246, 0.3);
+    touch-action: manipulation;
 }
 
-.mt-1 { margin-top: 0.5rem; }
-.mt-2 { margin-top: 1rem; }
-.mt-3 { margin-top: 1.5rem; }
-.mb-1 { margin-bottom: 0.5rem; }
-.mb-2 { margin-bottom: 1rem; }
-.mb-3 { margin-bottom: 1.5rem; }
+/* Blocca gli elementi DENTRO i bottoni dal ricevere click */
+button *,
+.btn *,
+.nav-btn *,
+a.btn * {
+    pointer-events: none !important;
+}
 
-.hidden {
+/* Hero buttons - MASSIMA PRIORITÀ */
+#heroLoginBtn,
+#heroRegisterBtn {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    position: relative !important;
+    z-index: 100 !important;
+    display: inline-flex !important;
+}
+
+/* Navigation buttons */
+.header,
+.nav,
+.nav-btn,
+.btn-logout {
+    pointer-events: auto !important;
+}
+
+/* Auth modal */
+#authModal,
+.modal-content,
+#closeAuthModal {
+    pointer-events: auto !important;
+}
+
+/* Forms */
+form,
+form * {
+    pointer-events: auto !important;
+}
+
+form button,
+form .btn {
+    cursor: pointer !important;
+}
+
+/* Selects e inputs */
+input,
+select,
+textarea {
+    pointer-events: auto !important;
+    cursor: text !important;
+}
+
+select {
+    cursor: pointer !important;
+}
+
+/* Links */
+a {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+}
+
+/* Modals close button */
+.modal-close {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    z-index: 2001 !important;
+}
+
+/* Loading overlay - quando attivo blocca tutto tranne se stesso */
+.loading-overlay:not(.active) {
+    pointer-events: none !important;
     display: none !important;
 }
 
-.visible {
-    display: block !important;
+.loading-overlay.active {
+    pointer-events: auto !important;
+    display: flex !important;
 }
 
-/* ============ PRINT STYLES ============ */
+/* Player e Team cards */
+.player-card,
+.team-card {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+}
+
+.player-card > *:not(button):not(.btn),
+.team-card > *:not(button):not(.btn) {
+    pointer-events: none !important;
+}
+
+/* Detail actions */
+.detail-actions,
+.detail-actions * {
+    pointer-events: auto !important;
+}
+
+/* Print styles */
 @media print {
     .header, .nav, .btn, .modal {
         display: none !important;
@@ -1922,1448 +2191,4 @@ body {
         background: white;
         color: black;
     }
-}
-
-/* ============================================
-   AGGIUNGI QUESTE CLASSI AL TUO style.css ESISTENTE
-   ============================================ */
-
-/* FEEDBACK COMPATTO */
-.feedback-section-compact {
-    background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(51, 65, 85, 0.9) 100%);
-    backdrop-filter: blur(20px);
-    border: 2px solid rgba(59, 130, 246, 0.3);
-    border-radius: 20px;
-    padding: clamp(1.5rem, 3vw, 2rem);
-    margin-top: 2rem;
-    box-shadow: var(--shadow-lg);
-}
-
-.feedback-section-compact h3 {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    margin-bottom: 1rem;
-    font-size: clamp(1.25rem, 3vw, 1.5rem);
-    font-weight: 700;
-}
-
-.feedback-list-compact {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    max-height: 400px;
-    overflow-y: auto;
-    padding: 0.5rem;
-}
-
-.feedback-item-compact {
-    background: rgba(15, 23, 42, 0.8);
-    border: 1px solid rgba(59, 130, 246, 0.2);
-    border-radius: 12px;
-    padding: 0.75rem 1rem;
-    transition: all 0.3s ease;
-}
-
-.feedback-item-compact:hover {
-    border-color: var(--primary);
-    transform: translateX(3px);
-}
-
-.feedback-header-compact {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.5rem;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-}
-
-.feedback-user-compact {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    font-weight: 600;
-    font-size: clamp(0.85rem, 2vw, 0.95rem);
-    color: #cbd5e1;
-}
-
-.feedback-user-compact i {
-    color: var(--primary);
-    font-size: clamp(1rem, 2.5vw, 1.2rem);
-}
-
-.feedback-rating-compact {
-    font-size: clamp(0.85rem, 2vw, 1rem);
-    letter-spacing: 0.1rem;
-}
-
-.feedback-tags-compact {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.35rem;
-    margin: 0.5rem 0;
-}
-
-.feedback-tag-compact {
-    padding: 0.25rem 0.6rem;
-    background: rgba(59, 130, 246, 0.15);
-    border: 1px solid var(--primary);
-    border-radius: 8px;
-    font-size: clamp(0.7rem, 1.5vw, 0.8rem);
-    color: var(--primary);
-    font-weight: 600;
-}
-
-.feedback-comment-compact {
-    color: #cbd5e1;
-    line-height: 1.5;
-    margin: 0.5rem 0;
-    font-size: clamp(0.85rem, 1.8vw, 0.95rem);
-}
-
-.feedback-date-compact {
-    color: #64748b;
-    font-size: clamp(0.7rem, 1.5vw, 0.8rem);
-    margin-top: 0.5rem;
-    display: block;
-}
-
-/* INLINE FEEDBACK FORM */
-.feedback-form-inline {
-    background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(51, 65, 85, 0.95) 100%);
-    backdrop-filter: blur(20px);
-    border: 2px solid rgba(59, 130, 246, 0.3);
-    border-radius: 20px;
-    padding: clamp(1.5rem, 3vw, 2rem);
-    animation: fadeInUp 0.4s ease;
-}
-
-@keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.feedback-form-inline h3 {
-    margin-bottom: 1.5rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    color: var(--primary);
-}
-
-/* RESPONSIVE IMPROVEMENTS */
-@media (max-width: 768px) {
-    .feedback-list-compact {
-        max-height: 300px;
-    }
-
-    .feedback-item-compact {
-        padding: 0.6rem 0.8rem;
-    }
-
-    .feedback-header-compact {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    .feedback-tags-compact {
-        gap: 0.25rem;
-    }
-}
-
-@media (max-width: 480px) {
-    .feedback-section-compact {
-        padding: 1rem;
-    }
-
-    .feedback-list-compact {
-        max-height: 250px;
-        padding: 0.25rem;
-    }
-}
-
-/* ============================================
-   AGGIUNGI QUESTE CLASSI AL TUO style.css ESISTENTE
-   ALLA FINE DEL FILE
-   ============================================ */
-
-/* FEEDBACK COMPATTO */
-.feedback-section-compact {
-    background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(51, 65, 85, 0.9) 100%);
-    backdrop-filter: blur(20px);
-    border: 2px solid rgba(59, 130, 246, 0.3);
-    border-radius: 20px;
-    padding: clamp(1.5rem, 3vw, 2rem);
-    margin-top: 2rem;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-}
-
-.feedback-section-compact h3 {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    margin-bottom: 1rem;
-    font-size: clamp(1.25rem, 3vw, 1.5rem);
-    font-weight: 700;
-}
-
-.feedback-list-compact {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    max-height: 400px;
-    overflow-y: auto;
-    padding: 0.5rem;
-}
-
-.feedback-item-compact {
-    background: rgba(15, 23, 42, 0.8);
-    border: 1px solid rgba(59, 130, 246, 0.2);
-    border-radius: 12px;
-    padding: 0.75rem 1rem;
-    transition: all 0.3s ease;
-}
-
-.feedback-item-compact:hover {
-    border-color: #3b82f6;
-    transform: translateX(3px);
-}
-
-.feedback-header-compact {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.5rem;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-}
-
-.feedback-user-compact {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    font-weight: 600;
-    font-size: clamp(0.85rem, 2vw, 0.95rem);
-    color: #cbd5e1;
-}
-
-.feedback-user-compact i {
-    color: #3b82f6;
-    font-size: clamp(1rem, 2.5vw, 1.2rem);
-}
-
-.feedback-rating-compact {
-    font-size: clamp(0.85rem, 2vw, 1rem);
-    letter-spacing: 0.1rem;
-}
-
-.feedback-tags-compact {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.35rem;
-    margin: 0.5rem 0;
-}
-
-.feedback-tag-compact {
-    padding: 0.25rem 0.6rem;
-    background: rgba(59, 130, 246, 0.15);
-    border: 1px solid #3b82f6;
-    border-radius: 8px;
-    font-size: clamp(0.7rem, 1.5vw, 0.8rem);
-    color: #3b82f6;
-    font-weight: 600;
-}
-
-.feedback-comment-compact {
-    color: #cbd5e1;
-    line-height: 1.5;
-    margin: 0.5rem 0;
-    font-size: clamp(0.85rem, 1.8vw, 0.95rem);
-}
-
-.feedback-date-compact {
-    color: #64748b;
-    font-size: clamp(0.7rem, 1.5vw, 0.8rem);
-    margin-top: 0.5rem;
-    display: block;
-}
-
-/* INLINE FEEDBACK FORM */
-.feedback-form-inline {
-    background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(51, 65, 85, 0.95) 100%);
-    backdrop-filter: blur(20px);
-    border: 2px solid rgba(59, 130, 246, 0.3);
-    border-radius: 20px;
-    padding: clamp(1.5rem, 3vw, 2rem);
-    animation: fadeInUp 0.4s ease;
-}
-
-@keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.feedback-form-inline h3 {
-    margin-bottom: 1.5rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    color: #3b82f6;
-}
-
-/* MODAL CLOSE BUTTON - FIX */
-.modal-close {
-    position: absolute;
-    top: clamp(0.75rem, 2vw, 1rem);
-    right: clamp(0.75rem, 2vw, 1rem);
-    background: rgba(239, 68, 68, 0.9);
-    border: 2px solid #dc2626;
-    color: white;
-    width: clamp(2.5rem, 5vw, 3rem);
-    height: clamp(2.5rem, 5vw, 3rem);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    font-size: clamp(1.25rem, 2.5vw, 1.5rem);
-    transition: all 0.3s ease;
-    z-index: 1001;
-    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
-}
-
-.modal-close:hover {
-    background: #dc2626;
-    transform: rotate(90deg) scale(1.1);
-    box-shadow: 0 6px 16px rgba(239, 68, 68, 0.6);
-}
-
-.modal-close:active {
-    transform: rotate(90deg) scale(0.95);
-}
-
-.modal-close i {
-    pointer-events: none;
-}
-
-/* HELPER TEXT */
-.helper-text {
-    color: #fbbf24;
-    font-size: clamp(0.75rem, 1.8vw, 0.85rem);
-    margin-top: 0.5rem;
-    display: flex;
-    align-items: flex-start;
-    gap: 0.5rem;
-    line-height: 1.4;
-}
-
-/* ADMIN - LEVEL SETTINGS FORM */
-.level-settings-form {
-    background: rgba(15, 23, 42, 0.6);
-    padding: clamp(1rem, 2vw, 1.5rem);
-    border-radius: 12px;
-    border: 1px solid rgba(59, 130, 246, 0.2);
-}
-
-.form-row {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1rem;
-    margin-bottom: 1rem;
-}
-
-/* ADMIN STATS GRID */
-.admin-stats {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: clamp(1rem, 2vw, 1.5rem);
-    margin-bottom: 2rem;
-}
-
-.stat-card {
-    background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(51, 65, 85, 0.9) 100%);
-    backdrop-filter: blur(20px);
-    border: 2px solid rgba(59, 130, 246, 0.3);
-    border-radius: 16px;
-    padding: clamp(1.25rem, 3vw, 1.5rem);
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    transition: all 0.3s ease;
-}
-
-.stat-card:hover {
-    border-color: #3b82f6;
-    transform: translateY(-4px);
-    box-shadow: 0 10px 30px rgba(59, 130, 246, 0.3);
-}
-
-.stat-icon {
-    width: clamp(3rem, 6vw, 4rem);
-    height: clamp(3rem, 6vw, 4rem);
-    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: clamp(1.5rem, 3vw, 2rem);
-    color: white;
-    flex-shrink: 0;
-}
-
-.stat-info h3 {
-    font-size: clamp(1.75rem, 4vw, 2.5rem);
-    font-weight: 900;
-    color: #3b82f6;
-    margin: 0;
-}
-
-.stat-info p {
-    color: #cbd5e1;
-    margin: 0;
-    font-size: clamp(0.85rem, 2vw, 0.95rem);
-    font-weight: 600;
-}
-
-/* ADMIN SECTION */
-.admin-section {
-    background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(51, 65, 85, 0.9) 100%);
-    backdrop-filter: blur(20px);
-    border: 2px solid rgba(59, 130, 246, 0.3);
-    border-radius: 20px;
-    padding: clamp(1.5rem, 3vw, 2rem);
-    margin-bottom: 2rem;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-}
-
-.admin-section h3 {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    margin-bottom: 1.5rem;
-    font-size: clamp(1.25rem, 3vw, 1.5rem);
-    font-weight: 700;
-    color: #3b82f6;
-}
-
-.admin-actions {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 1rem;
-}
-
-/* USERS LIST */
-.users-list {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    max-height: 600px;
-    overflow-y: auto;
-    padding: 0.5rem;
-}
-
-.user-item {
-    background: rgba(15, 23, 42, 0.8);
-    border: 1px solid rgba(59, 130, 246, 0.2);
-    border-radius: 12px;
-    padding: 1rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 1rem;
-    transition: all 0.3s ease;
-    flex-wrap: wrap;
-}
-
-.user-item:hover {
-    border-color: #3b82f6;
-    background: rgba(15, 23, 42, 0.95);
-}
-
-.user-item-info h4 {
-    margin: 0 0 0.5rem 0;
-    color: #f1f5f9;
-    font-size: clamp(1rem, 2vw, 1.1rem);
-}
-
-.user-item-info p {
-    margin: 0;
-    color: #94a3b8;
-    font-size: clamp(0.85rem, 1.8vw, 0.9rem);
-}
-
-.user-item-actions {
-    display: flex;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-}
-
-/* NEWSLETTER FORM */
-.newsletter-form {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-}
-
-/* RESPONSIVE IMPROVEMENTS */
-@media (max-width: 768px) {
-    .admin-stats {
-        grid-template-columns: 1fr;
-    }
-
-    .stat-card {
-        padding: 1rem;
-    }
-
-    .admin-actions {
-        grid-template-columns: 1fr;
-    }
-
-    .user-item {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    .user-item-actions {
-        width: 100%;
-        justify-content: stretch;
-    }
-
-    .user-item-actions button {
-        flex: 1;
-    }
-
-    .form-row {
-        grid-template-columns: 1fr;
-    }
-
-    .feedback-list-compact {
-        max-height: 300px;
-    }
-
-    .feedback-item-compact {
-        padding: 0.6rem 0.8rem;
-    }
-
-    .feedback-header-compact {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    .feedback-tags-compact {
-        gap: 0.25rem;
-    }
-}
-
-@media (max-width: 480px) {
-    .admin-section {
-        padding: 1rem;
-    }
-
-    .modal-close {
-        width: 2.5rem;
-        height: 2.5rem;
-        font-size: 1.25rem;
-    }
-
-    .stat-icon {
-        width: 3rem;
-        height: 3rem;
-        font-size: 1.5rem;
-    }
-
-    .feedback-section-compact {
-        padding: 1rem;
-    }
-
-    .feedback-list-compact {
-        max-height: 250px;
-        padding: 0.25rem;
-    }
-}
-
-/* ============================================
-   FIX TASTI CLICCABILI - AGGIUNGI ALLA FINE
-   ============================================ */
-
-/* Player Detail Modal - Fix z-index */
-.player-detail-header,
-.team-detail-header {
-    position: relative;
-    z-index: 1;
-}
-
-.detail-avatar {
-    font-size: clamp(4rem, 10vw, 6rem);
-    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    filter: drop-shadow(0 0 20px rgba(59, 130, 246, 0.5));
-    margin-bottom: 1rem;
-}
-
-.detail-info {
-    flex: 1;
-}
-
-.detail-info h2 {
-    font-size: clamp(1.75rem, 5vw, 2.5rem);
-    margin-bottom: 1rem;
-    font-weight: 800;
-}
-
-.detail-meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1rem;
-    margin-bottom: 1rem;
-}
-
-.meta-item {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    background: rgba(59, 130, 246, 0.1);
-    border: 1px solid rgba(59, 130, 246, 0.3);
-    border-radius: 12px;
-    font-size: clamp(0.85rem, 2vw, 0.95rem);
-    font-weight: 600;
-}
-
-.meta-item i {
-    color: #3b82f6;
-}
-
-/* Info Grid */
-.info-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
-    gap: 1.5rem;
-    margin: 2rem 0;
-}
-
-.info-card {
-    background: rgba(15, 23, 42, 0.8);
-    border: 2px solid rgba(59, 130, 246, 0.2);
-    border-radius: 16px;
-    padding: clamp(1rem, 3vw, 1.5rem);
-    transition: all 0.3s ease;
-}
-
-.info-card:hover {
-    border-color: #3b82f6;
-    transform: translateY(-3px);
-}
-
-.info-card h4 {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-bottom: 0.75rem;
-    color: #3b82f6;
-    font-size: clamp(1rem, 2vw, 1.1rem);
-    font-weight: 700;
-}
-
-.info-card p {
-    color: #cbd5e1;
-    line-height: 1.6;
-    font-size: clamp(0.9rem, 2vw, 1rem);
-}
-
-.roles-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-}
-
-.role-badge {
-    padding: 0.5rem 1rem;
-    background: rgba(59, 130, 246, 0.15);
-    border: 1px solid #3b82f6;
-    border-radius: 12px;
-    font-size: clamp(0.8rem, 1.8vw, 0.9rem);
-    color: #3b82f6;
-    font-weight: 600;
-    display: inline-block;
-}
-
-/* Detail Actions - FIX IMPORTANTE */
-.detail-actions {
-    display: flex;
-    gap: 1rem;
-    margin: 2rem 0;
-    flex-wrap: wrap;
-    position: relative;
-    z-index: 10; /* IMPORTANTE */
-}
-
-.detail-actions .btn {
-    position: relative;
-    z-index: 10; /* IMPORTANTE */
-    pointer-events: auto; /* IMPORTANTE */
-    cursor: pointer; /* IMPORTANTE */
-}
-
-/* Team Members */
-.team-members {
-    margin-top: 2rem;
-}
-
-.team-members h4 {
-    margin-bottom: 1rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: clamp(1.25rem, 3vw, 1.5rem);
-    font-weight: 700;
-    color: #3b82f6;
-}
-
-.member-list {
-    display: grid;
-    gap: 1rem;
-}
-
-.member-item {
-    background: rgba(15, 23, 42, 0.9);
-    border: 2px solid rgba(59, 130, 246, 0.2);
-    border-radius: 12px;
-    padding: clamp(1rem, 2vw, 1.5rem);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    transition: all 0.3s ease;
-    flex-wrap: wrap;
-    gap: 1rem;
-}
-
-.member-item:hover {
-    border-color: #3b82f6;
-    transform: translateX(3px);
-}
-
-.member-info {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    flex: 1;
-}
-
-.member-avatar {
-    font-size: clamp(2rem, 5vw, 2.5rem);
-    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.5));
-}
-
-.member-details h5 {
-    margin-bottom: 0.25rem;
-    font-size: clamp(1rem, 2vw, 1.2rem);
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-}
-
-.member-role {
-    color: #94a3b8;
-    font-size: clamp(0.85rem, 1.8vw, 1rem);
-}
-
-.captain-badge,
-.vice-captain-badge {
-    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
-    color: white;
-    padding: 0.3rem 0.6rem;
-    border-radius: 8px;
-    font-size: clamp(0.7rem, 1.5vw, 0.8rem);
-    font-weight: 700;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.3rem;
-    box-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
-}
-
-.vice-captain-badge {
-    background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
-    box-shadow: 0 0 15px rgba(139, 92, 246, 0.4);
-}
-
-/* Feedback Section in Modals */
-.feedback-section {
-    background: rgba(15, 23, 42, 0.6);
-    border: 2px solid rgba(59, 130, 246, 0.2);
-    border-radius: 16px;
-    padding: clamp(1.5rem, 3vw, 2rem);
-    margin-top: 2rem;
-}
-
-.feedback-section h3 {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    margin-bottom: 1.5rem;
-    font-size: clamp(1.25rem, 3vw, 1.5rem);
-    font-weight: 700;
-    color: #3b82f6;
-}
-
-/* Player Card e Team Card - Fix Clickable */
-.player-card,
-.team-card {
-    cursor: pointer;
-    position: relative;
-    z-index: 1;
-}
-
-.player-card *,
-.team-card * {
-    pointer-events: none; /* Gli elementi interni non intercettano il click */
-}
-
-/* Modal Content Scrollable Fix */
-.modal-scrollable {
-    max-height: 90vh;
-    overflow-y: auto;
-}
-
-.modal-scrollable::-webkit-scrollbar {
-    width: 8px;
-}
-
-.modal-scrollable::-webkit-scrollbar-track {
-    background: rgba(15, 23, 42, 0.5);
-    border-radius: 10px;
-}
-
-.modal-scrollable::-webkit-scrollbar-thumb {
-    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
-    border-radius: 10px;
-}
-
-/* Buttons inside modals - Ensure they work */
-.modal button,
-.modal .btn,
-.modal a.btn {
-    pointer-events: auto !important;
-    cursor: pointer !important;
-    position: relative;
-    z-index: 10;
-}
-
-/* Fix for nested buttons */
-.detail-actions button,
-.member-item button,
-.request-actions button {
-    pointer-events: auto !important;
-    cursor: pointer !important;
-}
-
-/* Social Links */
-.social-links {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.75rem;
-}
-
-.social-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.75rem 1.25rem;
-    background: rgba(59, 130, 246, 0.1);
-    border: 2px solid #3b82f6;
-    border-radius: 12px;
-    color: #3b82f6;
-    text-decoration: none;
-    transition: all 0.3s ease;
-    font-weight: 700;
-    font-size: clamp(0.85rem, 1.8vw, 0.95rem);
-    pointer-events: auto !important;
-    cursor: pointer !important;
-}
-
-.social-link:hover {
-    background: #3b82f6;
-    color: white;
-    transform: translateY(-3px);
-    box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
-}
-
-.social-link.instagram {
-    border-color: #e1306c;
-    color: #e1306c;
-}
-
-.social-link.instagram:hover {
-    background: linear-gradient(135deg, #833ab4 0%, #fd1d1d 50%, #fcb045 100%);
-    color: white;
-    box-shadow: 0 0 20px rgba(225, 48, 108, 0.4);
-}
-
-.social-link.tiktok {
-    border-color: #00f2ea;
-    color: #00f2ea;
-}
-
-.social-link.tiktok:hover {
-    background: linear-gradient(135deg, #00f2ea 0%, #ff0050 100%);
-    color: white;
-    box-shadow: 0 0 20px rgba(0, 242, 234, 0.4);
-}
-
-/* RESPONSIVE FIXES */
-@media (max-width: 768px) {
-    .player-detail-header,
-    .team-detail-header {
-        flex-direction: column;
-        text-align: center;
-    }
-
-    .detail-meta {
-        justify-content: center;
-    }
-
-    .detail-actions {
-        flex-direction: column;
-        width: 100%;
-    }
-
-    .detail-actions .btn {
-        width: 100%;
-        justify-content: center;
-    }
-
-    .member-item {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .member-info {
-        justify-content: center;
-        text-align: center;
-    }
-
-    .member-details h5 {
-        justify-content: center;
-    }
-
-    .info-grid {
-        grid-template-columns: 1fr;
-    }
-}
-
-@media (max-width: 480px) {
-    .detail-avatar {
-        font-size: 4rem;
-    }
-
-    .meta-item {
-        font-size: 0.8rem;
-        padding: 0.4rem 0.75rem;
-    }
-
-    .modal-scrollable {
-        max-height: 85vh;
-    }
-}
-
-/* Force clickable on all buttons */
-button,
-.btn,
-a.btn,
-[onclick] {
-    pointer-events: auto !important;
-    cursor: pointer !important;
-}
-
-/* Ensure modal background doesn't block clicks */
-.modal-content {
-    pointer-events: auto;
-}
-
-.modal.active {
-    pointer-events: auto;
-}
-
-/* Fix for detail content */
-#playerDetailContent,
-#teamDetailContent {
-    pointer-events: auto;
-}
-
-#playerDetailContent *,
-#teamDetailContent * {
-    pointer-events: auto;
-}
-
-/* Override any conflicting pointer-events */
-.player-card *,
-.team-card * {
-    pointer-events: none;
-}
-
-.player-card,
-.team-card {
-    pointer-events: auto;
-}
-
-/* ============================================
-   FIX TASTI NAVBAR E HERO - PRIORITÀ MASSIMA
-   ============================================ */
-
-/* Header e Navigation - SEMPRE CLICCABILI */
-.header,
-.header *,
-.nav,
-.nav *,
-.nav-btn,
-.nav-btn *,
-.btn-logout,
-.btn-logout *,
-.header-actions,
-.header-actions * {
-    pointer-events: auto !important;
-    cursor: pointer !important;
-}
-
-/* Hero Actions - SEMPRE CLICCABILI */
-.hero-actions,
-.hero-actions *,
-#heroLoginBtn,
-#heroRegisterBtn,
-#heroLoginBtn *,
-#heroRegisterBtn * {
-    pointer-events: auto !important;
-    cursor: pointer !important;
-}
-
-/* Language Selector - SEMPRE CLICCABILE */
-.language-selector,
-#languageSelector {
-    pointer-events: auto !important;
-    cursor: pointer !important;
-}
-
-/* Tutti i bottoni primari - SEMPRE CLICCABILI */
-.btn,
-.btn *,
-button,
-button *,
-[type="button"],
-[type="submit"] {
-    pointer-events: auto !important;
-    cursor: pointer !important;
-    user-select: none !important;
-}
-
-/* Nav buttons specifici */
-button.nav-btn,
-button.btn-logout,
-button[data-page] {
-    pointer-events: auto !important;
-    cursor: pointer !important;
-    position: relative;
-    z-index: 1000;
-}
-
-/* Hero buttons */
-.btn-primary,
-.btn-secondary,
-.btn-large {
-    pointer-events: auto !important;
-    cursor: pointer !important;
-    position: relative;
-    z-index: 100;
-}
-
-/* Fix per i tag <i> dentro i bottoni che bloccano i click */
-.btn i,
-.nav-btn i,
-button i {
-    pointer-events: none !important;
-}
-
-/* Fix per i tag <span> dentro i bottoni */
-.btn span,
-.nav-btn span,
-button span {
-    pointer-events: none !important;
-}
-
-/* Assicura che il contenuto dei bottoni non blocchi */
-.btn > *,
-.nav-btn > *,
-button > * {
-    pointer-events: none !important;
-}
-
-/* Ma il bottone stesso deve essere cliccabile */
-.btn,
-.nav-btn,
-button {
-    pointer-events: auto !important;
-}
-
-/* Feature cards - NON devono bloccare i click */
-.feature-card,
-.feature-card * {
-    pointer-events: auto !important;
-}
-
-/* Hero section */
-.hero,
-.hero-content,
-.hero-actions {
-    pointer-events: auto !important;
-}
-
-/* Container principale */
-.main-content,
-.container {
-    pointer-events: auto !important;
-}
-
-/* Page sections */
-.page {
-    pointer-events: auto !important;
-}
-
-/* Filters e search */
-.search-filters,
-.search-filters *,
-.filter-row,
-.filter-row * {
-    pointer-events: auto !important;
-}
-
-/* Search buttons */
-#searchPlayersBtn,
-#searchTeamsBtn,
-#createTeamBtn {
-    pointer-events: auto !important;
-    cursor: pointer !important;
-    position: relative;
-    z-index: 10;
-}
-
-/* Input fields */
-input,
-select,
-textarea,
-.input,
-.select,
-.textarea {
-    pointer-events: auto !important;
-    cursor: text !important;
-}
-
-select,
-.select {
-    cursor: pointer !important;
-}
-
-/* Links */
-a,
-a * {
-    pointer-events: auto !important;
-}
-
-/* Modals */
-.modal,
-.modal-content,
-.modal *,
-.auth-form,
-.auth-form * {
-    pointer-events: auto !important;
-}
-
-/* Form buttons */
-form button,
-form button *,
-form .btn,
-form .btn * {
-    pointer-events: auto !important;
-    cursor: pointer !important;
-}
-
-form button,
-form .btn {
-    pointer-events: auto !important;
-}
-
-form button > *,
-form .btn > * {
-    pointer-events: none !important;
-}
-
-/* Modal close buttons */
-.modal-close,
-.modal-close * {
-    pointer-events: auto !important;
-    cursor: pointer !important;
-    position: relative;
-    z-index: 2001;
-}
-
-.modal-close {
-    pointer-events: auto !important;
-}
-
-.modal-close i {
-    pointer-events: none !important;
-}
-
-/* Auth switches (links) */
-.auth-switch,
-.auth-switch a {
-    pointer-events: auto !important;
-    cursor: pointer !important;
-}
-
-/* Fix z-index hierarchy */
-.header {
-    position: sticky;
-    top: 0;
-    z-index: 1000;
-}
-
-.nav {
-    position: relative;
-    z-index: 1001;
-}
-
-.nav-btn {
-    position: relative;
-    z-index: 1002;
-}
-
-.hero-actions {
-    position: relative;
-    z-index: 100;
-}
-
-/* Force button hover states */
-button:hover,
-.btn:hover,
-.nav-btn:hover {
-    opacity: 1 !important;
-}
-
-/* Remove any conflicting transforms */
-.btn::before,
-.nav-btn::before {
-    pointer-events: none !important;
-}
-
-/* Assicura che nulla blocchi i click sulla pagina */
-body,
-html,
-#app,
-#root {
-    pointer-events: auto !important;
-}
-
-/* Previeni che gli overlay bloccino tutto */
-.loading-overlay {
-    pointer-events: auto !important;
-}
-
-.loading-overlay.active {
-    pointer-events: auto !important;
-}
-
-/* Quando il loading è attivo, blocca solo i click sull'overlay stesso */
-.loading-overlay.active ~ * {
-    pointer-events: none !important;
-}
-
-.loading-overlay:not(.active) {
-    pointer-events: none !important;
-}
-
-/* Results grids - cards devono essere cliccabili */
-.results-grid,
-.player-card,
-.team-card {
-    pointer-events: auto !important;
-}
-
-/* Card content interno non deve intercettare */
-.player-card > *:not(button):not(.btn),
-.team-card > *:not(button):not(.btn) {
-    pointer-events: none !important;
-}
-
-/* Ma la card stessa sì */
-.player-card,
-.team-card {
-    pointer-events: auto !important;
-    cursor: pointer !important;
-}
-
-/* Profile actions */
-.profile-actions,
-.profile-actions * {
-    pointer-events: auto !important;
-}
-
-#editProfileBtn,
-#resetPasswordBtn {
-    pointer-events: auto !important;
-    cursor: pointer !important;
-}
-
-/* Admin buttons */
-#deleteAllTeamsBtn,
-#resetProfilesBtn {
-    pointer-events: auto !important;
-    cursor: pointer !important;
-}
-
-/* Requests tabs */
-.tab-btn,
-.tab-btn * {
-    pointer-events: auto !important;
-}
-
-.tab-btn {
-    pointer-events: auto !important;
-    cursor: pointer !important;
-}
-
-.tab-btn > * {
-    pointer-events: none !important;
-}
-
-/* Request actions */
-.request-actions,
-.request-actions * {
-    pointer-events: auto !important;
-}
-
-/* Checkbox labels */
-.checkbox-label,
-.checkbox-label *,
-.checkbox-label-single,
-.checkbox-label-single * {
-    pointer-events: auto !important;
-    cursor: pointer !important;
-}
-
-input[type="checkbox"],
-input[type="radio"] {
-    pointer-events: auto !important;
-    cursor: pointer !important;
-}
-
-/* Tag selector */
-.tag-selector,
-.tag-btn {
-    pointer-events: auto !important;
-}
-
-.tag-btn {
-    pointer-events: auto !important;
-    cursor: pointer !important;
-}
-
-.tag-btn > * {
-    pointer-events: none !important;
-}
-
-/* Star rating */
-.star-rating,
-.star-rating i {
-    pointer-events: auto !important;
-    cursor: pointer !important;
-}
-
-/* Feedback form */
-#feedbackForm,
-#feedbackForm * {
-    pointer-events: auto !important;
-}
-
-/* Create team form */
-#createTeamForm,
-#createTeamForm * {
-    pointer-events: auto !important;
-}
-
-/* Edit profile form */
-#editProfileForm,
-#editProfileForm * {
-    pointer-events: auto !important;
-}
-
-/* Newsletter form */
-#newsletterForm,
-#newsletterForm * {
-    pointer-events: auto !important;
-}
-
-/* Admin users list */
-.users-list,
-.user-item,
-.user-item * {
-    pointer-events: auto !important;
-}
-
-.user-item-actions button {
-    pointer-events: auto !important;
-    cursor: pointer !important;
-}
-
-/* Social links */
-.social-link {
-    pointer-events: auto !important;
-    cursor: pointer !important;
-}
-
-/* Notification */
-.notification {
-    pointer-events: none !important;
-}
-
-/* Fix per bottoni che non rispondono su mobile */
-@media (max-width: 768px) {
-    button,
-    .btn,
-    .nav-btn,
-    a {
-        -webkit-tap-highlight-color: rgba(59, 130, 246, 0.3);
-        touch-action: manipulation;
-    }
-}
-
-/* Debug helper - rimuovi dopo aver verificato che funziona */
-button:hover::after,
-.btn:hover::after {
-    content: '';
-    position: absolute;
-    inset: -2px;
-    border: 2px solid red;
-    pointer-events: none;
-    opacity: 0; /* Cambia a 1 per vedere i bordi e capire se l'hover funziona */
-    z-index: 9999;
 }
