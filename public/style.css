@@ -2926,3 +2926,444 @@ a.btn,
 .team-card {
     pointer-events: auto;
 }
+
+/* ============================================
+   FIX TASTI NAVBAR E HERO - PRIORITÀ MASSIMA
+   ============================================ */
+
+/* Header e Navigation - SEMPRE CLICCABILI */
+.header,
+.header *,
+.nav,
+.nav *,
+.nav-btn,
+.nav-btn *,
+.btn-logout,
+.btn-logout *,
+.header-actions,
+.header-actions * {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+}
+
+/* Hero Actions - SEMPRE CLICCABILI */
+.hero-actions,
+.hero-actions *,
+#heroLoginBtn,
+#heroRegisterBtn,
+#heroLoginBtn *,
+#heroRegisterBtn * {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+}
+
+/* Language Selector - SEMPRE CLICCABILE */
+.language-selector,
+#languageSelector {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+}
+
+/* Tutti i bottoni primari - SEMPRE CLICCABILI */
+.btn,
+.btn *,
+button,
+button *,
+[type="button"],
+[type="submit"] {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    user-select: none !important;
+}
+
+/* Nav buttons specifici */
+button.nav-btn,
+button.btn-logout,
+button[data-page] {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    position: relative;
+    z-index: 1000;
+}
+
+/* Hero buttons */
+.btn-primary,
+.btn-secondary,
+.btn-large {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    position: relative;
+    z-index: 100;
+}
+
+/* Fix per i tag <i> dentro i bottoni che bloccano i click */
+.btn i,
+.nav-btn i,
+button i {
+    pointer-events: none !important;
+}
+
+/* Fix per i tag <span> dentro i bottoni */
+.btn span,
+.nav-btn span,
+button span {
+    pointer-events: none !important;
+}
+
+/* Assicura che il contenuto dei bottoni non blocchi */
+.btn > *,
+.nav-btn > *,
+button > * {
+    pointer-events: none !important;
+}
+
+/* Ma il bottone stesso deve essere cliccabile */
+.btn,
+.nav-btn,
+button {
+    pointer-events: auto !important;
+}
+
+/* Feature cards - NON devono bloccare i click */
+.feature-card,
+.feature-card * {
+    pointer-events: auto !important;
+}
+
+/* Hero section */
+.hero,
+.hero-content,
+.hero-actions {
+    pointer-events: auto !important;
+}
+
+/* Container principale */
+.main-content,
+.container {
+    pointer-events: auto !important;
+}
+
+/* Page sections */
+.page {
+    pointer-events: auto !important;
+}
+
+/* Filters e search */
+.search-filters,
+.search-filters *,
+.filter-row,
+.filter-row * {
+    pointer-events: auto !important;
+}
+
+/* Search buttons */
+#searchPlayersBtn,
+#searchTeamsBtn,
+#createTeamBtn {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    position: relative;
+    z-index: 10;
+}
+
+/* Input fields */
+input,
+select,
+textarea,
+.input,
+.select,
+.textarea {
+    pointer-events: auto !important;
+    cursor: text !important;
+}
+
+select,
+.select {
+    cursor: pointer !important;
+}
+
+/* Links */
+a,
+a * {
+    pointer-events: auto !important;
+}
+
+/* Modals */
+.modal,
+.modal-content,
+.modal *,
+.auth-form,
+.auth-form * {
+    pointer-events: auto !important;
+}
+
+/* Form buttons */
+form button,
+form button *,
+form .btn,
+form .btn * {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+}
+
+form button,
+form .btn {
+    pointer-events: auto !important;
+}
+
+form button > *,
+form .btn > * {
+    pointer-events: none !important;
+}
+
+/* Modal close buttons */
+.modal-close,
+.modal-close * {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    position: relative;
+    z-index: 2001;
+}
+
+.modal-close {
+    pointer-events: auto !important;
+}
+
+.modal-close i {
+    pointer-events: none !important;
+}
+
+/* Auth switches (links) */
+.auth-switch,
+.auth-switch a {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+}
+
+/* Fix z-index hierarchy */
+.header {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.nav {
+    position: relative;
+    z-index: 1001;
+}
+
+.nav-btn {
+    position: relative;
+    z-index: 1002;
+}
+
+.hero-actions {
+    position: relative;
+    z-index: 100;
+}
+
+/* Force button hover states */
+button:hover,
+.btn:hover,
+.nav-btn:hover {
+    opacity: 1 !important;
+}
+
+/* Remove any conflicting transforms */
+.btn::before,
+.nav-btn::before {
+    pointer-events: none !important;
+}
+
+/* Assicura che nulla blocchi i click sulla pagina */
+body,
+html,
+#app,
+#root {
+    pointer-events: auto !important;
+}
+
+/* Previeni che gli overlay bloccino tutto */
+.loading-overlay {
+    pointer-events: auto !important;
+}
+
+.loading-overlay.active {
+    pointer-events: auto !important;
+}
+
+/* Quando il loading è attivo, blocca solo i click sull'overlay stesso */
+.loading-overlay.active ~ * {
+    pointer-events: none !important;
+}
+
+.loading-overlay:not(.active) {
+    pointer-events: none !important;
+}
+
+/* Results grids - cards devono essere cliccabili */
+.results-grid,
+.player-card,
+.team-card {
+    pointer-events: auto !important;
+}
+
+/* Card content interno non deve intercettare */
+.player-card > *:not(button):not(.btn),
+.team-card > *:not(button):not(.btn) {
+    pointer-events: none !important;
+}
+
+/* Ma la card stessa sì */
+.player-card,
+.team-card {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+}
+
+/* Profile actions */
+.profile-actions,
+.profile-actions * {
+    pointer-events: auto !important;
+}
+
+#editProfileBtn,
+#resetPasswordBtn {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+}
+
+/* Admin buttons */
+#deleteAllTeamsBtn,
+#resetProfilesBtn {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+}
+
+/* Requests tabs */
+.tab-btn,
+.tab-btn * {
+    pointer-events: auto !important;
+}
+
+.tab-btn {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+}
+
+.tab-btn > * {
+    pointer-events: none !important;
+}
+
+/* Request actions */
+.request-actions,
+.request-actions * {
+    pointer-events: auto !important;
+}
+
+/* Checkbox labels */
+.checkbox-label,
+.checkbox-label *,
+.checkbox-label-single,
+.checkbox-label-single * {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+}
+
+/* Tag selector */
+.tag-selector,
+.tag-btn {
+    pointer-events: auto !important;
+}
+
+.tag-btn {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+}
+
+.tag-btn > * {
+    pointer-events: none !important;
+}
+
+/* Star rating */
+.star-rating,
+.star-rating i {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+}
+
+/* Feedback form */
+#feedbackForm,
+#feedbackForm * {
+    pointer-events: auto !important;
+}
+
+/* Create team form */
+#createTeamForm,
+#createTeamForm * {
+    pointer-events: auto !important;
+}
+
+/* Edit profile form */
+#editProfileForm,
+#editProfileForm * {
+    pointer-events: auto !important;
+}
+
+/* Newsletter form */
+#newsletterForm,
+#newsletterForm * {
+    pointer-events: auto !important;
+}
+
+/* Admin users list */
+.users-list,
+.user-item,
+.user-item * {
+    pointer-events: auto !important;
+}
+
+.user-item-actions button {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+}
+
+/* Social links */
+.social-link {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+}
+
+/* Notification */
+.notification {
+    pointer-events: none !important;
+}
+
+/* Fix per bottoni che non rispondono su mobile */
+@media (max-width: 768px) {
+    button,
+    .btn,
+    .nav-btn,
+    a {
+        -webkit-tap-highlight-color: rgba(59, 130, 246, 0.3);
+        touch-action: manipulation;
+    }
+}
+
+/* Debug helper - rimuovi dopo aver verificato che funziona */
+button:hover::after,
+.btn:hover::after {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border: 2px solid red;
+    pointer-events: none;
+    opacity: 0; /* Cambia a 1 per vedere i bordi e capire se l'hover funziona */
+    z-index: 9999;
+}
