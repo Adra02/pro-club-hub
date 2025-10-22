@@ -76,6 +76,7 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'Il livello massimo non può superare 9999' });
       }
 
+      // Salva i nuovi limiti
       await settingsCollection.updateOne(
         { _id: 'level_limits' },
         { 
@@ -88,8 +89,21 @@ export default async function handler(req, res) {
         { upsert: true }
       );
 
+      // CRITICAL FIX: Aggiorna automaticamente tutti gli utenti fuori range
+      // Porta gli utenti sotto il minimo al nuovo minimo
+      await db.collection('users').updateMany(
+        { level: { $lt: min } },
+        { $set: { level: min, updatedAt: new Date() } }
+      );
+
+      // Porta gli utenti sopra il massimo al nuovo massimo
+      await db.collection('users').updateMany(
+        { level: { $gt: max } },
+        { $set: { level: max, updatedAt: new Date() } }
+      );
+
       return res.status(200).json({
-        message: 'Limiti livello aggiornati con successo',
+        message: 'Limiti livello aggiornati con successo. Utenti aggiornati automaticamente.',
         minLevel: min,
         maxLevel: max
       });
