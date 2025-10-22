@@ -2242,7 +2242,7 @@ async function cancelRequest(requestId) {
 }
 
 // ============================================
-// ADMIN DASHBOARD
+// ADMIN DASHBOARD - AGGIORNA QUESTA SEZIONE COMPLETA
 // ============================================
 
 async function loadAdminDashboard() {
@@ -2255,6 +2255,7 @@ async function loadAdminDashboard() {
     try {
         showLoading();
         
+        // Load stats
         const statsResponse = await fetch(`${API_BASE}/admin?action=stats`, {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -2269,6 +2270,7 @@ async function loadAdminDashboard() {
             document.getElementById('pendingRequests').textContent = stats.pendingRequests;
         }
 
+        // Load users list
         const usersResponse = await fetch(`${API_BASE}/admin?action=users`, {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -2280,6 +2282,9 @@ async function loadAdminDashboard() {
             displayUsersList(data.users);
         }
 
+        // Load level settings
+        await loadLevelSettings();
+
     } catch (error) {
         console.error('Load admin dashboard error:', error);
         showNotification('❌ Errore nel caricamento dashboard', 'error');
@@ -2288,229 +2293,120 @@ async function loadAdminDashboard() {
     }
 }
 
-function displayUsersList(users) {
-    const container = document.getElementById('usersList');
-
-    if (users.length === 0) {
-        container.innerHTML = '<p style="color: #64748b;">Nessun utente registrato</p>';
-        return;
-    }
-
-    container.innerHTML = users.map(user => {
-        const isSuspended = user.isSuspended;
-        const statusBadge = isSuspended 
-            ? '<span style="color: #ef4444; font-weight: 600;">SOSPESO</span>'
-            : '<span style="color: #10b981; font-weight: 600;">ATTIVO</span>';
-
-        return `
-            <div class="user-item">
-                <div class="user-item-info">
-                    <h4>${user.username} ${statusBadge}</h4>
-                    <p>${user.platform} - Livello ${user.level} - ${user.nationality}</p>
-                </div>
-                <div class="user-item-actions">
-                    ${isSuspended ? `
-                        <button class="btn btn-small btn-success" onclick="unsuspendUser('${user._id}')">
-                            <i class="fas fa-check"></i> Riabilita
-                        </button>
-                    ` : `
-                        <button class="btn btn-small btn-warning" onclick="suspendUser('${user._id}')">
-                            <i class="fas fa-ban"></i> Sospendi
-                        </button>
-                    `}
-                    <button class="btn btn-small btn-danger" onclick="deleteUser('${user._id}')">
-                        <i class="fas fa-trash"></i> Elimina
-                    </button>
-                </div>
-            </div>
-        `;
-    }).join('');
-}
-
-async function suspendUser(userId) {
-    if (!confirm('Sei sicuro di voler sospendere questo utente?')) return;
-
+async function loadLevelSettings() {
     try {
-        showLoading();
-        const response = await fetch(`${API_BASE}/admin?action=suspend`, {
-            method: 'POST',
+        const response = await fetch(`${API_BASE}/admin?action=level-settings`, {
             headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            },
-            body: JSON.stringify({ userId })
-        });
-
-        if (response.ok) {
-            showNotification('✅ Utente sospeso', 'success');
-            loadAdminDashboard();
-        } else {
-            showNotification('❌ Errore durante la sospensione', 'error');
-        }
-    } catch (error) {
-        console.error('Suspend user error:', error);
-        showNotification('❌ Errore di connessione', 'error');
-    } finally {
-        hideLoading();
-    }
-}
-
-async function unsuspendUser(userId) {
-    if (!confirm('Sei sicuro di voler riabilitare questo utente?')) return;
-
-    try {
-        showLoading();
-        const response = await fetch(`${API_BASE}/admin?action=unsuspend`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            },
-            body: JSON.stringify({ userId })
-        });
-
-        if (response.ok) {
-            showNotification('✅ Utente riabilitato', 'success');
-            loadAdminDashboard();
-        } else {
-            showNotification('❌ Errore durante la riabilitazione', 'error');
-        }
-    } catch (error) {
-        console.error('Unsuspend user error:', error);
-        showNotification('❌ Errore di connessione', 'error');
-    } finally {
-        hideLoading();
-    }
-}
-
-async function deleteUser(userId) {
-    if (!confirm('⚠️ ATTENZIONE! Sei sicuro di voler ELIMINARE questo utente? Questa azione è IRREVERSIBILE!')) return;
-    if (!confirm('Confermi definitivamente l\'eliminazione?')) return;
-
-    try {
-        showLoading();
-        const response = await fetch(`${API_BASE}/admin?action=user`, {
-            method: 'DELETE',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            },
-            body: JSON.stringify({ userId })
-        });
-
-        if (response.ok) {
-            showNotification('✅ Utente eliminato', 'success');
-            loadAdminDashboard();
-        } else {
-            showNotification('❌ Errore durante l\'eliminazione', 'error');
-        }
-    } catch (error) {
-        console.error('Delete user error:', error);
-        showNotification('❌ Errore di connessione', 'error');
-    } finally {
-        hideLoading();
-    }
-}
-
-async function handleDeleteAllTeams() {
-    if (!confirm('⚠️ ATTENZIONE! Vuoi ELIMINARE TUTTE LE SQUADRE? Questa azione è IRREVERSIBILE!')) return;
-    if (!confirm('Confermi definitivamente l\'eliminazione di TUTTE le squadre?')) return;
-
-    try {
-        showLoading();
-        const response = await fetch(`${API_BASE}/admin?action=teams`, {
-            method: 'DELETE',
-            headers: {
-                'Content-Type': 'application/json',
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
         });
 
-        const data = await response.json();
-
         if (response.ok) {
-            showNotification(`✅ ${data.count} squadre eliminate con successo`, 'success');
-            loadAdminDashboard();
-        } else {
-            showNotification('❌ Errore durante l\'eliminazione', 'error');
+            const data = await response.json();
+            document.getElementById('adminMinLevel').value = data.minLevel;
+            document.getElementById('adminMaxLevel').value = data.maxLevel;
+            
+            // Update global variables for validation
+            window.GLOBAL_MIN_LEVEL = data.minLevel;
+            window.GLOBAL_MAX_LEVEL = data.maxLevel;
+            
+            // Update all level input fields
+            updateLevelInputLimits(data.minLevel, data.maxLevel);
         }
     } catch (error) {
-        console.error('Delete all teams error:', error);
-        showNotification('❌ Errore di connessione', 'error');
-    } finally {
-        hideLoading();
+        console.error('Load level settings error:', error);
     }
 }
 
-async function handleResetProfiles() {
-    if (!confirm('⚠️ ATTENZIONE! Vuoi resettare tutti i profili dei giocatori? Questa azione resetterà livelli, ruoli e statistiche!')) return;
-    if (!confirm('Confermi definitivamente il reset di tutti i profili?')) return;
-
-    try {
-        showLoading();
-        const response = await fetch(`${API_BASE}/admin?action=reset-profiles`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-            showNotification('✅ Profili resettati con successo!', 'success');
-            loadAdminDashboard();
-        } else {
-            showNotification('❌ Errore durante il reset', 'error');
+function updateLevelInputLimits(minLevel, maxLevel) {
+    // Update all level input fields in the page
+    const levelInputs = document.querySelectorAll('input[type="number"][id*="evel"], input[type="number"][id*="Level"]');
+    levelInputs.forEach(input => {
+        if (input.id !== 'adminMinLevel' && input.id !== 'adminMaxLevel') {
+            input.min = minLevel;
+            input.max = maxLevel;
+            input.placeholder = `${minLevel}-${maxLevel}`;
         }
-    } catch (error) {
-        console.error('Reset profiles error:', error);
-        showNotification('❌ Errore di connessione', 'error');
-    } finally {
-        hideLoading();
+    });
+
+    // Update filter inputs
+    const minLevelFilter = document.getElementById('minLevelFilter');
+    const maxLevelFilter = document.getElementById('maxLevelFilter');
+    if (minLevelFilter) {
+        minLevelFilter.min = minLevel;
+        minLevelFilter.max = maxLevel;
+        minLevelFilter.placeholder = minLevel.toString();
+    }
+    if (maxLevelFilter) {
+        maxLevelFilter.min = minLevel;
+        maxLevelFilter.max = maxLevel;
+        maxLevelFilter.placeholder = maxLevel.toString();
     }
 }
 
-async function handleSendNewsletter(e) {
+async function handleLevelSettingsUpdate(e) {
     e.preventDefault();
 
-    const subject = document.getElementById('newsletterSubject').value.trim();
-    const message = document.getElementById('newsletterMessage').value.trim();
+    const minLevel = parseInt(document.getElementById('adminMinLevel').value);
+    const maxLevel = parseInt(document.getElementById('adminMaxLevel').value);
 
-    if (!subject || !message) {
-        showNotification('⚠️ Compila tutti i campi', 'error');
+    if (isNaN(minLevel) || isNaN(maxLevel)) {
+        showNotification('⚠️ Inserisci valori numerici validi', 'error');
         return;
     }
 
-    if (!confirm(`Vuoi inviare questa newsletter a TUTTI gli utenti?\n\nOggetto: ${subject}`)) return;
+    if (minLevel < 1) {
+        showNotification('⚠️ Il livello minimo deve essere almeno 1', 'error');
+        return;
+    }
+
+    if (maxLevel < minLevel) {
+        showNotification('⚠️ Il livello massimo deve essere maggiore o uguale al minimo', 'error');
+        return;
+    }
+
+    if (maxLevel > 9999) {
+        showNotification('⚠️ Il livello massimo non può superare 9999', 'error');
+        return;
+    }
+
+    if (!confirm(`Confermi di voler impostare i livelli tra ${minLevel} e ${maxLevel}?\n\nQuesto influenzerà tutti i form di registrazione e modifica profilo.`)) {
+        return;
+    }
 
     try {
         showLoading();
-        const response = await fetch(`${API_BASE}/admin?action=newsletter`, {
+        const response = await fetch(`${API_BASE}/admin?action=level-settings`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             },
-            body: JSON.stringify({ subject, message })
+            body: JSON.stringify({ minLevel, maxLevel })
         });
 
         const data = await response.json();
 
         if (response.ok) {
-            showNotification(`✅ Newsletter inviata a ${data.sent} utenti!`, 'success');
-            document.getElementById('newsletterForm').reset();
+            showNotification(`✅ ${data.message}`, 'success');
+            
+            // Update global variables
+            window.GLOBAL_MIN_LEVEL = minLevel;
+            window.GLOBAL_MAX_LEVEL = maxLevel;
+            
+            // Update all level inputs in the page
+            updateLevelInputLimits(minLevel, maxLevel);
         } else {
-            showNotification('❌ Errore durante l\'invio', 'error');
+            showNotification('❌ ' + (data.error || 'Errore durante l\'aggiornamento'), 'error');
         }
     } catch (error) {
-        console.error('Send newsletter error:', error);
+        console.error('Update level settings error:', error);
         showNotification('❌ Errore di connessione', 'error');
     } finally {
         hideLoading();
     }
 }
+
 
 // ============================================
 // UTILITY FUNCTIONS
@@ -2556,3 +2452,4 @@ window.cancelRequest = cancelRequest;
 window.suspendUser = suspendUser;
 window.unsuspendUser = unsuspendUser;
 window.deleteUser = deleteUser;
+
