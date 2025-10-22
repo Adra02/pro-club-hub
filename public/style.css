@@ -2494,3 +2494,435 @@ body {
         padding: 0.25rem;
     }
 }
+
+/* ============================================
+   FIX TASTI CLICCABILI - AGGIUNGI ALLA FINE
+   ============================================ */
+
+/* Player Detail Modal - Fix z-index */
+.player-detail-header,
+.team-detail-header {
+    position: relative;
+    z-index: 1;
+}
+
+.detail-avatar {
+    font-size: clamp(4rem, 10vw, 6rem);
+    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    filter: drop-shadow(0 0 20px rgba(59, 130, 246, 0.5));
+    margin-bottom: 1rem;
+}
+
+.detail-info {
+    flex: 1;
+}
+
+.detail-info h2 {
+    font-size: clamp(1.75rem, 5vw, 2.5rem);
+    margin-bottom: 1rem;
+    font-weight: 800;
+}
+
+.detail-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    border-radius: 12px;
+    font-size: clamp(0.85rem, 2vw, 0.95rem);
+    font-weight: 600;
+}
+
+.meta-item i {
+    color: #3b82f6;
+}
+
+/* Info Grid */
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
+    gap: 1.5rem;
+    margin: 2rem 0;
+}
+
+.info-card {
+    background: rgba(15, 23, 42, 0.8);
+    border: 2px solid rgba(59, 130, 246, 0.2);
+    border-radius: 16px;
+    padding: clamp(1rem, 3vw, 1.5rem);
+    transition: all 0.3s ease;
+}
+
+.info-card:hover {
+    border-color: #3b82f6;
+    transform: translateY(-3px);
+}
+
+.info-card h4 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    color: #3b82f6;
+    font-size: clamp(1rem, 2vw, 1.1rem);
+    font-weight: 700;
+}
+
+.info-card p {
+    color: #cbd5e1;
+    line-height: 1.6;
+    font-size: clamp(0.9rem, 2vw, 1rem);
+}
+
+.roles-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.role-badge {
+    padding: 0.5rem 1rem;
+    background: rgba(59, 130, 246, 0.15);
+    border: 1px solid #3b82f6;
+    border-radius: 12px;
+    font-size: clamp(0.8rem, 1.8vw, 0.9rem);
+    color: #3b82f6;
+    font-weight: 600;
+    display: inline-block;
+}
+
+/* Detail Actions - FIX IMPORTANTE */
+.detail-actions {
+    display: flex;
+    gap: 1rem;
+    margin: 2rem 0;
+    flex-wrap: wrap;
+    position: relative;
+    z-index: 10; /* IMPORTANTE */
+}
+
+.detail-actions .btn {
+    position: relative;
+    z-index: 10; /* IMPORTANTE */
+    pointer-events: auto; /* IMPORTANTE */
+    cursor: pointer; /* IMPORTANTE */
+}
+
+/* Team Members */
+.team-members {
+    margin-top: 2rem;
+}
+
+.team-members h4 {
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: clamp(1.25rem, 3vw, 1.5rem);
+    font-weight: 700;
+    color: #3b82f6;
+}
+
+.member-list {
+    display: grid;
+    gap: 1rem;
+}
+
+.member-item {
+    background: rgba(15, 23, 42, 0.9);
+    border: 2px solid rgba(59, 130, 246, 0.2);
+    border-radius: 12px;
+    padding: clamp(1rem, 2vw, 1.5rem);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.3s ease;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.member-item:hover {
+    border-color: #3b82f6;
+    transform: translateX(3px);
+}
+
+.member-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex: 1;
+}
+
+.member-avatar {
+    font-size: clamp(2rem, 5vw, 2.5rem);
+    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.5));
+}
+
+.member-details h5 {
+    margin-bottom: 0.25rem;
+    font-size: clamp(1rem, 2vw, 1.2rem);
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.member-role {
+    color: #94a3b8;
+    font-size: clamp(0.85rem, 1.8vw, 1rem);
+}
+
+.captain-badge,
+.vice-captain-badge {
+    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+    color: white;
+    padding: 0.3rem 0.6rem;
+    border-radius: 8px;
+    font-size: clamp(0.7rem, 1.5vw, 0.8rem);
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
+}
+
+.vice-captain-badge {
+    background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+    box-shadow: 0 0 15px rgba(139, 92, 246, 0.4);
+}
+
+/* Feedback Section in Modals */
+.feedback-section {
+    background: rgba(15, 23, 42, 0.6);
+    border: 2px solid rgba(59, 130, 246, 0.2);
+    border-radius: 16px;
+    padding: clamp(1.5rem, 3vw, 2rem);
+    margin-top: 2rem;
+}
+
+.feedback-section h3 {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    font-size: clamp(1.25rem, 3vw, 1.5rem);
+    font-weight: 700;
+    color: #3b82f6;
+}
+
+/* Player Card e Team Card - Fix Clickable */
+.player-card,
+.team-card {
+    cursor: pointer;
+    position: relative;
+    z-index: 1;
+}
+
+.player-card *,
+.team-card * {
+    pointer-events: none; /* Gli elementi interni non intercettano il click */
+}
+
+/* Modal Content Scrollable Fix */
+.modal-scrollable {
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal-scrollable::-webkit-scrollbar {
+    width: 8px;
+}
+
+.modal-scrollable::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, 0.5);
+    border-radius: 10px;
+}
+
+.modal-scrollable::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+    border-radius: 10px;
+}
+
+/* Buttons inside modals - Ensure they work */
+.modal button,
+.modal .btn,
+.modal a.btn {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    position: relative;
+    z-index: 10;
+}
+
+/* Fix for nested buttons */
+.detail-actions button,
+.member-item button,
+.request-actions button {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+}
+
+/* Social Links */
+.social-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.social-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    background: rgba(59, 130, 246, 0.1);
+    border: 2px solid #3b82f6;
+    border-radius: 12px;
+    color: #3b82f6;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    font-weight: 700;
+    font-size: clamp(0.85rem, 1.8vw, 0.95rem);
+    pointer-events: auto !important;
+    cursor: pointer !important;
+}
+
+.social-link:hover {
+    background: #3b82f6;
+    color: white;
+    transform: translateY(-3px);
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+}
+
+.social-link.instagram {
+    border-color: #e1306c;
+    color: #e1306c;
+}
+
+.social-link.instagram:hover {
+    background: linear-gradient(135deg, #833ab4 0%, #fd1d1d 50%, #fcb045 100%);
+    color: white;
+    box-shadow: 0 0 20px rgba(225, 48, 108, 0.4);
+}
+
+.social-link.tiktok {
+    border-color: #00f2ea;
+    color: #00f2ea;
+}
+
+.social-link.tiktok:hover {
+    background: linear-gradient(135deg, #00f2ea 0%, #ff0050 100%);
+    color: white;
+    box-shadow: 0 0 20px rgba(0, 242, 234, 0.4);
+}
+
+/* RESPONSIVE FIXES */
+@media (max-width: 768px) {
+    .player-detail-header,
+    .team-detail-header {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .detail-meta {
+        justify-content: center;
+    }
+
+    .detail-actions {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .detail-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .member-item {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .member-info {
+        justify-content: center;
+        text-align: center;
+    }
+
+    .member-details h5 {
+        justify-content: center;
+    }
+
+    .info-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .detail-avatar {
+        font-size: 4rem;
+    }
+
+    .meta-item {
+        font-size: 0.8rem;
+        padding: 0.4rem 0.75rem;
+    }
+
+    .modal-scrollable {
+        max-height: 85vh;
+    }
+}
+
+/* Force clickable on all buttons */
+button,
+.btn,
+a.btn,
+[onclick] {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+}
+
+/* Ensure modal background doesn't block clicks */
+.modal-content {
+    pointer-events: auto;
+}
+
+.modal.active {
+    pointer-events: auto;
+}
+
+/* Fix for detail content */
+#playerDetailContent,
+#teamDetailContent {
+    pointer-events: auto;
+}
+
+#playerDetailContent *,
+#teamDetailContent * {
+    pointer-events: auto;
+}
+
+/* Override any conflicting pointer-events */
+.player-card *,
+.team-card * {
+    pointer-events: none;
+}
+
+.player-card,
+.team-card {
+    pointer-events: auto;
+}
