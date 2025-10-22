@@ -1,18 +1,27 @@
 {
-  "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": "/api/$1"
-    }
-  ],
+  "version": 2,
   "functions": {
-    "api/*.js": {
+    "api/**/*.js": {
       "memory": 1024,
       "maxDuration": 10
     }
   },
-  "env": {
-    "VERCEL_URL": "_vercel-url"
-  }
+  "routes": [
+    {
+      "src": "/api/share",
+      "dest": "/api/share.js"
+    },
+    {
+      "src": "/api/preferiti",
+      "dest": "/api/preferiti.js"
+    },
+    {
+      "src": "/api/notifications",
+      "dest": "/api/notifications.js"
+    },
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/$1.js"
+    }
+  ]
 }
-
