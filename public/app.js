@@ -189,13 +189,171 @@ async function fetchCurrentUser() {
 }
 
 // ============================================
-// SISTEMA PREFERITI - VERSIONE CORRETTA
+// SISTEMA PREFERITI - IMPLEMENTAZIONE COMPLETA
 // ============================================
 
-// ============================================
-// FAVORITES PAGE - IMPLEMENTAZIONE COMPLETA
-// ============================================
+/**
+ * Carica i preferiti dell'utente dal server
+ */
+async function loadUserFavorites() {
+    if (!currentUser) {
+        userFavorites = { giocatori: [], squadre: [] };
+        return;
+    }
 
+    try {
+        const response = await fetch(`${API_BASE}/preferiti`, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            userFavorites = data.preferiti || { giocatori: [], squadre: [] };
+            console.log('✅ Preferiti caricati:', userFavorites);
+            
+            // Aggiorna le icone dei preferiti nella UI
+            updateFavoriteIcons();
+        } else {
+            console.error('❌ Errore caricamento preferiti');
+            userFavorites = { giocatori: [], squadre: [] };
+        }
+    } catch (error) {
+        console.error('Errore caricamento preferiti:', error);
+        userFavorites = { giocatori: [], squadre: [] };
+    }
+}
+
+/**
+ * Aggiunge o rimuove un elemento dai preferiti
+ * @param {string} targetId - ID del giocatore o squadra
+ * @param {string} type - 'giocatori' o 'squadre'
+ */
+async function toggleFavorite(targetId, type) {
+    if (!currentUser) {
+        showNotification('⚠️ Devi effettuare il login', 'error');
+        return;
+    }
+
+    console.log('🔄 Toggle favorite:', { targetId, type });
+
+    // Controlla se è già nei preferiti
+    const favorites = type === 'giocatori' ? userFavorites.giocatori : userFavorites.squadre;
+    const isFavorite = favorites.some(item => item._id === targetId);
+
+    try {
+        showLoading();
+
+        if (isFavorite) {
+            // Rimuovi dai preferiti
+            const response = await fetch(`${API_BASE}/preferiti?action=remove`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify({ targetId, type })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                // Aggiorna la cache locale
+                if (type === 'giocatori') {
+                    userFavorites.giocatori = userFavorites.giocatori.filter(g => g._id !== targetId);
+                } else {
+                    userFavorites.squadre = userFavorites.squadre.filter(s => s._id !== targetId);
+                }
+
+                showNotification('💔 Rimosso dai preferiti', 'success');
+                console.log('✅ Rimosso dai preferiti');
+                
+                // Aggiorna l'icona
+                updateFavoriteIcon(targetId, false);
+                
+                // Se siamo nella pagina preferiti, ricarica la vista
+                const currentPage = document.querySelector('.page.active');
+                if (currentPage && currentPage.id === 'favoritesPage') {
+                    if (type === 'giocatori') {
+                        renderFavoritePlayers();
+                    } else {
+                        renderFavoriteTeams();
+                    }
+                }
+            } else {
+                showNotification('❌ ' + (data.error || 'Errore'), 'error');
+            }
+        } else {
+            // Aggiungi ai preferiti
+            const response = await fetch(`${API_BASE}/preferiti?action=add`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify({ targetId, type })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                // Ricarica i preferiti per ottenere i dettagli completi
+                await loadUserFavorites();
+                
+                showNotification('❤️ Aggiunto ai preferiti', 'success');
+                console.log('✅ Aggiunto ai preferiti');
+                
+                // Aggiorna l'icona
+                updateFavoriteIcon(targetId, true);
+            } else {
+                showNotification('❌ ' + (data.error || 'Errore'), 'error');
+            }
+        }
+    } catch (error) {
+        console.error('Toggle favorite error:', error);
+        showNotification('❌ Errore di connessione', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+/**
+ * Aggiorna l'icona di un singolo preferito
+ */
+function updateFavoriteIcon(targetId, isFavorite) {
+    const icons = document.querySelectorAll(`[data-favorite-id="${targetId}"]`);
+    icons.forEach(icon => {
+        if (isFavorite) {
+            icon.classList.remove('far');
+            icon.classList.add('fas');
+            icon.style.color = '#ef4444';
+        } else {
+            icon.classList.remove('fas');
+            icon.classList.add('far');
+            icon.style.color = '#94a3b8';
+        }
+    });
+}
+
+/**
+ * Aggiorna tutte le icone dei preferiti nella UI
+ */
+function updateFavoriteIcons() {
+    // Aggiorna le icone dei giocatori
+    userFavorites.giocatori.forEach(player => {
+        updateFavoriteIcon(player._id, true);
+    });
+
+    // Aggiorna le icone delle squadre
+    userFavorites.squadre.forEach(team => {
+        updateFavoriteIcon(team._id, true);
+    });
+}
+
+/**
+ * Carica la pagina dei preferiti
+ */
 async function loadFavoritesPage() {
     if (!currentUser) {
         showNotification('⚠️ Devi effettuare il login', 'error');
@@ -207,6 +365,9 @@ async function loadFavoritesPage() {
     switchFavoritesTab('favorite-players');
 }
 
+/**
+ * Cambia tab nella pagina preferiti
+ */
 function switchFavoritesTab(tab) {
     // Aggiorna i bottoni tab
     document.querySelectorAll('.requests-tabs .tab-btn').forEach(btn => {
@@ -233,6 +394,9 @@ function switchFavoritesTab(tab) {
     }
 }
 
+/**
+ * Renderizza i giocatori preferiti
+ */
 function renderFavoritePlayers() {
     const container = document.getElementById('favoritePlayersContainer');
     
@@ -284,6 +448,9 @@ function renderFavoritePlayers() {
     }).join('');
 }
 
+/**
+ * Renderizza le squadre preferite
+ */
 function renderFavoriteTeams() {
     const container = document.getElementById('favoriteTeamsContainer');
     
@@ -335,6 +502,17 @@ function renderFavoriteTeams() {
         `;
     }).join('');
 }
+
+// ============================================
+// FINE FUNZIONI PREFERITI
+// ============================================
+
+// IMPORTANTE: Assicurati che nel tuo file app.js esista anche:
+// 1. La variabile globale: let userFavorites = { giocatori: [], squadre: [] };
+// 2. La chiamata a loadUserFavorites() nella funzione fetchCurrentUser()
+// 3. Le funzioni globali alla fine del file:
+//    window.toggleFavorite = toggleFavorite;
+//    window.loadFavoritesPage = loadFavoritesPage;
 
 // ============================================
 // NUOVO: SISTEMA CONDIVISIONE
@@ -2680,6 +2858,7 @@ window.unsuspendUser = unsuspendUser;
 window.deleteUser = deleteUser;
 window.toggleFavorite = toggleFavorite;
 window.shareProfile = shareProfile;
+
 
 
 
