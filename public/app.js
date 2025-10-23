@@ -3233,6 +3233,36 @@ function hideLoading() {
     if (overlay) overlay.classList.remove('active');
 }
 
+// ========================================
+// 🔗 GESTIONE CHIUSURA MODAL CONDIVISI
+// ========================================
+
+// Chiudi modal e pulisci URL quando si clicca sulla X
+document.addEventListener('click', (event) => {
+    if (event.target.classList.contains('close')) {
+        const urlParams = getURLParams();
+        
+        if (urlParams.profile && urlParams.id) {
+            // Chiudi tutti i modal
+            document.querySelectorAll('.modal').forEach(modal => {
+                modal.style.display = 'none';
+            });
+            
+            // Rimuovi parametri dall'URL
+            window.history.pushState({}, '', window.location.pathname);
+            
+            // Mostra homepage
+            showHomepage();
+            
+            // Ricarica pagina per stato pulito
+            setTimeout(() => {
+                window.location.reload();
+            }, 100);
+        }
+    }
+});
+
+
 // ============================================
 // GLOBAL FUNCTIONS FOR ONCLICK
 // ============================================
@@ -3251,6 +3281,7 @@ window.unsuspendUser = unsuspendUser;
 window.deleteUser = deleteUser;
 window.toggleFavorite = toggleFavorite;
 window.shareProfile = shareProfile;
+
 
 
 
