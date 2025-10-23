@@ -45,8 +45,8 @@ let userFavorites = { giocatori: [], squadre: [] }; // NUOVO: Preferiti
 // INITIALIZATION
 // ============================================
 
-document.addEventListener('DOMContentLoaded', () => {
-    console.log('🚀 App inizializzata');
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log('DOM caricato, inizializzazione app...');
     initApp();
     checkResetToken();
 });
@@ -3072,5 +3072,6 @@ window.unsuspendUser = unsuspendUser;
 window.deleteUser = deleteUser;
 window.toggleFavorite = toggleFavorite;
 window.shareProfile = shareProfile;
+
 
 
