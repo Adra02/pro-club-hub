@@ -44,6 +44,14 @@
       "dest": "/api/$1.js"
     },
     {
+      "src": "/share.html",
+      "dest": "/public/share.html"
+    },
+    {
+      "src": "/share.js",
+      "dest": "/public/share.js"
+    },
+    {
       "src": "/(.*)",
       "dest": "/public/$1"
     }
