@@ -10,9 +10,17 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { type, id } = req.query;
+    // CRITICAL FIX: Estrai parametri da URL in modo più robusto
+    const url = new URL(req.url, `https://${req.headers.host}`);
+    const type = url.searchParams.get('type');
+    const id = url.searchParams.get('id');
 
-    console.log('Share request:', { type, id, query: req.query, url: req.url });
+    console.log('📍 Share request:', { 
+      type, 
+      id, 
+      fullUrl: req.url,
+      host: req.headers.host 
+    });
 
     if (!type || !id) {
       return renderNotFound(res, 'Parametri mancanti. Usa: /api/share?type=player&id=xxx');
@@ -20,7 +28,7 @@ export default async function handler(req, res) {
 
     // CRITICAL FIX: Verifica che l'ID sia valido
     if (!ObjectId.isValid(id)) {
-      console.error('Invalid ObjectId:', id);
+      console.error('❌ Invalid ObjectId:', id);
       return renderNotFound(res, 'ID non valido');
     }
 
@@ -33,7 +41,7 @@ export default async function handler(req, res) {
       const user = await userModel.findById(id);
 
       if (!user) {
-        console.error('Player not found:', id);
+        console.error('❌ Player not found:', id);
         return renderNotFound(res, 'Giocatore non trovato');
       }
 
@@ -46,7 +54,7 @@ export default async function handler(req, res) {
       const team = await teamModel.findById(id);
 
       if (!team) {
-        console.error('Team not found:', id);
+        console.error('❌ Team not found:', id);
         return renderNotFound(res, 'Squadra non trovata');
       }
 
@@ -56,7 +64,7 @@ export default async function handler(req, res) {
     return renderNotFound(res, 'Type deve essere "player" o "team"');
 
   } catch (error) {
-    console.error('Share endpoint error:', error);
+    console.error('❌ Share endpoint error:', error);
     return res.status(500).send(`
       <!DOCTYPE html>
       <html>
@@ -85,7 +93,7 @@ export default async function handler(req, res) {
           }
           h1 { color: #ef4444; margin-bottom: 1rem; }
           p { color: #cbd5e1; margin-bottom: 0.5rem; }
-          code { background: #0f172a; padding: 0.5rem; border-radius: 8px; display: block; margin: 1rem 0; }
+          code { background: #0f172a; padding: 0.5rem; border-radius: 8px; display: block; margin: 1rem 0; word-break: break-all; }
         </style>
       </head>
       <body>
@@ -101,20 +109,15 @@ export default async function handler(req, res) {
 }
 
 function getBaseUrl(req) {
-  if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL}`;
-  }
-  if (req.headers.host) {
-    const protocol = req.headers['x-forwarded-proto'] || 'https';
-    return `${protocol}://${req.headers.host}`;
-  }
-  return 'https://proclubhub.vercel.app';
+  // CRITICAL FIX: Usa sempre il dominio corretto
+  const host = req.headers.host || 'proclubhub.vercel.app';
+  const protocol = req.headers['x-forwarded-proto'] || 'https';
+  return `${protocol}://${host}`;
 }
 
 function renderPlayerPreview(res, user, req) {
   const baseUrl = getBaseUrl(req);
-  // CRITICAL FIX: Converti ObjectId in stringa
-  const userId = user._id instanceof ObjectId ? user._id.toString() : user._id;
+  const userId = user._id.toString();
   const shareUrl = `${baseUrl}/api/share?type=player&id=${userId}`;
 
   const html = `
@@ -259,8 +262,7 @@ function renderPlayerPreview(res, user, req) {
 
 function renderTeamPreview(res, team, req) {
   const baseUrl = getBaseUrl(req);
-  // CRITICAL FIX: Converti ObjectId in stringa
-  const teamId = team._id instanceof ObjectId ? team._id.toString() : team._id;
+  const teamId = team._id.toString();
   const shareUrl = `${baseUrl}/api/share?type=team&id=${teamId}`;
 
   const html = `
@@ -355,117 +357,3 @@ function renderTeamPreview(res, team, req) {
             font-weight: 700;
             font-size: 1.1rem;
             margin-top: 2rem;
-            transition: transform 0.3s;
-        }
-        .btn:hover {
-            transform: translateY(-3px);
-        }
-        .redirect-msg {
-            margin-top: 2rem;
-            font-size: 0.9rem;
-            color: #64748b;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="icon">🛡️</div>
-        <h1>${team.name}</h1>
-        ${team.description ? `<div class="description">${team.description}</div>` : ''}
-        
-        <div class="stats">
-            <div class="stat">
-                <div class="stat-value">${team.members.length}</div>
-                <div class="stat-label">Membri</div>
-            </div>
-            <div class="stat">
-                <div class="stat-value">${team.platform}</div>
-                <div class="stat-label">Piattaforma</div>
-            </div>
-            <div class="stat">
-                <div class="stat-value">⭐ ${team.averageRating.toFixed(1)}</div>
-                <div class="stat-label">${team.feedbackCount} feedback</div>
-            </div>
-        </div>
-        
-        <a href="${baseUrl}" class="btn">
-            Apri Pro Club Hub
-        </a>
-        
-        <div class="redirect-msg">
-            Clicca il pulsante per visitare Pro Club Hub
-        </div>
-    </div>
-</body>
-</html>
-  `;
-
-  res.setHeader('Content-Type', 'text/html; charset=utf-8');
-  return res.status(200).send(html);
-}
-
-function renderNotFound(res, message) {
-  const baseUrl = process.env.VERCEL_URL 
-    ? `https://${process.env.VERCEL_URL}` 
-    : 'https://proclubhub.vercel.app';
-
-  const html = `
-<!DOCTYPE html>
-<html lang="it">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Non Trovato - Pro Club Hub</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-            color: #f1f5f9;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            padding: 2rem;
-        }
-        .container {
-            max-width: 500px;
-        }
-        h1 { 
-            font-size: 3rem; 
-            margin-bottom: 1rem;
-            color: #ef4444;
-        }
-        p { 
-            font-size: 1.2rem; 
-            color: #94a3b8; 
-            margin-bottom: 2rem; 
-        }
-        a {
-            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-            color: white;
-            padding: 1rem 2rem;
-            border-radius: 12px;
-            text-decoration: none;
-            font-weight: 700;
-            display: inline-block;
-        }
-        a:hover {
-            transform: translateY(-3px);
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>❌ ${message}</h1>
-        <p>Il contenuto che stai cercando non esiste o è stato rimosso.</p>
-        <a href="${baseUrl}">Torna a Pro Club Hub</a>
-    </div>
-</body>
-</html>
-  `;
-
-  res.setHeader('Content-Type', 'text/html; charset=utf-8');
-  return res.status(404).send(html);
-}
