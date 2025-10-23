@@ -1,241 +1,237 @@
-<!DOCTYPE html>
-<html lang="it">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test API Share - Debug</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 50px auto;
-            padding: 20px;
-            background: #1a1f35;
-            color: #fff;
+// ============================================
+// API ENDPOINT: /api/share.js
+// Endpoint serverless per condivisione profili pubblici
+// ============================================
+
+import { connectToDatabase } from '../lib/mongodb.js';
+import { UserModel } from '../models/User.js';
+import { TeamModel } from '../models/Team.js';
+import { FeedbackModel } from '../models/Feedback.js';
+import { ObjectId } from 'mongodb';
+
+export default async function handler(req, res) {
+  // CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: 'Metodo non consentito' });
+  }
+
+  try {
+    const { type, id } = req.query;
+
+    console.log('[SHARE API] Request received:', { type, id });
+
+    // Validazione parametri
+    if (!type || !id) {
+      return res.status(400).json({ 
+        error: 'Parametri type e id sono obbligatori' 
+      });
+    }
+
+    if (type !== 'player' && type !== 'team') {
+      return res.status(400).json({ 
+        error: 'Il tipo deve essere "player" o "team"' 
+      });
+    }
+
+    if (!ObjectId.isValid(id)) {
+      return res.status(400).json({ 
+        error: 'ID non valido' 
+      });
+    }
+
+    const { db } = await connectToDatabase();
+    const userModel = new UserModel(db);
+    const teamModel = new TeamModel(db);
+    const feedbackModel = new FeedbackModel(db);
+
+    // === GESTIONE PROFILO GIOCATORE ===
+    if (type === 'player') {
+      console.log('[SHARE API] Fetching player:', id);
+      
+      const player = await userModel.findById(id);
+      
+      if (!player) {
+        console.log('[SHARE API] Player not found:', id);
+        return res.status(404).json({ 
+          error: 'Giocatore non trovato' 
+        });
+      }
+
+      console.log('[SHARE API] Player found:', player.username);
+
+      // Sanitizza dati
+      const sanitizedPlayer = userModel.sanitizeUser(player);
+
+      // Recupera squadra se presente
+      let team = null;
+      if (player.team) {
+        team = await teamModel.findById(player.team.toString());
+      }
+
+      // Recupera feedback
+      const feedbacks = await feedbackModel.getFeedbackForUser(id);
+      
+      // Popola autori feedback
+      const feedbacksWithAuthors = await Promise.all(
+        feedbacks.map(async (fb) => {
+          const author = await userModel.findById(fb.fromUser.toString());
+          return {
+            _id: fb._id,
+            rating: fb.rating,
+            comment: fb.comment,
+            tags: fb.tags,
+            createdAt: fb.createdAt,
+            fromUsername: author ? author.username : 'Utente Eliminato'
+          };
+        })
+      );
+
+      // Calcola statistiche
+      const stats = await feedbackModel.calculateUserStats(id);
+
+      // Top tags
+      const tagCounts = {};
+      feedbacksWithAuthors.forEach(fb => {
+        if (fb.tags) {
+          fb.tags.forEach(tag => {
+            tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+          });
         }
-        .test-section {
-            background: rgba(255,255,255,0.05);
-            padding: 20px;
-            margin: 20px 0;
-            border-radius: 10px;
-            border: 1px solid rgba(255,255,255,0.1);
+      });
+
+      const topTags = Object.entries(tagCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(([tag, count]) => ({ tag, count }));
+
+      console.log('[SHARE API] Sending player response');
+
+      return res.status(200).json({
+        data: sanitizedPlayer,
+        team: team ? {
+          _id: team._id,
+          name: team.name,
+          platform: team.platform
+        } : null,
+        feedbacks: feedbacksWithAuthors,
+        stats: {
+          totalFeedbacks: stats.count,
+          averageRating: stats.average,
+          topTags
         }
-        button {
-            background: #3b82f6;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            margin: 5px;
+      });
+    }
+
+    // === GESTIONE PROFILO SQUADRA ===
+    if (type === 'team') {
+      console.log('[SHARE API] Fetching team:', id);
+      
+      const team = await teamModel.findById(id);
+      
+      if (!team) {
+        console.log('[SHARE API] Team not found:', id);
+        return res.status(404).json({ 
+          error: 'Squadra non trovata' 
+        });
+      }
+
+      console.log('[SHARE API] Team found:', team.name);
+
+      // Recupera membri
+      const members = await Promise.all(
+        team.members.map(async (memberId) => {
+          const member = await userModel.findById(memberId.toString());
+          if (!member) return null;
+          
+          return {
+            _id: member._id,
+            username: member.username,
+            primaryRole: member.primaryRole,
+            level: member.level,
+            isCaptain: team.captain.toString() === memberId.toString(),
+            isViceCaptain: team.viceCaptain ? 
+              team.viceCaptain.toString() === memberId.toString() : false
+          };
+        })
+      );
+
+      // Recupera feedback
+      const feedbacks = await feedbackModel.getFeedbackForTeam(id);
+      
+      // Popola autori feedback
+      const feedbacksWithAuthors = await Promise.all(
+        feedbacks.map(async (fb) => {
+          const author = await userModel.findById(fb.fromUser.toString());
+          return {
+            _id: fb._id,
+            rating: fb.rating,
+            comment: fb.comment,
+            tags: fb.tags,
+            createdAt: fb.createdAt,
+            fromUsername: author ? author.username : 'Utente Eliminato'
+          };
+        })
+      );
+
+      // Calcola statistiche
+      const stats = await feedbackModel.calculateTeamStats(id);
+
+      // Top tags
+      const tagCounts = {};
+      feedbacksWithAuthors.forEach(fb => {
+        if (fb.tags) {
+          fb.tags.forEach(tag => {
+            tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+          });
         }
-        button:hover {
-            background: #2563eb;
+      });
+
+      const topTags = Object.entries(tagCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(([tag, count]) => ({ tag, count }));
+
+      console.log('[SHARE API] Sending team response');
+
+      return res.status(200).json({
+        data: {
+          _id: team._id,
+          name: team.name,
+          description: team.description,
+          platform: team.platform,
+          nationality: team.nationality,
+          lookingForPlayers: team.lookingForPlayers,
+          instagram: team.instagram,
+          tiktok: team.tiktok,
+          liveLink: team.liveLink,
+          averageRating: team.averageRating,
+          feedbackCount: team.feedbackCount,
+          createdAt: team.createdAt,
+          membersCount: members.filter(m => m !== null).length
+        },
+        members: members.filter(m => m !== null),
+        feedbacks: feedbacksWithAuthors,
+        stats: {
+          totalFeedbacks: stats.count,
+          averageRating: stats.average,
+          topTags
         }
-        pre {
-            background: #000;
-            padding: 15px;
-            border-radius: 5px;
-            overflow-x: auto;
-            font-size: 12px;
-        }
-        .error {
-            color: #ef4444;
-        }
-        .success {
-            color: #10b981;
-        }
-        input {
-            padding: 8px;
-            border-radius: 5px;
-            border: 1px solid rgba(255,255,255,0.2);
-            background: rgba(255,255,255,0.1);
-            color: white;
-            width: 300px;
-        }
-    </style>
-</head>
-<body>
-    <h1>🔍 Debug API Share Endpoint</h1>
-    
-    <div class="test-section">
-        <h2>Test 1: Verifica Endpoint API</h2>
-        <p>Testa se l'endpoint /api/share risponde correttamente</p>
-        
-        <div>
-            <label>Player ID:</label>
-            <input type="text" id="playerId" placeholder="Inserisci un player ID valido">
-            <button onclick="testPlayerEndpoint()">Test Player</button>
-        </div>
-        
-        <div style="margin-top: 10px;">
-            <label>Team ID:</label>
-            <input type="text" id="teamId" placeholder="Inserisci un team ID valido">
-            <button onclick="testTeamEndpoint()">Test Team</button>
-        </div>
-        
-        <div id="result1" style="margin-top: 20px;"></div>
-    </div>
+      });
+    }
 
-    <div class="test-section">
-        <h2>Test 2: Verifica Struttura Risposta</h2>
-        <p>Verifica che la risposta JSON sia corretta</p>
-        <button onclick="testResponseStructure()">Test Struttura</button>
-        <div id="result2" style="margin-top: 20px;"></div>
-    </div>
-
-    <div class="test-section">
-        <h2>Test 3: Verifica URL Share.html</h2>
-        <p>Testa la pagina share.html con parametri</p>
-        <button onclick="testSharePage()">Apri Share Page</button>
-        <div id="result3" style="margin-top: 20px;"></div>
-    </div>
-
-    <div class="test-section">
-        <h2>📋 Console Log</h2>
-        <div id="consoleLog"></div>
-    </div>
-
-    <script>
-        const log = (message, type = 'info') => {
-            const consoleLog = document.getElementById('consoleLog');
-            const timestamp = new Date().toLocaleTimeString();
-            const color = type === 'error' ? '#ef4444' : type === 'success' ? '#10b981' : '#64748b';
-            consoleLog.innerHTML += `<div style="color: ${color}; margin: 5px 0;">[${timestamp}] ${message}</div>`;
-            console.log(message);
-        };
-
-        async function testPlayerEndpoint() {
-            const playerId = document.getElementById('playerId').value;
-            const result1 = document.getElementById('result1');
-            
-            if (!playerId) {
-                result1.innerHTML = '<p class="error">❌ Inserisci un Player ID!</p>';
-                return;
-            }
-
-            result1.innerHTML = '<p>⏳ Testing...</p>';
-            log(`Testing player endpoint with ID: ${playerId}`);
-
-            try {
-                const url = `/api/share?type=player&id=${playerId}`;
-                log(`Calling: ${url}`);
-                
-                const response = await fetch(url);
-                log(`Response status: ${response.status}`);
-                log(`Response headers: ${JSON.stringify([...response.headers])}`);
-                
-                const text = await response.text();
-                log(`Response text length: ${text.length}`);
-                
-                try {
-                    const data = JSON.parse(text);
-                    result1.innerHTML = `
-                        <p class="success">✅ Success! Status: ${response.status}</p>
-                        <pre>${JSON.stringify(data, null, 2)}</pre>
-                    `;
-                    log('Response is valid JSON', 'success');
-                } catch (e) {
-                    result1.innerHTML = `
-                        <p class="error">❌ Response is not JSON!</p>
-                        <p>Status: ${response.status}</p>
-                        <p>Response Type: ${response.headers.get('content-type')}</p>
-                        <pre>${text.substring(0, 500)}</pre>
-                    `;
-                    log('Response is NOT valid JSON!', 'error');
-                    log(`First 200 chars: ${text.substring(0, 200)}`);
-                }
-            } catch (error) {
-                result1.innerHTML = `<p class="error">❌ Error: ${error.message}</p>`;
-                log(`Error: ${error.message}`, 'error');
-            }
-        }
-
-        async function testTeamEndpoint() {
-            const teamId = document.getElementById('teamId').value;
-            const result1 = document.getElementById('result1');
-            
-            if (!teamId) {
-                result1.innerHTML = '<p class="error">❌ Inserisci un Team ID!</p>';
-                return;
-            }
-
-            result1.innerHTML = '<p>⏳ Testing...</p>';
-            log(`Testing team endpoint with ID: ${teamId}`);
-
-            try {
-                const url = `/api/share?type=team&id=${teamId}`;
-                log(`Calling: ${url}`);
-                
-                const response = await fetch(url);
-                log(`Response status: ${response.status}`);
-                
-                const text = await response.text();
-                
-                try {
-                    const data = JSON.parse(text);
-                    result1.innerHTML = `
-                        <p class="success">✅ Success! Status: ${response.status}</p>
-                        <pre>${JSON.stringify(data, null, 2)}</pre>
-                    `;
-                    log('Response is valid JSON', 'success');
-                } catch (e) {
-                    result1.innerHTML = `
-                        <p class="error">❌ Response is not JSON!</p>
-                        <p>Status: ${response.status}</p>
-                        <pre>${text.substring(0, 500)}</pre>
-                    `;
-                    log('Response is NOT valid JSON!', 'error');
-                }
-            } catch (error) {
-                result1.innerHTML = `<p class="error">❌ Error: ${error.message}</p>`;
-                log(`Error: ${error.message}`, 'error');
-            }
-        }
-
-        async function testResponseStructure() {
-            const result2 = document.getElementById('result2');
-            result2.innerHTML = '<p>⏳ Testing response structure...</p>';
-            
-            log('Testing if endpoint returns HTML or JSON');
-
-            try {
-                const response = await fetch('/api/share?type=player&id=invalid');
-                const contentType = response.headers.get('content-type');
-                
-                log(`Content-Type: ${contentType}`);
-                
-                if (contentType && contentType.includes('application/json')) {
-                    result2.innerHTML = '<p class="success">✅ Endpoint returns JSON</p>';
-                    log('Correct: Endpoint returns JSON', 'success');
-                } else if (contentType && contentType.includes('text/html')) {
-                    result2.innerHTML = '<p class="error">❌ PROBLEMA: Endpoint returns HTML instead of JSON!</p>';
-                    log('ERROR: Endpoint returns HTML!', 'error');
-                } else {
-                    result2.innerHTML = `<p class="error">❌ Unknown content type: ${contentType}</p>`;
-                    log(`Unknown content type: ${contentType}`, 'error');
-                }
-            } catch (error) {
-                result2.innerHTML = `<p class="error">❌ Error: ${error.message}</p>`;
-                log(`Error: ${error.message}`, 'error');
-            }
-        }
-
-        function testSharePage() {
-            const playerId = document.getElementById('playerId').value;
-            if (!playerId) {
-                alert('Inserisci prima un Player ID nel Test 1!');
-                return;
-            }
-            
-            const url = `/share.html?type=player&id=${playerId}`;
-            log(`Opening: ${url}`);
-            window.open(url, '_blank');
-        }
-
-        // Log iniziale
-        log('Debug page loaded', 'success');
-        log('Current URL: ' + window.location.href);
-    </script>
-</body>
-</html>
+  } catch (error) {
+    console.error('[SHARE API] Error:', error);
+    return res.status(500).json({ 
+      error: 'Errore durante il caricamento del profilo',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+}
