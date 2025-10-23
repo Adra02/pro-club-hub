@@ -793,38 +793,155 @@ function renderFavoriteTeams() {
 // NUOVO: SISTEMA CONDIVISIONE
 // ============================================
 
+/**
+ * Condivide un profilo generando un link condivisibile
+ */
 async function shareProfile(type, id, name) {
-    const shareData = {
-        title: `${name} - Pro Club Hub`,
-        text: type === 'player' 
-            ? `Guarda il profilo di ${name} su Pro Club Hub!`
-            : `Scopri la squadra ${name} su Pro Club Hub!`,
-        url: `https://pro-club-hub.com/share.html?type=${type}&id=${id}`
-    };
-
     try {
-        // Se disponibile Web Share API (mobile)
+        // Genera URL con query parameters
+        const baseUrl = window.location.origin;
+        const shareUrl = `${baseUrl}/?profile=${type}&id=${id}`;
+
+        const shareData = {
+            title: `${name} - Pro Club Hub`,
+            text: type === 'player' 
+                ? `Guarda il profilo di ${name} su Pro Club Hub! 🎮⚽`
+                : `Scopri la squadra ${name} su Pro Club Hub! 🏆⚽`,
+            url: shareUrl
+        };
+
+        // Prova Web Share API (mobile)
         if (navigator.share) {
-            await navigator.share(shareData);
-            showNotification('✅ Condiviso con successo!', 'success');
-        } else {
-            // Fallback: copia link
-            await navigator.clipboard.writeText(shareData.url);
-            showNotification('📋 Link copiato negli appunti!', 'success');
+            try {
+                await navigator.share(shareData);
+                showNotification('Profilo condiviso con successo! ✅', 'success');
+                return;
+            } catch (err) {
+                if (err.name !== 'AbortError') {
+                    console.log('Web Share API non disponibile, uso clipboard');
+                }
+            }
         }
+
+        // Fallback: copia negli appunti
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(shareUrl);
+            showNotification('Link copiato negli appunti! 📋', 'success');
+            showShareLinkModal(shareUrl, name, type);
+        } else {
+            // Fallback per browser molto vecchi
+            const textArea = document.createElement('textarea');
+            textArea.value = shareUrl;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            document.body.appendChild(textArea);
+            textArea.select();
+            
+            try {
+                document.execCommand('copy');
+                showNotification('Link copiato negli appunti! 📋', 'success');
+                showShareLinkModal(shareUrl, name, type);
+            } catch (err) {
+                showNotification('Impossibile copiare il link. Copia manualmente: ' + shareUrl, 'error');
+            }
+            
+            document.body.removeChild(textArea);
+        }
+
     } catch (error) {
-        console.error('Share error:', error);
-        // Fallback manuale
-        const input = document.createElement('input');
-        input.value = shareData.url;
-        document.body.appendChild(input);
-        input.select();
-        document.execCommand('copy');
-        document.body.removeChild(input);
-        showNotification('📋 Link copiato negli appunti!', 'success');
+        console.error('Errore nella condivisione:', error);
+        showNotification('Errore nella condivisione del profilo', 'error');
     }
 }
 
+/**
+ * Mostra un modal con il link condivisibile
+ */
+function showShareLinkModal(url, name, type) {
+    let modal = document.getElementById('shareLinkModal');
+    
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'shareLinkModal';
+        modal.className = 'modal';
+        modal.style.display = 'block';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 500px;">
+                <span class="close" onclick="document.getElementById('shareLinkModal').style.display='none'">&times;</span>
+                <h2 style="margin-top: 0;">🔗 Link Condivisibile</h2>
+                <p>Condividi questo link per mostrare ${type === 'player' ? 'il profilo di' : 'la squadra'} <strong>${name}</strong>:</p>
+                <div style="
+                    background: #f5f5f5;
+                    padding: 15px;
+                    border-radius: 8px;
+                    margin: 20px 0;
+                    word-break: break-all;
+                    font-family: monospace;
+                    font-size: 14px;
+                    border: 2px solid #007bff;
+                ">
+                    ${url}
+                </div>
+                <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                    <button onclick="copyShareLink('${url}')" style="
+                        background: #007bff;
+                        color: white;
+                        border: none;
+                        padding: 12px 24px;
+                        border-radius: 5px;
+                        cursor: pointer;
+                        font-size: 14px;
+                        font-weight: bold;
+                        transition: background 0.3s;
+                    " onmouseover="this.style.background='#0056b3'" onmouseout="this.style.background='#007bff'">
+                        📋 Copia di nuovo
+                    </button>
+                    <button onclick="document.getElementById('shareLinkModal').style.display='none'" style="
+                        background: #6c757d;
+                        color: white;
+                        border: none;
+                        padding: 12px 24px;
+                        border-radius: 5px;
+                        cursor: pointer;
+                        font-size: 14px;
+                        font-weight: bold;
+                        transition: background 0.3s;
+                    " onmouseover="this.style.background='#5a6268'" onmouseout="this.style.background='#6c757d'">
+                        Chiudi
+                    </button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+        // Click fuori dal modal per chiudere
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+    } else {
+        // Aggiorna contenuto del modal esistente
+        const content = modal.querySelector('.modal-content');
+        content.querySelector('p').innerHTML = `Condividi questo link per mostrare ${type === 'player' ? 'il profilo di' : 'la squadra'} <strong>${name}</strong>:`;
+        content.querySelector('div[style*="background"]').textContent = url;
+        const copyBtn = content.querySelector('button[onclick^="copyShareLink"]');
+        copyBtn.setAttribute('onclick', `copyShareLink('${url}')`);
+        modal.style.display = 'block';
+    }
+}
+
+/**
+ * Copia un link negli appunti
+ */
+async function copyShareLink(url) {
+    try {
+        await navigator.clipboard.writeText(url);
+        showNotification('Link copiato di nuovo! 📋', 'success');
+    } catch (error) {
+        showNotification('Errore nella copia del link', 'error');
+    }
+}
 
 // ============================================
 // GESTIONE ERRORI ANTI-SPAM
@@ -3134,6 +3251,7 @@ window.unsuspendUser = unsuspendUser;
 window.deleteUser = deleteUser;
 window.toggleFavorite = toggleFavorite;
 window.shareProfile = shareProfile;
+
 
 
 
