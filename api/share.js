@@ -10,17 +10,12 @@ export default async function handler(req, res) {
   }
 
   try {
-    // CRITICAL FIX: Estrai parametri da URL in modo più robusto
+    // CRITICAL FIX: Estrai parametri da URL
     const url = new URL(req.url, `https://${req.headers.host}`);
     const type = url.searchParams.get('type');
     const id = url.searchParams.get('id');
 
-    console.log('📍 Share request:', { 
-      type, 
-      id, 
-      fullUrl: req.url,
-      host: req.headers.host 
-    });
+    console.log('📍 Share request:', { type, id, fullUrl: req.url });
 
     if (!type || !id) {
       return renderNotFound(res, 'Parametri mancanti. Usa: /api/share?type=player&id=xxx');
@@ -93,14 +88,12 @@ export default async function handler(req, res) {
           }
           h1 { color: #ef4444; margin-bottom: 1rem; }
           p { color: #cbd5e1; margin-bottom: 0.5rem; }
-          code { background: #0f172a; padding: 0.5rem; border-radius: 8px; display: block; margin: 1rem 0; word-break: break-all; }
         </style>
       </head>
       <body>
         <div class="error-box">
           <h1>⚠️ Errore del server</h1>
           <p>${error.message}</p>
-          <code>${error.stack?.split('\n')[0] || 'No stack trace'}</code>
         </div>
       </body>
       </html>
@@ -109,7 +102,6 @@ export default async function handler(req, res) {
 }
 
 function getBaseUrl(req) {
-  // CRITICAL FIX: Usa sempre il dominio corretto
   const host = req.headers.host || 'proclubhub.vercel.app';
   const protocol = req.headers['x-forwarded-proto'] || 'https';
   return `${protocol}://${host}`;
@@ -154,109 +146,165 @@ function renderPlayerPreview(res, user, req) {
         }
         .container {
             background: rgba(30, 41, 59, 0.95);
-            border: 2px solid rgba(59, 130, 246, 0.3);
             border-radius: 24px;
+            border: 2px solid rgba(59, 130, 246, 0.3);
             padding: 3rem;
             max-width: 600px;
             width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+        }
+        .header {
             text-align: center;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
-        }
-        .icon {
-            font-size: 5rem;
-            margin-bottom: 1.5rem;
-        }
-        h1 {
-            font-size: 2.5rem;
-            margin-bottom: 1rem;
-            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        .role {
-            font-size: 1.2rem;
-            color: #94a3b8;
             margin-bottom: 2rem;
         }
-        .stats {
+        .logo {
+            font-size: 2rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+        .subtitle {
+            color: #94a3b8;
+            font-size: 0.95rem;
+        }
+        .player-card {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border-radius: 20px;
+            padding: 2rem;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+        .player-header {
             display: flex;
+            align-items: center;
             gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            display: flex;
+            align-items: center;
             justify-content: center;
-            margin: 2rem 0;
-            flex-wrap: wrap;
+            font-size: 3rem;
+            flex-shrink: 0;
         }
-        .stat {
-            background: rgba(59, 130, 246, 0.1);
-            border: 2px solid rgba(59, 130, 246, 0.3);
+        .player-info h1 {
+            font-size: 1.75rem;
+            margin-bottom: 0.5rem;
+            color: #f1f5f9;
+        }
+        .player-role {
+            color: #3b82f6;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+        .stat-box {
+            background: rgba(15, 23, 42, 0.7);
+            padding: 1rem;
             border-radius: 12px;
-            padding: 1rem 1.5rem;
-        }
-        .stat-value {
-            font-size: 1.5rem;
-            font-weight: bold;
-            margin-bottom: 0.25rem;
+            border: 1px solid rgba(59, 130, 246, 0.2);
         }
         .stat-label {
-            font-size: 0.9rem;
             color: #94a3b8;
+            font-size: 0.85rem;
+            margin-bottom: 0.3rem;
+        }
+        .stat-value {
+            color: #f1f5f9;
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+        .rating {
+            color: #fbbf24;
         }
         .btn {
-            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-            color: white;
-            padding: 1rem 2rem;
-            border-radius: 12px;
-            text-decoration: none;
-            display: inline-block;
-            font-weight: 700;
-            font-size: 1.1rem;
+            display: block;
+            width: 100%;
+            padding: 1rem;
             margin-top: 2rem;
-            transition: transform 0.3s;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+            text-align: center;
+            transition: transform 0.2s, box-shadow 0.2s;
         }
         .btn:hover {
-            transform: translateY(-3px);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(59, 130, 246, 0.3);
         }
-        .redirect-msg {
+        .footer {
+            text-align: center;
             margin-top: 2rem;
-            font-size: 0.9rem;
             color: #64748b;
+            font-size: 0.9rem;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="icon">⚽</div>
-        <h1>${user.username}</h1>
-        <div class="role">${user.primaryRole}</div>
+        <div class="header">
+            <div class="logo">⚽ PRO CLUB HUB</div>
+            <div class="subtitle">Profilo Giocatore</div>
+        </div>
         
-        <div class="stats">
-            <div class="stat">
-                <div class="stat-value">${user.level}</div>
-                <div class="stat-label">Livello</div>
+        <div class="player-card">
+            <div class="player-header">
+                <div class="avatar">👤</div>
+                <div class="player-info">
+                    <h1>${user.username}</h1>
+                    <div class="player-role">${user.primaryRole}</div>
+                </div>
             </div>
-            <div class="stat">
-                <div class="stat-value">${user.platform}</div>
-                <div class="stat-label">Piattaforma</div>
-            </div>
-            <div class="stat">
-                <div class="stat-value">⭐ ${user.averageRating.toFixed(1)}</div>
-                <div class="stat-label">${user.feedbackCount} feedback</div>
+            
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div class="stat-label">🏆 Livello</div>
+                    <div class="stat-value">${user.level}</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">🎮 Piattaforma</div>
+                    <div class="stat-value">${user.platform}</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">⭐ Rating</div>
+                    <div class="stat-value rating">${user.averageRating.toFixed(1)}</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">💬 Feedback</div>
+                    <div class="stat-value">${user.feedbackCount}</div>
+                </div>
             </div>
         </div>
         
         <a href="${baseUrl}" class="btn">
-            Apri Pro Club Hub
+            🚀 Apri Pro Club Hub
         </a>
         
-        <div class="redirect-msg">
-            Clicca il pulsante per visitare Pro Club Hub
+        <div class="footer">
+            Scopri la community per i giocatori di Pro Club
         </div>
     </div>
 </body>
 </html>
   `;
 
-  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.setHeader('Content-Type', 'text/html');
   return res.status(200).send(html);
 }
 
@@ -280,11 +328,6 @@ function renderTeamPreview(res, team, req) {
     <meta property="og:url" content="${shareUrl}">
     <meta property="og:site_name" content="Pro Club Hub">
     
-    <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="${team.name} - Pro Club Hub">
-    <meta name="twitter:description" content="${team.platform} • ${team.members.length} membri">
-    
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -299,61 +342,239 @@ function renderTeamPreview(res, team, req) {
         }
         .container {
             background: rgba(30, 41, 59, 0.95);
-            border: 2px solid rgba(59, 130, 246, 0.3);
             border-radius: 24px;
+            border: 2px solid rgba(59, 130, 246, 0.3);
             padding: 3rem;
             max-width: 600px;
             width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+        }
+        .header {
             text-align: center;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+            margin-bottom: 2rem;
         }
-        .icon {
-            font-size: 5rem;
-            margin-bottom: 1.5rem;
-        }
-        h1 {
-            font-size: 2.5rem;
-            margin-bottom: 1rem;
-            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+        .logo {
+            font-size: 2rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+        .subtitle {
+            color: #94a3b8;
+            font-size: 0.95rem;
+        }
+        .team-card {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border-radius: 20px;
+            padding: 2rem;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+        .team-header {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            flex-shrink: 0;
+        }
+        .team-info h1 {
+            font-size: 1.75rem;
+            margin-bottom: 0.5rem;
+            color: #f1f5f9;
+        }
+        .team-platform {
+            color: #3b82f6;
+            font-weight: 600;
+            font-size: 1.1rem;
         }
         .description {
-            font-size: 1.1rem;
             color: #cbd5e1;
-            margin-bottom: 2rem;
             line-height: 1.6;
-        }
-        .stats {
-            display: flex;
-            gap: 1.5rem;
-            justify-content: center;
-            margin: 2rem 0;
-            flex-wrap: wrap;
-        }
-        .stat {
-            background: rgba(59, 130, 246, 0.1);
-            border: 2px solid rgba(59, 130, 246, 0.3);
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background: rgba(15, 23, 42, 0.5);
             border-radius: 12px;
-            padding: 1rem 1.5rem;
         }
-        .stat-value {
-            font-size: 1.5rem;
-            font-weight: bold;
-            margin-bottom: 0.25rem;
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+        .stat-box {
+            background: rgba(15, 23, 42, 0.7);
+            padding: 1rem;
+            border-radius: 12px;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            text-align: center;
         }
         .stat-label {
-            font-size: 0.9rem;
             color: #94a3b8;
+            font-size: 0.85rem;
+            margin-bottom: 0.3rem;
+        }
+        .stat-value {
+            color: #f1f5f9;
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+        .rating {
+            color: #fbbf24;
         }
         .btn {
-            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-            color: white;
-            padding: 1rem 2rem;
-            border-radius: 12px;
-            text-decoration: none;
-            display: inline-block;
-            font-weight: 700;
-            font-size: 1.1rem;
+            display: block;
+            width: 100%;
+            padding: 1rem;
             margin-top: 2rem;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+            text-align: center;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(59, 130, 246, 0.3);
+        }
+        .footer {
+            text-align: center;
+            margin-top: 2rem;
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">⚽ PRO CLUB HUB</div>
+            <div class="subtitle">Profilo Squadra</div>
+        </div>
+        
+        <div class="team-card">
+            <div class="team-header">
+                <div class="avatar">🛡️</div>
+                <div class="team-info">
+                    <h1>${team.name}</h1>
+                    <div class="team-platform">${team.platform}</div>
+                </div>
+            </div>
+            
+            ${team.description ? `<div class="description">${team.description}</div>` : ''}
+            
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div class="stat-label">👥 Membri</div>
+                    <div class="stat-value">${team.members.length}</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">⭐ Rating</div>
+                    <div class="stat-value rating">${team.averageRating.toFixed(1)}</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">💬 Feedback</div>
+                    <div class="stat-value">${team.feedbackCount}</div>
+                </div>
+            </div>
+        </div>
+        
+        <a href="${baseUrl}" class="btn">
+            🚀 Apri Pro Club Hub
+        </a>
+        
+        <div class="footer">
+            Scopri la community per i giocatori di Pro Club
+        </div>
+    </div>
+</body>
+</html>
+  `;
+
+  res.setHeader('Content-Type', 'text/html');
+  return res.status(200).send(html);
+}
+
+function renderNotFound(res, message) {
+  const html = `
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Non Trovato - Pro Club Hub</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: Arial, sans-serif;
+            background: #0a0f1e;
+            color: #f1f5f9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        .error-box {
+            background: #1e293b;
+            border: 2px solid #ef4444;
+            border-radius: 16px;
+            padding: 3rem;
+            max-width: 500px;
+            text-align: center;
+        }
+        h1 {
+            font-size: 4rem;
+            color: #ef4444;
+            margin-bottom: 1rem;
+        }
+        h2 {
+            color: #f1f5f9;
+            margin-bottom: 1rem;
+        }
+        p {
+            color: #cbd5e1;
+            line-height: 1.6;
+        }
+        .btn {
+            display: inline-block;
+            margin-top: 2rem;
+            padding: 1rem 2rem;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            color: white;
+            text-decoration: none;
+            border-radius: 12px;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+    <div class="error-box">
+        <h1>404</h1>
+        <h2>Non Trovato</h2>
+        <p>${message}</p>
+        <a href="https://proclubhub.vercel.app" class="btn">Torna alla Home</a>
+    </div>
+</body>
+</html>
+  `;
+
+  res.setHeader('Content-Type', 'text/html');
+  return res.status(404).send(html);
+}
