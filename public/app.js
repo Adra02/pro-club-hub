@@ -197,7 +197,7 @@ async function fetchCurrentUser() {
  */
 async function loadUserFavorites() {
     if (!currentUser) {
-        userFavorites = { giocatori: [], squadre: [] };
+        let userFavorites = { giocatori: [], squadre: [] };
         return;
     }
 
@@ -2858,6 +2858,7 @@ window.unsuspendUser = unsuspendUser;
 window.deleteUser = deleteUser;
 window.toggleFavorite = toggleFavorite;
 window.shareProfile = shareProfile;
+
 
 
 
