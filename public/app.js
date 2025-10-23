@@ -47,6 +47,25 @@ let userFavorites = { giocatori: [], squadre: [] }; // NUOVO: Preferiti
 
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('DOM caricato, inizializzazione app...');
+
+    // ✅ NUOVO: Controlla se è un link condiviso
+    const urlParams = getURLParams();
+    
+    if (urlParams.profile && urlParams.id) {
+        console.log('🔗 Link condiviso rilevato:', urlParams);
+        
+        if (urlParams.profile === 'player') {
+            await loadSharedPlayerProfile(urlParams.id);
+        } else if (urlParams.profile === 'team') {
+            await loadSharedTeamProfile(urlParams.id);
+        } else {
+            showNotification('Tipo di profilo non valido', 'error');
+            window.location.href = '/';
+        }
+        
+        return; // Non continuare con il caricamento normale
+    }
+
     initApp();
     checkResetToken();
 });
@@ -3072,6 +3091,7 @@ window.unsuspendUser = unsuspendUser;
 window.deleteUser = deleteUser;
 window.toggleFavorite = toggleFavorite;
 window.shareProfile = shareProfile;
+
 
 
 
