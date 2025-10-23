@@ -524,7 +524,7 @@ async function shareProfile(type, id, name) {
         text: type === 'player' 
             ? `Guarda il profilo di ${name} su Pro Club Hub!`
             : `Scopri la squadra ${name} su Pro Club Hub!`,
-        url: `https://proclubhub.vercel.app/api/share?type=${type}&id=${id}`
+        url: `https://pro-club-hub.com/share.html?type=${type}&id=${id}`
     };
 
     try {
@@ -2858,3 +2858,4 @@ window.unsuspendUser = unsuspendUser;
 window.deleteUser = deleteUser;
 window.toggleFavorite = toggleFavorite;
 window.shareProfile = shareProfile;
+
