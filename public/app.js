@@ -206,6 +206,23 @@ async function loadUserFavorites() {
             const data = await response.json();
             userFavorites = data.preferiti || { giocatori: [], squadre: [] };
             console.log('✅ Preferiti caricati:', userFavorites);
+            
+            // CRITICAL FIX: Assicurati che gli ID siano stringhe
+            if (userFavorites.giocatori) {
+                userFavorites.giocatori = userFavorites.giocatori.map(g => ({
+                    ...g,
+                    _id: g._id.toString()
+                }));
+            }
+            if (userFavorites.squadre) {
+                userFavorites.squadre = userFavorites.squadre.map(s => ({
+                    ...s,
+                    _id: s._id.toString()
+                }));
+            }
+        } else {
+            console.error('Error loading favorites:', await response.text());
+            userFavorites = { giocatori: [], squadre: [] };
         }
     } catch (error) {
         console.error('Error loading favorites:', error);
@@ -222,9 +239,12 @@ async function toggleFavorite(targetId, type) {
     try {
         showLoading();
         
+        // CRITICAL FIX: Converti targetId in stringa per il confronto
+        const targetIdStr = targetId.toString();
+        
         const isFavorite = type === 'giocatori' 
-            ? userFavorites.giocatori.some(g => g._id === targetId)
-            : userFavorites.squadre.some(s => s._id === targetId);
+            ? userFavorites.giocatori.some(g => g._id.toString() === targetIdStr)
+            : userFavorites.squadre.some(s => s._id.toString() === targetIdStr);
 
         const method = isFavorite ? 'DELETE' : 'POST';
         const action = isFavorite ? 'remove' : 'add';
@@ -235,7 +255,7 @@ async function toggleFavorite(targetId, type) {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             },
-            body: JSON.stringify({ targetId, type })
+            body: JSON.stringify({ targetId: targetIdStr, type })
         });
 
         if (response.ok) {
@@ -246,7 +266,7 @@ async function toggleFavorite(targetId, type) {
             );
             
             // Aggiorna l'icona ovunque appaia
-            updateAllFavoriteIcons(targetId, type);
+            updateAllFavoriteIcons(targetIdStr, type);
             
             // Se siamo nella pagina preferiti, ricarica la lista
             const currentPage = document.querySelector('.page[style*="block"]');
@@ -270,151 +290,19 @@ async function toggleFavorite(targetId, type) {
 }
 
 function updateAllFavoriteIcons(targetId, type) {
+    // CRITICAL FIX: Converti in stringa per il confronto
+    const targetIdStr = targetId.toString();
+    
     const isFavorite = type === 'giocatori'
-        ? userFavorites.giocatori.some(g => g._id === targetId)
-        : userFavorites.squadre.some(s => s._id === targetId);
+        ? userFavorites.giocatori.some(g => g._id.toString() === targetIdStr)
+        : userFavorites.squadre.some(s => s._id.toString() === targetIdStr);
 
     // Trova TUTTE le icone con questo ID
-    const icons = document.querySelectorAll(`[data-favorite-id="${targetId}"]`);
+    const icons = document.querySelectorAll(`[data-favorite-id="${targetIdStr}"]`);
     icons.forEach(icon => {
         icon.className = isFavorite ? 'fas fa-heart' : 'far fa-heart';
         icon.style.color = isFavorite ? '#ef4444' : '#94a3b8';
     });
-}
-
-async function loadFavoritesPage() {
-    if (!currentUser) {
-        showNotification('⚠️ Devi effettuare il login', 'error');
-        navigateTo('home');
-        return;
-    }
-
-    await loadUserFavorites();
-    
-    // Inizia sempre con i giocatori
-    switchFavoritesTab('favorite-players');
-}
-
-function renderFavoritePlayers() {
-    const container = document.getElementById('favoritePlayersContainer');
-    const players = userFavorites.giocatori || [];
-
-    if (players.length === 0) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <i class="fas fa-heart-broken"></i>
-                <p>Nessun giocatore nei preferiti</p>
-                <p style="color: #64748b; font-size: 0.9rem; margin-top: 0.5rem;">
-                    Aggiungi giocatori ai preferiti dalla pagina di ricerca
-                </p>
-            </div>
-        `;
-        return;
-    }
-
-    container.innerHTML = players.map(player => `
-        <div class="player-card" onclick="showPlayerDetail('${player._id}')">
-            <div class="player-card-header">
-                <div class="player-avatar">
-                    <i class="fas fa-user-circle"></i>
-                </div>
-                <div class="player-info">
-                    <h3>
-                        ${player.username}
-                        <i class="fas fa-heart" 
-                           style="color: #ef4444; cursor: pointer; margin-left: 0.5rem;" 
-                           data-favorite-id="${player._id}"
-                           onclick="event.stopPropagation(); toggleFavorite('${player._id}', 'giocatori');">
-                        </i>
-                    </h3>
-                    <p class="player-role">${player.primaryRole}</p>
-                </div>
-            </div>
-            <div class="player-stats">
-                <span class="stat">
-                    <i class="fas fa-trophy"></i> ${player.level}
-                </span>
-                <span class="stat">
-                    <i class="fas fa-gamepad"></i> ${player.platform}
-                </span>
-                <span class="stat star">
-                    <i class="fas fa-star"></i> ${player.averageRating.toFixed(1)} (${player.feedbackCount})
-                </span>
-            </div>
-        </div>
-    `).join('');
-}
-
-function renderFavoriteTeams() {
-    const container = document.getElementById('favoriteTeamsContainer');
-    const teams = userFavorites.squadre || [];
-
-    if (teams.length === 0) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <i class="fas fa-heart-broken"></i>
-                <p>Nessuna squadra nei preferiti</p>
-                <p style="color: #64748b; font-size: 0.9rem; margin-top: 0.5rem;">
-                    Aggiungi squadre ai preferiti dalla pagina di ricerca
-                </p>
-            </div>
-        `;
-        return;
-    }
-
-    container.innerHTML = teams.map(team => `
-        <div class="team-card" onclick="showTeamDetail('${team._id}')">
-            <div class="team-card-header">
-                <div class="team-avatar">
-                    <i class="fas fa-shield-alt"></i>
-                </div>
-                <div class="team-info">
-                    <h3>
-                        ${team.name}
-                        <i class="fas fa-heart" 
-                           style="color: #ef4444; cursor: pointer; margin-left: 0.5rem;" 
-                           data-favorite-id="${team._id}"
-                           onclick="event.stopPropagation(); toggleFavorite('${team._id}', 'squadre');">
-                        </i>
-                    </h3>
-                    <p class="team-platform">${team.platform}</p>
-                </div>
-            </div>
-            ${team.description ? `<p class="team-description">${team.description}</p>` : ''}
-            <div class="team-stats">
-                <span class="stat">
-                    <i class="fas fa-users"></i> ${team.members.length} membri
-                </span>
-                <span class="stat">
-                    <i class="fas fa-flag"></i> ${team.nationality || 'N/A'}
-                </span>
-                <span class="stat star">
-                    <i class="fas fa-star"></i> ${team.averageRating.toFixed(1)} (${team.feedbackCount})
-                </span>
-            </div>
-        </div>
-    `).join('');
-}
-
-function switchFavoritesTab(tab) {
-    const playerTab = document.querySelector('[data-tab="favorite-players"]');
-    const teamTab = document.querySelector('[data-tab="favorite-teams"]');
-    const playerContainer = document.getElementById('favoritePlayersContainer');
-    const teamContainer = document.getElementById('favoriteTeamsContainer');
-
-    if (tab === 'favorite-players') {
-        playerTab.classList.add('active');
-        teamTab.classList.remove('active');
-        playerContainer.style.display = 'grid';
-        teamContainer.style.display = 'none';
-        renderFavoritePlayers();
-    } else {
-        playerTab.classList.remove('active');
-        teamTab.classList.add('active');
-        playerContainer.style.display = 'none';
-        teamContainer.style.display = 'grid';
-        renderFavoriteTeams();
-    }
 }
 
 // ============================================
@@ -2761,4 +2649,5 @@ window.unsuspendUser = unsuspendUser;
 window.deleteUser = deleteUser;
 window.toggleFavorite = toggleFavorite;
 window.shareProfile = shareProfile;
+
 
