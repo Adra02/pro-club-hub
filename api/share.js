@@ -4,100 +4,51 @@ import { TeamModel } from '../models/Team.js';
 import { ObjectId } from 'mongodb';
 
 export default async function handler(req, res) {
-  // CRITICAL: Permetti GET senza autenticazione
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    // CRITICAL FIX: Estrai parametri da URL
     const url = new URL(req.url, `https://${req.headers.host}`);
     const type = url.searchParams.get('type');
     const id = url.searchParams.get('id');
 
-    console.log('📍 Share request:', { type, id, fullUrl: req.url });
+    console.log('Share request:', { type, id });
 
     if (!type || !id) {
-      return renderNotFound(res, 'Parametri mancanti. Usa: /api/share?type=player&id=xxx');
+      return res.status(400).send(renderError('Parametri mancanti'));
     }
 
-    // CRITICAL FIX: Verifica che l'ID sia valido
     if (!ObjectId.isValid(id)) {
-      console.error('❌ Invalid ObjectId:', id);
-      return renderNotFound(res, 'ID non valido');
+      return res.status(400).send(renderError('ID non valido'));
     }
 
     const { db } = await connectToDatabase();
     const userModel = new UserModel(db);
     const teamModel = new TeamModel(db);
 
-    // Condivisione giocatore
     if (type === 'player') {
       const user = await userModel.findById(id);
-
       if (!user) {
-        console.error('❌ Player not found:', id);
-        return renderNotFound(res, 'Giocatore non trovato');
+        return res.status(404).send(renderError('Giocatore non trovato'));
       }
-
       const sanitized = userModel.sanitizeUser(user);
-      return renderPlayerPreview(res, sanitized, req);
+      return res.status(200).send(renderPlayer(sanitized, req));
     }
 
-    // Condivisione squadra
     if (type === 'team') {
       const team = await teamModel.findById(id);
-
       if (!team) {
-        console.error('❌ Team not found:', id);
-        return renderNotFound(res, 'Squadra non trovata');
+        return res.status(404).send(renderError('Squadra non trovata'));
       }
-
-      return renderTeamPreview(res, team, req);
+      return res.status(200).send(renderTeam(team, req));
     }
 
-    return renderNotFound(res, 'Type deve essere "player" o "team"');
+    return res.status(400).send(renderError('Type deve essere "player" o "team"'));
 
   } catch (error) {
-    console.error('❌ Share endpoint error:', error);
-    return res.status(500).send(`
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="UTF-8">
-        <title>Errore - Pro Club Hub</title>
-        <style>
-          body {
-            font-family: Arial, sans-serif;
-            background: #0a0f1e;
-            color: #f1f5f9;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            margin: 0;
-            padding: 2rem;
-          }
-          .error-box {
-            background: #1e293b;
-            border: 2px solid #ef4444;
-            border-radius: 16px;
-            padding: 2rem;
-            max-width: 500px;
-            text-align: center;
-          }
-          h1 { color: #ef4444; margin-bottom: 1rem; }
-          p { color: #cbd5e1; margin-bottom: 0.5rem; }
-        </style>
-      </head>
-      <body>
-        <div class="error-box">
-          <h1>⚠️ Errore del server</h1>
-          <p>${error.message}</p>
-        </div>
-      </body>
-      </html>
-    `);
+    console.error('Share error:', error);
+    return res.status(500).send(renderError('Errore del server'));
   }
 }
 
@@ -107,31 +58,16 @@ function getBaseUrl(req) {
   return `${protocol}://${host}`;
 }
 
-function renderPlayerPreview(res, user, req) {
+function renderPlayer(user, req) {
   const baseUrl = getBaseUrl(req);
-  const userId = user._id.toString();
-  const shareUrl = `${baseUrl}/api/share?type=player&id=${userId}`;
-
-  const html = `
-<!DOCTYPE html>
+  return `<!DOCTYPE html>
 <html lang="it">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${user.username} - Pro Club Hub</title>
-    
-    <!-- Open Graph Meta Tags -->
     <meta property="og:title" content="${user.username} - Pro Club Hub">
-    <meta property="og:description" content="${user.primaryRole} • Livello ${user.level} • ${user.platform} • ⭐ ${user.averageRating.toFixed(1)}">
-    <meta property="og:type" content="profile">
-    <meta property="og:url" content="${shareUrl}">
-    <meta property="og:site_name" content="Pro Club Hub">
-    
-    <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="${user.username} - Pro Club Hub">
-    <meta name="twitter:description" content="${user.primaryRole} • Livello ${user.level}">
-    
+    <meta property="og:description" content="${user.primaryRole} • Livello ${user.level} • ${user.platform}">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -152,11 +88,6 @@ function renderPlayerPreview(res, user, req) {
             max-width: 600px;
             width: 100%;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            backdrop-filter: blur(10px);
-        }
-        .header {
-            text-align: center;
-            margin-bottom: 2rem;
         }
         .logo {
             font-size: 2rem;
@@ -164,11 +95,8 @@ function renderPlayerPreview(res, user, req) {
             background: linear-gradient(135deg, #3b82f6, #8b5cf6);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            margin-bottom: 0.5rem;
-        }
-        .subtitle {
-            color: #94a3b8;
-            font-size: 0.95rem;
+            margin-bottom: 2rem;
+            text-align: center;
         }
         .player-card {
             background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
@@ -193,12 +121,12 @@ function renderPlayerPreview(res, user, req) {
             font-size: 3rem;
             flex-shrink: 0;
         }
-        .player-info h1 {
+        h1 {
             font-size: 1.75rem;
             margin-bottom: 0.5rem;
             color: #f1f5f9;
         }
-        .player-role {
+        .role {
             color: #3b82f6;
             font-weight: 600;
             font-size: 1.1rem;
@@ -225,9 +153,7 @@ function renderPlayerPreview(res, user, req) {
             font-size: 1.2rem;
             font-weight: 700;
         }
-        .rating {
-            color: #fbbf24;
-        }
+        .rating { color: #fbbf24; }
         .btn {
             display: block;
             width: 100%;
@@ -239,39 +165,22 @@ function renderPlayerPreview(res, user, req) {
             border-radius: 12px;
             font-size: 1.1rem;
             font-weight: 700;
-            cursor: pointer;
             text-decoration: none;
             text-align: center;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(59, 130, 246, 0.3);
-        }
-        .footer {
-            text-align: center;
-            margin-top: 2rem;
-            color: #64748b;
-            font-size: 0.9rem;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <div class="logo">⚽ PRO CLUB HUB</div>
-            <div class="subtitle">Profilo Giocatore</div>
-        </div>
-        
+        <div class="logo">⚽ PRO CLUB HUB</div>
         <div class="player-card">
             <div class="player-header">
                 <div class="avatar">👤</div>
-                <div class="player-info">
+                <div>
                     <h1>${user.username}</h1>
-                    <div class="player-role">${user.primaryRole}</div>
+                    <div class="role">${user.primaryRole}</div>
                 </div>
             </div>
-            
             <div class="stats-grid">
                 <div class="stat-box">
                     <div class="stat-label">🏆 Livello</div>
@@ -291,43 +200,22 @@ function renderPlayerPreview(res, user, req) {
                 </div>
             </div>
         </div>
-        
-        <a href="${baseUrl}" class="btn">
-            🚀 Apri Pro Club Hub
-        </a>
-        
-        <div class="footer">
-            Scopri la community per i giocatori di Pro Club
-        </div>
+        <a href="${baseUrl}" class="btn">🚀 Apri Pro Club Hub</a>
     </div>
 </body>
-</html>
-  `;
-
-  res.setHeader('Content-Type', 'text/html');
-  return res.status(200).send(html);
+</html>`;
 }
 
-function renderTeamPreview(res, team, req) {
+function renderTeam(team, req) {
   const baseUrl = getBaseUrl(req);
-  const teamId = team._id.toString();
-  const shareUrl = `${baseUrl}/api/share?type=team&id=${teamId}`;
-
-  const html = `
-<!DOCTYPE html>
+  return `<!DOCTYPE html>
 <html lang="it">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${team.name} - Pro Club Hub</title>
-    
-    <!-- Open Graph Meta Tags -->
     <meta property="og:title" content="${team.name} - Pro Club Hub">
-    <meta property="og:description" content="${team.platform} • ${team.members.length} membri • ⭐ ${team.averageRating.toFixed(1)}">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="${shareUrl}">
-    <meta property="og:site_name" content="Pro Club Hub">
-    
+    <meta property="og:description" content="${team.platform} • ${team.members.length} membri">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -348,11 +236,6 @@ function renderTeamPreview(res, team, req) {
             max-width: 600px;
             width: 100%;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            backdrop-filter: blur(10px);
-        }
-        .header {
-            text-align: center;
-            margin-bottom: 2rem;
         }
         .logo {
             font-size: 2rem;
@@ -360,11 +243,8 @@ function renderTeamPreview(res, team, req) {
             background: linear-gradient(135deg, #3b82f6, #8b5cf6);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            margin-bottom: 0.5rem;
-        }
-        .subtitle {
-            color: #94a3b8;
-            font-size: 0.95rem;
+            margin-bottom: 2rem;
+            text-align: center;
         }
         .team-card {
             background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
@@ -389,12 +269,12 @@ function renderTeamPreview(res, team, req) {
             font-size: 3rem;
             flex-shrink: 0;
         }
-        .team-info h1 {
+        h1 {
             font-size: 1.75rem;
             margin-bottom: 0.5rem;
             color: #f1f5f9;
         }
-        .team-platform {
+        .platform {
             color: #3b82f6;
             font-weight: 600;
             font-size: 1.1rem;
@@ -402,7 +282,7 @@ function renderTeamPreview(res, team, req) {
         .description {
             color: #cbd5e1;
             line-height: 1.6;
-            margin-bottom: 1.5rem;
+            margin: 1.5rem 0;
             padding: 1rem;
             background: rgba(15, 23, 42, 0.5);
             border-radius: 12px;
@@ -430,9 +310,7 @@ function renderTeamPreview(res, team, req) {
             font-size: 1.2rem;
             font-weight: 700;
         }
-        .rating {
-            color: #fbbf24;
-        }
+        .rating { color: #fbbf24; }
         .btn {
             display: block;
             width: 100%;
@@ -444,41 +322,23 @@ function renderTeamPreview(res, team, req) {
             border-radius: 12px;
             font-size: 1.1rem;
             font-weight: 700;
-            cursor: pointer;
             text-decoration: none;
             text-align: center;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(59, 130, 246, 0.3);
-        }
-        .footer {
-            text-align: center;
-            margin-top: 2rem;
-            color: #64748b;
-            font-size: 0.9rem;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <div class="logo">⚽ PRO CLUB HUB</div>
-            <div class="subtitle">Profilo Squadra</div>
-        </div>
-        
+        <div class="logo">⚽ PRO CLUB HUB</div>
         <div class="team-card">
             <div class="team-header">
                 <div class="avatar">🛡️</div>
-                <div class="team-info">
+                <div>
                     <h1>${team.name}</h1>
-                    <div class="team-platform">${team.platform}</div>
+                    <div class="platform">${team.platform}</div>
                 </div>
             </div>
-            
             ${team.description ? `<div class="description">${team.description}</div>` : ''}
-            
             <div class="stats-grid">
                 <div class="stat-box">
                     <div class="stat-label">👥 Membri</div>
@@ -494,31 +354,19 @@ function renderTeamPreview(res, team, req) {
                 </div>
             </div>
         </div>
-        
-        <a href="${baseUrl}" class="btn">
-            🚀 Apri Pro Club Hub
-        </a>
-        
-        <div class="footer">
-            Scopri la community per i giocatori di Pro Club
-        </div>
+        <a href="${baseUrl}" class="btn">🚀 Apri Pro Club Hub</a>
     </div>
 </body>
-</html>
-  `;
-
-  res.setHeader('Content-Type', 'text/html');
-  return res.status(200).send(html);
+</html>`;
 }
 
-function renderNotFound(res, message) {
-  const html = `
-<!DOCTYPE html>
+function renderError(message) {
+  return `<!DOCTYPE html>
 <html lang="it">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Non Trovato - Pro Club Hub</title>
+    <title>Errore - Pro Club Hub</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -539,19 +387,9 @@ function renderNotFound(res, message) {
             max-width: 500px;
             text-align: center;
         }
-        h1 {
-            font-size: 4rem;
-            color: #ef4444;
-            margin-bottom: 1rem;
-        }
-        h2 {
-            color: #f1f5f9;
-            margin-bottom: 1rem;
-        }
-        p {
-            color: #cbd5e1;
-            line-height: 1.6;
-        }
+        h1 { font-size: 4rem; color: #ef4444; margin-bottom: 1rem; }
+        h2 { color: #f1f5f9; margin-bottom: 1rem; }
+        p { color: #cbd5e1; line-height: 1.6; }
         .btn {
             display: inline-block;
             margin-top: 2rem;
@@ -572,9 +410,5 @@ function renderNotFound(res, message) {
         <a href="https://proclubhub.vercel.app" class="btn">Torna alla Home</a>
     </div>
 </body>
-</html>
-  `;
-
-  res.setHeader('Content-Type', 'text/html');
-  return res.status(404).send(html);
+</html>`;
 }
