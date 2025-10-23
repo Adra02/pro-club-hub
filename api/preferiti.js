@@ -8,7 +8,6 @@ import { ObjectId } from 'mongodb';
  * API /api/preferiti
  * 
  * Gestisce il sistema preferiti per giocatori e squadre
- * Un unico endpoint per risparmiare funzioni Vercel
  * 
  * GET    /api/preferiti                  - Ottieni preferiti dell'utente
  * POST   /api/preferiti?action=add       - Aggiungi a preferiti
@@ -45,7 +44,6 @@ export default async function handler(req, res) {
             const user = await userModel.findById(id);
             if (!user) return null;
             const sanitized = userModel.sanitizeUser(user);
-            // CRITICAL FIX: Assicurati che _id sia una stringa
             return {
               ...sanitized,
               _id: sanitized._id.toString()
@@ -63,7 +61,6 @@ export default async function handler(req, res) {
           try {
             const team = await teamModel.findById(id);
             if (!team) return null;
-            // CRITICAL FIX: Converti ObjectId in stringhe
             return {
               ...team,
               _id: team._id.toString(),
