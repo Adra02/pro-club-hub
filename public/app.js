@@ -1,39 +1,4 @@
-cat > /mnt/user-data/outputs/app.js << 'EOFALL'
-// ============================================
-// PRO CLUB HUB - APP.JS COMPLETO E FUNZIONANTE
-// Con: Preferiti, Condivisione, Ricerca, Profili, Team, Feedback, Admin
-// ============================================
-
-const API_BASE = '/api';
-const NATIONALITIES = [
-  'Afghanistan', 'Albania', 'Algeria', 'Andorra', 'Angola', 'Antigua e Barbuda', 'Arabia Saudita', 
-  'Argentina', 'Armenia', 'Australia', 'Austria', 'Azerbaigian', 'Bahamas', 'Bahrein', 'Bangladesh',
-  'Barbados', 'Belgio', 'Belize', 'Benin', 'Bhutan', 'Bielorussia', 'Birmania', 'Bolivia', 
-  'Bosnia ed Erzegovina', 'Botswana', 'Brasile', 'Brunei', 'Bulgaria', 'Burkina Faso', 'Burundi',
-  'Cambogia', 'Camerun', 'Canada', 'Capo Verde', 'Ciad', 'Cile', 'Cina', 'Cipro', 'Colombia',
-  'Comore', 'Corea del Nord', 'Corea del Sud', 'Costa d\'Avorio', 'Costa Rica', 'Croazia', 'Cuba',
-  'Danimarca', 'Dominica', 'Ecuador', 'Egitto', 'El Salvador', 'Emirati Arabi Uniti', 'Eritrea',
-  'Estonia', 'Etiopia', 'Figi', 'Filippine', 'Finlandia', 'Francia', 'Gabon', 'Gambia', 'Georgia',
-  'Germania', 'Ghana', 'Giamaica', 'Giappone', 'Gibuti', 'Giordania', 'Grecia', 'Grenada',
-  'Guatemala', 'Guinea', 'Guinea-Bissau', 'Guinea Equatoriale', 'Guyana', 'Haiti', 'Honduras',
-  'India', 'Indonesia', 'Iran', 'Iraq', 'Irlanda', 'Islanda', 'Israele', 'Italia', 'Kazakhstan',
-  'Kenya', 'Kirghizistan', 'Kiribati', 'Kosovo', 'Kuwait', 'Laos', 'Lesotho', 'Lettonia', 'Libano',
-  'Liberia', 'Libia', 'Liechtenstein', 'Lituania', 'Lussemburgo', 'Macedonia del Nord', 'Madagascar',
-  'Malawi', 'Malaysia', 'Maldive', 'Mali', 'Malta', 'Marocco', 'Marshall', 'Mauritania', 'Mauritius',
-  'Messico', 'Micronesia', 'Moldavia', 'Monaco', 'Mongolia', 'Montenegro', 'Mozambico', 'Namibia',
-  'Nauru', 'Nepal', 'Nicaragua', 'Niger', 'Nigeria', 'Norvegia', 'Nuova Zelanda', 'Oman', 'Paesi Bassi',
-  'Pakistan', 'Palau', 'Palestina', 'Panama', 'Papua Nuova Guinea', 'Paraguay', 'Perù', 'Polonia',
-  'Portogallo', 'Qatar', 'Regno Unito', 'Repubblica Ceca', 'Repubblica Centrafricana', 
-  'Repubblica del Congo', 'Repubblica Democratica del Congo', 'Repubblica Dominicana', 'Romania',
-  'Ruanda', 'Russia', 'Saint Kitts e Nevis', 'Saint Lucia', 'Saint Vincent e Grenadine', 'Samoa',
-  'San Marino', 'Santa Sede', 'São Tomé e Príncipe', 'Senegal', 'Serbia', 'Seychelles', 'Sierra Leone',
-  'Singapore', 'Siria', 'Slovacchia', 'Slovenia', 'Somalia', 'Spagna', 'Sri Lanka', 'Stati Uniti',
-  'Sudafrica', 'Sudan', 'Sudan del Sud', 'Suriname', 'Svezia', 'Svizzera', 'Swaziland', 'Tagikistan',
-  'Taiwan', 'Tanzania', 'Thailandia', 'Timor Est', 'Togo', 'Tonga', 'Trinidad e Tobago', 'Tunisia',
-  'Turchia', 'Turkmenistan', 'Tuvalu', 'Ucraina', 'Uganda', 'Ungheria', 'Uruguay', 'Uzbekistan',
-  'Vanuatu', 'Venezuela', 'Vietnam', 'Yemen', 'Zambia', 'Zimbabwe'
-];
-
+// ==================== GLOBAL VARIABLES ====================
 let currentUser = null;
 let selectedTags = [];
 let selectedRating = 0;
@@ -41,13 +6,33 @@ let currentTeam = null;
 let GLOBAL_MIN_LEVEL = 1;
 let GLOBAL_MAX_LEVEL = 999;
 let userFavorites = { giocatori: [], squadre: [] };
+const API_BASE = '/api';
 
-// ============================================
-// INITIALIZATION
-// ============================================
+const NATIONALITIES = [
+    "Afghanistan", "Albania", "Algeria", "Andorra", "Angola", "Antigua and Barbuda", "Argentina", "Armenia", "Australia", "Austria",
+    "Azerbaijan", "Bahamas", "Bahrain", "Bangladesh", "Barbados", "Belarus", "Belgium", "Belize", "Benin", "Bhutan",
+    "Bolivia", "Bosnia and Herzegovina", "Botswana", "Brazil", "Brunei", "Bulgaria", "Burkina Faso", "Burundi", "Cabo Verde", "Cambodia",
+    "Cameroon", "Canada", "Central African Republic", "Chad", "Chile", "China", "Colombia", "Comoros", "Congo", "Costa Rica",
+    "Croatia", "Cuba", "Cyprus", "Czech Republic", "Denmark", "Djibouti", "Dominica", "Dominican Republic", "East Timor", "Ecuador",
+    "Egypt", "El Salvador", "Equatorial Guinea", "Eritrea", "Estonia", "Eswatini", "Ethiopia", "Fiji", "Finland", "France",
+    "Gabon", "Gambia", "Georgia", "Germany", "Ghana", "Greece", "Grenada", "Guatemala", "Guinea", "Guinea-Bissau",
+    "Guyana", "Haiti", "Honduras", "Hungary", "Iceland", "India", "Indonesia", "Iran", "Iraq", "Ireland",
+    "Israel", "Italy", "Ivory Coast", "Jamaica", "Japan", "Jordan", "Kazakhstan", "Kenya", "Kiribati", "Kosovo",
+    "Kuwait", "Kyrgyzstan", "Laos", "Latvia", "Lebanon", "Lesotho", "Liberia", "Libya", "Liechtenstein", "Lithuania",
+    "Luxembourg", "Madagascar", "Malawi", "Malaysia", "Maldives", "Mali", "Malta", "Marshall Islands", "Mauritania", "Mauritius",
+    "Mexico", "Micronesia", "Moldova", "Monaco", "Mongolia", "Montenegro", "Morocco", "Mozambique", "Myanmar", "Namibia",
+    "Nauru", "Nepal", "Netherlands", "New Zealand", "Nicaragua", "Niger", "Nigeria", "North Korea", "North Macedonia", "Norway",
+    "Oman", "Pakistan", "Palau", "Palestine", "Panama", "Papua New Guinea", "Paraguay", "Peru", "Philippines", "Poland",
+    "Portugal", "Qatar", "Romania", "Russia", "Rwanda", "Saint Kitts and Nevis", "Saint Lucia", "Saint Vincent and the Grenadines", "Samoa", "San Marino",
+    "Sao Tome and Principe", "Saudi Arabia", "Senegal", "Serbia", "Seychelles", "Sierra Leone", "Singapore", "Slovakia", "Slovenia", "Solomon Islands",
+    "Somalia", "South Africa", "South Korea", "South Sudan", "Spain", "Sri Lanka", "Sudan", "Suriname", "Sweden", "Switzerland",
+    "Syria", "Taiwan", "Tajikistan", "Tanzania", "Thailand", "Togo", "Tonga", "Trinidad and Tobago", "Tunisia", "Turkey",
+    "Turkmenistan", "Tuvalu", "Uganda", "Ukraine", "United Arab Emirates", "United Kingdom", "United States", "Uruguay", "Uzbekistan", "Vanuatu",
+    "Vatican City", "Venezuela", "Vietnam", "Yemen", "Zambia", "Zimbabwe"
+];
 
+// ==================== INITIALIZATION ====================
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('🚀 App inizializzata');
     initApp();
     checkResetToken();
 });
@@ -62,70 +47,11 @@ async function initApp() {
     navigateTo('home');
 }
 
-async function loadGlobalLevelLimits() {
-    try {
-        const response = await fetch(`${API_BASE}/admin?action=level-settings`);
-        if (response.ok) {
-            const data = await response.json();
-            GLOBAL_MIN_LEVEL = data.minLevel;
-            GLOBAL_MAX_LEVEL = data.maxLevel;
-            updateLevelInputLimits(data.minLevel, data.maxLevel);
-        }
-    } catch (error) {
-        console.error('Failed to load level limits:', error);
-    }
-}
-
-function updateLevelInputLimits(minLevel, maxLevel) {
-    const levelInputs = document.querySelectorAll('input[type="number"][id*="evel"], input[type="number"][id*="Level"]');
-    levelInputs.forEach(input => {
-        if (input.id !== 'adminMinLevel' && input.id !== 'adminMaxLevel') {
-            input.min = minLevel;
-            input.max = maxLevel;
-            input.placeholder = `${minLevel}-${maxLevel}`;
-        }
-    });
-}
-
-function calculateLevelPercentage(level) {
-    if (GLOBAL_MAX_LEVEL === GLOBAL_MIN_LEVEL) return 100;
-    const percentage = ((level - GLOBAL_MIN_LEVEL) / (GLOBAL_MAX_LEVEL - GLOBAL_MIN_LEVEL)) * 100;
-    return Math.min(Math.max(percentage, 0), 100);
-}
-
-function populateNationalities() {
-    const lists = ['nationalitiesList', 'registerNationalitiesList', 'editNationalitiesList', 'teamNationalitiesList', 'teamCreateNationalitiesList'];
-    lists.forEach(listId => {
-        const datalist = document.getElementById(listId);
-        if (datalist) {
-            datalist.innerHTML = NATIONALITIES.map(n => `<option value="${n}">`).join('');
-        }
-    });
-}
-
-function setupLanguageSelector() {
-    const selector = document.getElementById('languageSelector');
-    if (selector) {
-        const savedLang = localStorage.getItem('language') || 'it';
-        selector.value = savedLang;
-        selector.addEventListener('change', (e) => {
-            setLanguage(e.target.value);
-        });
-    }
-}
-
-function checkResetToken() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const resetToken = urlParams.get('reset');
-    if (resetToken) {
-        showResetPasswordModal(resetToken);
-    }
-}
-
-function checkAuth() {
+// ==================== AUTHENTICATION ====================
+async function checkAuth() {
     const token = localStorage.getItem('token');
     if (token) {
-        fetchCurrentUser();
+        await fetchCurrentUser();
     } else {
         updateUIForGuest();
     }
@@ -133,72 +59,219 @@ function checkAuth() {
 
 async function fetchCurrentUser() {
     try {
-        showLoading();
-        const response = await fetch(`${API_BASE}/auth?action=me`, {
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        const response = await fetch(`${API_BASE}/auth/me`, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
         });
 
         if (response.ok) {
-            const data = await response.json();
-            currentUser = data.user;
+            currentUser = await response.json();
             updateUIForUser();
             await loadUserFavorites();
-            if (currentUser.team) {
-                loadCurrentTeam();
-            }
         } else {
-            localStorage.removeItem('token');
-            updateUIForGuest();
+            logout();
         }
     } catch (error) {
         console.error('Error fetching user:', error);
-        localStorage.removeItem('token');
-        updateUIForGuest();
+        logout();
+    }
+}
+
+async function handleLogin(e) {
+    e.preventDefault();
+    showLoading();
+
+    const email = document.getElementById('loginEmail').value;
+    const password = document.getElementById('loginPassword').value;
+
+    try {
+        const response = await fetch(`${API_BASE}/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            localStorage.setItem('token', data.token);
+            await fetchCurrentUser();
+            document.getElementById('loginModal').style.display = 'none';
+            showNotification('Login effettuato con successo!', 'success');
+            navigateTo('players');
+        } else {
+            showNotification(data.error || 'Errore durante il login', 'error');
+        }
+    } catch (error) {
+        showNotification('Errore di connessione', 'error');
     } finally {
         hideLoading();
     }
 }
 
-// ============================================
-// PREFERITI - FUNZIONI COMPLETE
-// ============================================
+async function handleRegister(e) {
+    e.preventDefault();
+    showLoading();
 
-async function loadUserFavorites() {
-    if (!currentUser) {
-        userFavorites = { giocatori: [], squadre: [] };
+    const formData = {
+        username: document.getElementById('registerUsername').value,
+        email: document.getElementById('registerEmail').value,
+        password: document.getElementById('registerPassword').value,
+        gamertag: document.getElementById('registerGamertag').value,
+        platform: document.getElementById('registerPlatform').value,
+        role: document.getElementById('registerRole').value,
+        nationality: document.getElementById('registerNationality').value,
+        level: parseInt(document.getElementById('registerLevel').value) || 1,
+        bio: document.getElementById('registerBio').value
+    };
+
+    try {
+        const response = await fetch(`${API_BASE}/auth/register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formData)
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            localStorage.setItem('token', data.token);
+            await fetchCurrentUser();
+            document.getElementById('registerModal').style.display = 'none';
+            showNotification('Registrazione completata con successo!', 'success');
+            navigateTo('players');
+        } else {
+            showNotification(data.error || 'Errore durante la registrazione', 'error');
+        }
+    } catch (error) {
+        showNotification('Errore di connessione', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+async function handleForgotPassword(e) {
+    e.preventDefault();
+    showLoading();
+
+    const email = document.getElementById('forgotEmail').value;
+
+    try {
+        const response = await fetch(`${API_BASE}/auth/request-reset`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            showNotification('Email di reset inviata! Controlla la tua casella.', 'success');
+            document.getElementById('forgotPasswordModal').style.display = 'none';
+        } else {
+            showNotification(data.error || 'Errore durante la richiesta', 'error');
+        }
+    } catch (error) {
+        showNotification('Errore di connessione', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+function logout() {
+    localStorage.removeItem('token');
+    currentUser = null;
+    userFavorites = { giocatori: [], squadre: [] };
+    updateUIForGuest();
+    navigateTo('home');
+    showNotification('Logout effettuato', 'success');
+}
+
+function checkResetToken() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('reset_token');
+    
+    if (token) {
+        document.getElementById('resetPasswordModal').style.display = 'flex';
+        document.getElementById('resetToken').value = token;
+    }
+}
+
+async function handleResetPassword(e) {
+    e.preventDefault();
+    showLoading();
+
+    const token = document.getElementById('resetToken').value;
+    const password = document.getElementById('newPassword').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+
+    if (password !== confirmPassword) {
+        showNotification('Le password non corrispondono', 'error');
+        hideLoading();
         return;
     }
 
     try {
+        const response = await fetch(`${API_BASE}/auth/reset-password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token, newPassword: password })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            showNotification('Password reimpostata con successo!', 'success');
+            document.getElementById('resetPasswordModal').style.display = 'none';
+            window.history.replaceState({}, document.title, window.location.pathname);
+        } else {
+            showNotification(data.error || 'Errore durante il reset', 'error');
+        }
+    } catch (error) {
+        showNotification('Errore di connessione', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+// ==================== FAVORITES SYSTEM ====================
+async function loadUserFavorites() {
+    if (!currentUser) return;
+
+    try {
         const response = await fetch(`${API_BASE}/preferiti`, {
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
         });
 
         if (response.ok) {
             const data = await response.json();
-            userFavorites = data.preferiti || { giocatori: [], squadre: [] };
+            userFavorites = data;
             updateFavoriteIcons();
         }
     } catch (error) {
-        console.error('Errore caricamento preferiti:', error);
-        userFavorites = { giocatori: [], squadre: [] };
+        console.error('Error loading favorites:', error);
     }
 }
 
 async function toggleFavorite(targetId, type) {
     if (!currentUser) {
-        showNotification('⚠️ Devi effettuare il login', 'error');
+        showNotification('Devi effettuare il login per aggiungere preferiti', 'error');
         return;
     }
 
-    const favorites = type === 'giocatori' ? userFavorites.giocatori : userFavorites.squadre;
-    const isFavorite = favorites.some(item => item._id === targetId);
+    const listKey = type === 'player' ? 'giocatori' : 'squadre';
+    const isFavorite = userFavorites[listKey].includes(targetId);
+    
+    showLoading();
 
     try {
-        showLoading();
-
+        let response;
+        
         if (isFavorite) {
-            const response = await fetch(`${API_BASE}/preferiti?action=remove`, {
+            response = await fetch(`${API_BASE}/preferiti?action=remove`, {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json',
@@ -206,27 +279,8 @@ async function toggleFavorite(targetId, type) {
                 },
                 body: JSON.stringify({ targetId, type })
             });
-
-            if (response.ok) {
-                if (type === 'giocatori') {
-                    userFavorites.giocatori = userFavorites.giocatori.filter(g => g._id !== targetId);
-                } else {
-                    userFavorites.squadre = userFavorites.squadre.filter(s => s._id !== targetId);
-                }
-                showNotification('💔 Rimosso dai preferiti', 'success');
-                updateFavoriteIcon(targetId, false);
-                
-                const currentPage = document.querySelector('.page.active');
-                if (currentPage && currentPage.id === 'favoritesPage') {
-                    if (type === 'giocatori') {
-                        renderFavoritePlayers();
-                    } else {
-                        renderFavoriteTeams();
-                    }
-                }
-            }
         } else {
-            const response = await fetch(`${API_BASE}/preferiti?action=add`, {
+            response = await fetch(`${API_BASE}/preferiti?action=add`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -234,16 +288,24 @@ async function toggleFavorite(targetId, type) {
                 },
                 body: JSON.stringify({ targetId, type })
             });
+        }
 
-            if (response.ok) {
-                await loadUserFavorites();
-                showNotification('❤️ Aggiunto ai preferiti', 'success');
-                updateFavoriteIcon(targetId, true);
+        if (response.ok) {
+            if (isFavorite) {
+                userFavorites[listKey] = userFavorites[listKey].filter(id => id !== targetId);
+                showNotification('Rimosso dai preferiti', 'success');
+            } else {
+                userFavorites[listKey].push(targetId);
+                showNotification('Aggiunto ai preferiti', 'success');
             }
+            
+            updateFavoriteIcon(targetId, !isFavorite);
+        } else {
+            const data = await response.json();
+            showNotification(data.error || 'Errore durante l\'operazione', 'error');
         }
     } catch (error) {
-        console.error('Toggle favorite error:', error);
-        showNotification('❌ Errore di connessione', 'error');
+        showNotification('Errore di connessione', 'error');
     } finally {
         hideLoading();
     }
@@ -265,722 +327,874 @@ function updateFavoriteIcon(targetId, isFavorite) {
 }
 
 function updateFavoriteIcons() {
-    userFavorites.giocatori.forEach(player => {
-        updateFavoriteIcon(player._id, true);
-    });
-    userFavorites.squadre.forEach(team => {
-        updateFavoriteIcon(team._id, true);
+    document.querySelectorAll('[data-favorite-id]').forEach(icon => {
+        const targetId = icon.getAttribute('data-favorite-id');
+        const isFavoritePlayer = userFavorites.giocatori.includes(targetId);
+        const isFavoriteTeam = userFavorites.squadre.includes(targetId);
+        const isFavorite = isFavoritePlayer || isFavoriteTeam;
+        
+        if (isFavorite) {
+            icon.classList.remove('far');
+            icon.classList.add('fas');
+            icon.style.color = '#ef4444';
+        } else {
+            icon.classList.remove('fas');
+            icon.classList.add('far');
+            icon.style.color = '#94a3b8';
+        }
     });
 }
 
 async function loadFavoritesPage() {
     if (!currentUser) {
-        showNotification('⚠️ Devi effettuare il login', 'error');
+        showNotification('Devi effettuare il login', 'error');
         navigateTo('home');
         return;
     }
-    await loadUserFavorites();
-    switchFavoritesTab('favorite-players');
+
+    showLoading();
+    try {
+        await loadUserFavorites();
+        switchFavoritesTab('players');
+    } catch (error) {
+        showNotification('Errore nel caricamento dei preferiti', 'error');
+    } finally {
+        hideLoading();
+    }
 }
 
 function switchFavoritesTab(tab) {
-    document.querySelectorAll('.requests-tabs .tab-btn').forEach(btn => {
-        btn.classList.remove('active');
-    });
-    const activeBtn = document.querySelector(`[data-tab="${tab}"]`);
-    if (activeBtn) activeBtn.classList.add('active');
-
-    const playersContainer = document.getElementById('favoritePlayersContainer');
-    const teamsContainer = document.getElementById('favoriteTeamsContainer');
+    document.querySelectorAll('.favorites-tab').forEach(t => t.classList.remove('active'));
     
-    if (tab === 'favorite-players') {
-        playersContainer.style.display = 'grid';
-        teamsContainer.style.display = 'none';
+    if (tab === 'players') {
+        document.getElementById('favPlayersTab').classList.add('active');
+        document.getElementById('favoritePlayersContent').style.display = 'block';
+        document.getElementById('favoriteTeamsContent').style.display = 'none';
         renderFavoritePlayers();
     } else {
-        playersContainer.style.display = 'none';
-        teamsContainer.style.display = 'grid';
+        document.getElementById('favTeamsTab').classList.add('active');
+        document.getElementById('favoritePlayersContent').style.display = 'none';
+        document.getElementById('favoriteTeamsContent').style.display = 'block';
         renderFavoriteTeams();
     }
 }
 
-function renderFavoritePlayers() {
-    const container = document.getElementById('favoritePlayersContainer');
-    if (!userFavorites.giocatori || userFavorites.giocatori.length === 0) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <i class="fas fa-heart-broken"></i>
-                <p>Nessun giocatore nei preferiti</p>
-            </div>`;
-        return;
-    }
-    container.innerHTML = userFavorites.giocatori.map(player => `
-        <div class="player-card" onclick="showPlayerDetail('${player._id}')">
-            <div class="player-card-header">
-                <div class="player-avatar"><i class="fas fa-user-circle"></i></div>
-                <div class="player-info">
-                    <h3>
-                        ${player.username}
-                        <i class="fas fa-heart" style="color: #ef4444; cursor: pointer; margin-left: 0.5rem;" 
-                           data-favorite-id="${player._id}"
-                           onclick="event.stopPropagation(); toggleFavorite('${player._id}', 'giocatori');"></i>
-                    </h3>
-                    <p class="player-role">${player.primaryRole}</p>
-                </div>
-            </div>
-            <div class="player-stats">
-                <span class="stat"><i class="fas fa-trophy"></i> ${player.level}</span>
-                <span class="stat"><i class="fas fa-gamepad"></i> ${player.platform}</span>
-                <span class="stat star"><i class="fas fa-star"></i> ${player.averageRating.toFixed(1)}</span>
-            </div>
-        </div>
-    `).join('');
-}
-
-function renderFavoriteTeams() {
-    const container = document.getElementById('favoriteTeamsContainer');
-    if (!userFavorites.squadre || userFavorites.squadre.length === 0) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <i class="fas fa-heart-broken"></i>
-                <p>Nessuna squadra nei preferiti</p>
-            </div>`;
-        return;
-    }
-    container.innerHTML = userFavorites.squadre.map(team => `
-        <div class="team-card" onclick="showTeamDetail('${team._id}')">
-            <div class="team-card-header">
-                <div class="team-avatar"><i class="fas fa-shield-alt"></i></div>
-                <div class="team-info">
-                    <h3>
-                        ${team.name}
-                        <i class="fas fa-heart" style="color: #ef4444; cursor: pointer; margin-left: 0.5rem;" 
-                           data-favorite-id="${team._id}"
-                           onclick="event.stopPropagation(); toggleFavorite('${team._id}', 'squadre');"></i>
-                    </h3>
-                    <p class="team-platform">${team.platform}</p>
-                </div>
-            </div>
-            <div class="team-stats">
-                <span class="stat"><i class="fas fa-users"></i> ${team.members.length} membri</span>
-                <span class="stat"><i class="fas fa-flag"></i> ${team.nationality || 'N/A'}</span>
-                <span class="stat star"><i class="fas fa-star"></i> ${team.averageRating.toFixed(1)}</span>
-            </div>
-        </div>
-    `).join('');
-}
-
-// ============================================
-// CONDIVISIONE
-// ============================================
-
-async function shareProfile(type, id, name) {
-    const shareData = {
-        title: `${name} - Pro Club Hub`,
-        text: type === 'player' 
-            ? `Guarda il profilo di ${name} su Pro Club Hub!`
-            : `Scopri la squadra ${name} su Pro Club Hub!`,
-        url: `https://proclubhub.vercel.app/api/share?type=${type}&id=${id}`
-    };
-
-    try {
-        if (navigator.share) {
-            await navigator.share(shareData);
-            showNotification('✅ Condiviso con successo!', 'success');
-        } else {
-            await navigator.clipboard.writeText(shareData.url);
-            showNotification('📋 Link copiato negli appunti!', 'success');
-        }
-    } catch (error) {
-        const input = document.createElement('input');
-        input.value = shareData.url;
-        document.body.appendChild(input);
-        input.select();
-        document.execCommand('copy');
-        document.body.removeChild(input);
-        showNotification('📋 Link copiato negli appunti!', 'success');
-    }
-}
-
-// ============================================
-// NAVIGATION
-// ============================================
-
-function navigateTo(page) {
-    document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
-    document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
-
-    const pageElement = document.getElementById(`${page}Page`);
-    if (pageElement) {
-        pageElement.style.display = 'block';
-    }
-
-    const navBtn = document.querySelector(`[data-page="${page}"]`);
-    if (navBtn) {
-        navBtn.classList.add('active');
-    }
-
-    if (page === 'profile') {
-        loadProfile();
-    } else if (page === 'players') {
-        if (!currentUser) {
-            showNotification('⚠️ Devi effettuare il login', 'error');
-            openAuthModal('login');
-            return;
-        }
-        searchPlayers();
-    } else if (page === 'teams') {
-        if (!currentUser) {
-            showNotification('⚠️ Devi effettuare il login', 'error');
-            openAuthModal('login');
-            return;
-        }
-        searchTeams();
-    } else if (page === 'favorites') {
-        loadFavoritesPage();
-    } else if (page === 'requests') {
-        loadRequests();
-    } else if (page === 'admin' && currentUser && currentUser.isAdmin) {
-        loadAdminDashboard();
-    }
-}
-
-// ============================================
-// AUTHENTICATION
-// ============================================
-
-function openAuthModal(form) {
-    switchAuthForm(form);
-    document.getElementById('authModal').classList.add('active');
-}
-
-function closeAuthModalFn() {
-    const authModal = document.getElementById('authModal');
-    if (authModal) authModal.classList.remove('active');
-}
-
-function switchAuthForm(form) {
-    const loginForm = document.getElementById('loginForm');
-    const registerForm = document.getElementById('registerForm');
-    const forgotPasswordForm = document.getElementById('forgotPasswordForm');
+async function renderFavoritePlayers() {
+    const container = document.getElementById('favoritePlayersList');
     
-    if (loginForm) loginForm.style.display = form === 'login' ? 'block' : 'none';
-    if (registerForm) registerForm.style.display = form === 'register' ? 'block' : 'none';
-    if (forgotPasswordForm) forgotPasswordForm.style.display = form === 'forgot' ? 'block' : 'none';
-}
-
-async function handleLogin(e) {
-    e.preventDefault();
-    const email = document.getElementById('loginEmail').value.trim();
-    const password = document.getElementById('loginPassword').value;
-
-    if (!email || !password) {
-        showNotification('⚠️ Email e password sono obbligatori', 'error');
+    if (userFavorites.giocatori.length === 0) {
+        container.innerHTML = '<p class="no-results">Nessun giocatore nei preferiti</p>';
         return;
     }
 
+    showLoading();
+    
     try {
-        showLoading();
-        const response = await fetch(`${API_BASE}/auth?action=login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password })
+        const response = await fetch(`${API_BASE}/users`, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
         });
 
-        const data = await response.json();
-
         if (response.ok) {
-            localStorage.setItem('token', data.token);
-            currentUser = data.user;
-            closeAuthModalFn();
-            updateUIForUser();
-            showNotification('✅ Login effettuato!', 'success');
-            navigateTo('home');
-        } else {
-            showNotification('❌ ' + (data.error || 'Errore'), 'error');
+            const users = await response.json();
+            const favoritePlayers = users.filter(u => userFavorites.giocatori.includes(u._id));
+            
+            if (favoritePlayers.length === 0) {
+                container.innerHTML = '<p class="no-results">Nessun giocatore nei preferiti</p>';
+                return;
+            }
+
+            container.innerHTML = favoritePlayers.map(player => {
+                const levelPercentage = calculateLevelPercentage(player.level || 1);
+                return `
+                    <div class="player-card" onclick="showPlayerDetail('${player._id}')">
+                        <div class="player-card-header">
+                            <div class="player-info">
+                                <h3>${player.gamertag || player.username}</h3>
+                                <p class="player-role">${player.role || 'N/A'}</p>
+                            </div>
+                            <div class="player-actions">
+                                <button class="icon-btn" onclick="event.stopPropagation(); shareProfile('player', '${player._id}', '${player.gamertag || player.username}');">
+                                    <i class="fas fa-share-alt"></i>
+                                </button>
+                                <button class="icon-btn favorite-btn" onclick="event.stopPropagation(); toggleFavorite('${player._id}', 'player');">
+                                    <i class="fas fa-heart" data-favorite-id="${player._id}" style="color: #ef4444;"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="player-stats">
+                            <div class="stat">
+                                <i class="fas fa-gamepad"></i>
+                                <span>${player.platform || 'N/A'}</span>
+                            </div>
+                            <div class="stat">
+                                <i class="fas fa-flag"></i>
+                                <span>${player.nationality || 'N/A'}</span>
+                            </div>
+                        </div>
+                        <div class="level-indicator">
+                            <div class="level-bar">
+                                <div class="level-fill" style="width: ${levelPercentage}%"></div>
+                            </div>
+                            <span class="level-text">Livello ${player.level || 1}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            updateFavoriteIcons();
         }
     } catch (error) {
-        showNotification('❌ Errore di connessione', 'error');
+        container.innerHTML = '<p class="no-results">Errore nel caricamento</p>';
     } finally {
         hideLoading();
     }
 }
 
-async function handleRegister(e) {
-    e.preventDefault();
-    const username = document.getElementById('registerUsername').value.trim();
-    const email = document.getElementById('registerEmail').value.trim();
-    const password = document.getElementById('registerPassword').value;
-    const primaryRole = document.getElementById('registerRole').value;
-    const platform = document.getElementById('registerPlatform').value;
-    const nationality = document.getElementById('registerNationality').value.trim();
-    const level = parseInt(document.getElementById('registerLevel').value);
-
-    if (!username || username.length < 3) {
-        showNotification('⚠️ Username deve essere almeno 3 caratteri', 'error');
+async function renderFavoriteTeams() {
+    const container = document.getElementById('favoriteTeamsList');
+    
+    if (userFavorites.squadre.length === 0) {
+        container.innerHTML = '<p class="no-results">Nessuna squadra nei preferiti</p>';
         return;
     }
 
-    if (!email || !email.includes('@')) {
-        showNotification('⚠️ Inserisci un\'email valida', 'error');
-        return;
-    }
-
-    if (!password || password.length < 6) {
-        showNotification('⚠️ Password deve essere almeno 6 caratteri', 'error');
-        return;
-    }
-
+    showLoading();
+    
     try {
-        showLoading();
-        const response = await fetch(`${API_BASE}/auth?action=register`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, email, password, primaryRole, platform, nationality, level })
+        const response = await fetch(`${API_BASE}/teams`, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
         });
 
-        const data = await response.json();
-
         if (response.ok) {
-            localStorage.setItem('token', data.token);
-            currentUser = data.user;
-            closeAuthModalFn();
-            updateUIForUser();
-            showNotification('🎉 Registrazione completata!', 'success');
-            navigateTo('profile');
-        } else {
-            showNotification('❌ ' + (data.error || 'Errore'), 'error');
+            const teams = await response.json();
+            const favoriteTeams = teams.filter(t => userFavorites.squadre.includes(t._id));
+            
+            if (favoriteTeams.length === 0) {
+                container.innerHTML = '<p class="no-results">Nessuna squadra nei preferiti</p>';
+                return;
+            }
+
+            container.innerHTML = favoriteTeams.map(team => `
+                <div class="team-card" onclick="showTeamDetail('${team._id}')">
+                    <div class="team-card-header">
+                        <div class="team-info">
+                            <h3>${team.name}</h3>
+                            <p class="team-platform">${team.platform || 'N/A'}</p>
+                        </div>
+                        <div class="team-actions">
+                            <button class="icon-btn" onclick="event.stopPropagation(); shareProfile('team', '${team._id}', '${team.name}');">
+                                <i class="fas fa-share-alt"></i>
+                            </button>
+                            <button class="icon-btn favorite-btn" onclick="event.stopPropagation(); toggleFavorite('${team._id}', 'team');">
+                                <i class="fas fa-heart" data-favorite-id="${team._id}" style="color: #ef4444;"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="team-stats">
+                        <div class="stat">
+                            <i class="fas fa-users"></i>
+                            <span>${team.members?.length || 0} membri</span>
+                        </div>
+                        <div class="stat">
+                            <i class="fas fa-flag"></i>
+                            <span>${team.nationality || 'N/A'}</span>
+                        </div>
+                    </div>
+                    ${team.description ? `<p class="team-description">${team.description}</p>` : ''}
+                </div>
+            `).join('');
+            
+            updateFavoriteIcons();
         }
     } catch (error) {
-        showNotification('❌ Errore di connessione', 'error');
+        container.innerHTML = '<p class="no-results">Errore nel caricamento</p>';
     } finally {
         hideLoading();
     }
 }
 
-async function handleForgotPassword(e) {
-    e.preventDefault();
-    const email = document.getElementById('forgotEmail').value.trim();
+// ==================== SHARE SYSTEM ====================
+async function shareProfile(type, id, name) {
+    const shareUrl = `https://proclubhub.vercel.app/api/share?type=${type}&id=${id}`;
+    const shareText = `Guarda il profilo di ${name} su Pro Club Hub!`;
 
-    if (!email) {
-        showNotification('⚠️ Inserisci un\'email', 'error');
-        return;
-    }
-
-    try {
-        showLoading();
-        const response = await fetch(`${API_BASE}/auth?action=request-reset`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email })
-        });
-
-        if (response.ok) {
-            closeAuthModalFn();
-            showNotification('📧 Email inviata!', 'success');
+    if (navigator.share) {
+        try {
+            await navigator.share({
+                title: 'Pro Club Hub',
+                text: shareText,
+                url: shareUrl
+            });
+            showNotification('Condiviso con successo!', 'success');
+        } catch (error) {
+            if (error.name !== 'AbortError') {
+                copyToClipboard(shareUrl);
+            }
         }
-    } catch (error) {
-        showNotification('❌ Errore di connessione', 'error');
-    } finally {
-        hideLoading();
+    } else {
+        copyToClipboard(shareUrl);
     }
 }
 
-function logout() {
-    localStorage.removeItem('token');
-    currentUser = null;
-    currentTeam = null;
-    userFavorites = { giocatori: [], squadre: [] };
-    updateUIForGuest();
-    showNotification('👋 Logout effettuato', 'info');
-    navigateTo('home');
-}
-
-// ============================================
-// UI UPDATES
-// ============================================
-
-function updateUIForUser() {
-    document.getElementById('profileNavBtn').style.display = 'flex';
-    document.getElementById('logoutBtn').style.display = 'flex';
-    document.getElementById('favoritesNavBtn').style.display = 'flex';
-    document.getElementById('heroActions').style.display = 'none';
-    document.getElementById('heroUserInfo').style.display = 'block';
-
-    document.getElementById('heroUsername').textContent = currentUser.username;
-    document.getElementById('heroLevel').textContent = currentUser.level;
-    document.getElementById('heroLevelProgress').style.width = `${calculateLevelPercentage(currentUser.level)}%`;
-    document.getElementById('heroRating').textContent = currentUser.averageRating.toFixed(1);
-    document.getElementById('heroRatingCount').textContent = currentUser.feedbackCount;
-
-    if (currentUser.profileCompleted) {
-        document.getElementById('createTeamBtn').style.display = 'flex';
-    }
-
-    if (currentUser.isAdmin) {
-        document.getElementById('adminNavBtn').style.display = 'flex';
+function copyToClipboard(text) {
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(() => {
+            showNotification('Link copiato negli appunti!', 'success');
+        }).catch(() => {
+            fallbackCopyToClipboard(text);
+        });
+    } else {
+        fallbackCopyToClipboard(text);
     }
 }
 
-function updateUIForGuest() {
-    document.getElementById('profileNavBtn').style.display = 'none';
-    document.getElementById('logoutBtn').style.display = 'none';
-    document.getElementById('requestsNavBtn').style.display = 'none';
-    document.getElementById('adminNavBtn').style.display = 'none';
-    document.getElementById('favoritesNavBtn').style.display = 'none';
-    document.getElementById('heroActions').style.display = 'flex';
-    document.getElementById('heroUserInfo').style.display = 'none';
-    document.getElementById('createTeamBtn').style.display = 'none';
+function fallbackCopyToClipboard(text) {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    try {
+        document.execCommand('copy');
+        showNotification('Link copiato negli appunti!', 'success');
+    } catch (err) {
+        showNotification('Impossibile copiare il link', 'error');
+    }
+    
+    document.body.removeChild(textArea);
 }
 
-// ============================================
-// PLAYERS SEARCH
-// ============================================
-
+// ==================== PLAYERS SEARCH ====================
 async function searchPlayers() {
-    const role = document.getElementById('roleFilter').value;
-    const platform = document.getElementById('platformFilter').value;
-    const search = document.getElementById('playerSearchInput').value.trim();
-    const nationality = document.getElementById('nationalityFilter').value.trim();
-    const minLevel = document.getElementById('minLevelFilter').value;
-    const maxLevel = document.getElementById('maxLevelFilter').value;
+    showLoading();
+    
+    const role = document.getElementById('playerRole').value;
+    const platform = document.getElementById('playerPlatform').value;
+    const nationality = document.getElementById('playerNationality').value;
+    const minLevel = document.getElementById('playerMinLevel').value;
+    const maxLevel = document.getElementById('playerMaxLevel').value;
+
+    const params = new URLSearchParams();
+    if (role) params.append('role', role);
+    if (platform) params.append('platform', platform);
+    if (nationality) params.append('nationality', nationality);
+    if (minLevel) params.append('minLevel', minLevel);
+    if (maxLevel) params.append('maxLevel', maxLevel);
 
     try {
-        showLoading();
-        const params = new URLSearchParams();
-        if (role) params.append('role', role);
-        if (platform) params.append('platform', platform);
-        if (search) params.append('search', search);
-        if (nationality) params.append('nationality', nationality);
-        if (minLevel) params.append('minLevel', minLevel);
-        if (maxLevel) params.append('maxLevel', maxLevel);
-
-        const response = await fetch(`${API_BASE}/users?${params}`, {
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        const response = await fetch(`${API_BASE}/users?${params.toString()}`, {
+            headers: currentUser ? {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            } : {}
         });
 
         if (response.ok) {
-            const data = await response.json();
-            renderPlayers(data.users);
+            const players = await response.json();
+            renderPlayers(players);
+        } else {
+            showNotification('Errore nella ricerca giocatori', 'error');
         }
     } catch (error) {
-        showNotification('❌ Errore di connessione', 'error');
+        showNotification('Errore di connessione', 'error');
     } finally {
         hideLoading();
     }
 }
 
 function renderPlayers(players) {
-    const container = document.getElementById('playersResults');
-    if (!players || players.length === 0) {
-        container.innerHTML = '<div class="empty-state"><i class="fas fa-user-slash"></i><p>Nessun giocatore trovato</p></div>';
+    const container = document.getElementById('playersList');
+    
+    if (players.length === 0) {
+        container.innerHTML = '<p class="no-results">Nessun giocatore trovato</p>';
         return;
     }
 
     container.innerHTML = players.map(player => {
-        const isFavorite = userFavorites.giocatori.some(g => g._id === player._id);
+        const levelPercentage = calculateLevelPercentage(player.level || 1);
+        const isFavorite = userFavorites.giocatori.includes(player._id);
+        const heartClass = isFavorite ? 'fas' : 'far';
+        const heartColor = isFavorite ? '#ef4444' : '#94a3b8';
+        
         return `
             <div class="player-card" onclick="showPlayerDetail('${player._id}')">
                 <div class="player-card-header">
-                    <div class="player-avatar"><i class="fas fa-user-circle"></i></div>
                     <div class="player-info">
-                        <h3>
-                            ${player.username}
-                            ${currentUser && player._id !== currentUser._id ? `
-                                <i class="${isFavorite ? 'fas' : 'far'} fa-heart" 
-                                   style="color: ${isFavorite ? '#ef4444' : '#94a3b8'}; cursor: pointer; margin-left: 0.5rem;" 
-                                   data-favorite-id="${player._id}"
-                                   onclick="event.stopPropagation(); toggleFavorite('${player._id}', 'giocatori');"></i>
-                            ` : ''}
-                        </h3>
-                        <p class="player-role">${player.primaryRole}</p>
+                        <h3>${player.gamertag || player.username}</h3>
+                        <p class="player-role">${player.role || 'N/A'}</p>
+                    </div>
+                    <div class="player-actions">
+                        <button class="icon-btn" onclick="event.stopPropagation(); shareProfile('player', '${player._id}', '${player.gamertag || player.username}');">
+                            <i class="fas fa-share-alt"></i>
+                        </button>
+                        ${currentUser ? `
+                            <button class="icon-btn favorite-btn" onclick="event.stopPropagation(); toggleFavorite('${player._id}', 'player');">
+                                <i class="${heartClass} fa-heart" data-favorite-id="${player._id}" style="color: ${heartColor};"></i>
+                            </button>
+                        ` : ''}
                     </div>
                 </div>
                 <div class="player-stats">
-                    <span class="stat"><i class="fas fa-trophy"></i> ${player.level}</span>
-                    <span class="stat"><i class="fas fa-gamepad"></i> ${player.platform}</span>
-                    <span class="stat star"><i class="fas fa-star"></i> ${player.averageRating.toFixed(1)}</span>
+                    <div class="stat">
+                        <i class="fas fa-gamepad"></i>
+                        <span>${player.platform || 'N/A'}</span>
+                    </div>
+                    <div class="stat">
+                        <i class="fas fa-flag"></i>
+                        <span>${player.nationality || 'N/A'}</span>
+                    </div>
+                </div>
+                <div class="level-indicator">
+                    <div class="level-bar">
+                        <div class="level-fill" style="width: ${levelPercentage}%"></div>
+                    </div>
+                    <span class="level-text">Livello ${player.level || 1}</span>
                 </div>
             </div>
         `;
     }).join('');
+    
+    updateFavoriteIcons();
 }
 
 async function showPlayerDetail(playerId) {
+    showLoading();
+    
     try {
-        showLoading();
-        const response = await fetch(`${API_BASE}/users?id=${playerId}`, {
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        const response = await fetch(`${API_BASE}/users?_id=${playerId}`, {
+            headers: currentUser ? {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            } : {}
         });
 
         if (response.ok) {
-            const data = await response.json();
-            const player = data.user;
-
-            const feedbackResponse = await fetch(`${API_BASE}/feedback?userId=${playerId}`, {
-                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-            });
-
-            let feedback = [];
-            if (feedbackResponse.ok) {
-                const feedbackData = await feedbackResponse.json();
-                feedback = feedbackData.feedback;
+            const players = await response.json();
+            if (players.length > 0) {
+                const player = players[0];
+                
+                const feedbackResponse = await fetch(`${API_BASE}/feedback?targetId=${playerId}`, {
+                    headers: currentUser ? {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    } : {}
+                });
+                
+                let feedback = [];
+                if (feedbackResponse.ok) {
+                    feedback = await feedbackResponse.json();
+                }
+                
+                renderPlayerDetail(player, feedback);
+                document.getElementById('playerDetailModal').style.display = 'flex';
             }
-
-            renderPlayerDetail(player, feedback);
-            document.getElementById('playerDetailModal').classList.add('active');
         }
     } catch (error) {
-        showNotification('❌ Errore nel caricamento', 'error');
+        showNotification('Errore nel caricamento del dettaglio', 'error');
     } finally {
         hideLoading();
     }
 }
 
 function renderPlayerDetail(player, feedback) {
-    const content = document.getElementById('playerDetailContent');
-    const isFavorite = userFavorites.giocatori.some(g => g._id === player._id);
+    const levelPercentage = calculateLevelPercentage(player.level || 1);
+    const isFavorite = userFavorites.giocatori.includes(player._id);
+    const heartClass = isFavorite ? 'fas' : 'far';
+    const heartColor = isFavorite ? '#ef4444' : '#94a3b8';
+    
+    const averageRating = feedback.length > 0 
+        ? (feedback.reduce((sum, f) => sum + (f.rating || 0), 0) / feedback.length).toFixed(1)
+        : 'N/A';
 
-    content.innerHTML = `
-        <div class="player-detail-header">
-            <div class="detail-avatar"><i class="fas fa-user-circle"></i></div>
-            <div class="detail-info">
-                <h2>
-                    ${player.username}
-                    ${currentUser && currentUser._id !== player._id ? `
-                        <i class="${isFavorite ? 'fas' : 'far'} fa-heart" 
-                           style="color: ${isFavorite ? '#ef4444' : '#94a3b8'}; cursor: pointer; margin-left: 0.5rem;" 
-                           data-favorite-id="${player._id}"
-                           onclick="toggleFavorite('${player._id}', 'giocatori');"></i>
-                    ` : ''}
-                </h2>
-                <div class="detail-meta">
-                    <span class="meta-item"><i class="fas fa-trophy"></i> ${player.level}</span>
-                    <span class="meta-item"><i class="fas fa-gamepad"></i> ${player.platform}</span>
-                    <span class="meta-item"><i class="fas fa-flag"></i> ${player.nationality}</span>
-                    <span class="meta-item"><i class="fas fa-star"></i> ${player.averageRating.toFixed(1)} (${player.feedbackCount})</span>
-                </div>
+    const detailContent = document.getElementById('playerDetailContent');
+    detailContent.innerHTML = `
+        <div class="detail-header">
+            <div>
+                <h2>${player.gamertag || player.username}</h2>
+                <p class="detail-role">${player.role || 'N/A'}</p>
             </div>
-        </div>
-        <div class="info-card">
-            <h4>Ruolo</h4>
-            <p><strong>Principale:</strong> ${player.primaryRole}</p>
-            ${player.secondaryRoles && player.secondaryRoles.length > 0 ? `<p><strong>Secondari:</strong> ${player.secondaryRoles.join(', ')}</p>` : ''}
-        </div>
-        ${player.bio ? `<div class="info-card"><h4>Bio</h4><p>${player.bio}</p></div>` : ''}
-        ${player.instagram || player.tiktok ? `
-            <div class="info-card">
-                <h4>Social</h4>
-                <div class="social-links">
-                    ${player.instagram ? `<a href="https://instagram.com/${player.instagram}" target="_blank" class="social-link instagram"><i class="fab fa-instagram"></i> @${player.instagram}</a>` : ''}
-                    ${player.tiktok ? `<a href="https://tiktok.com/@${player.tiktok}" target="_blank" class="social-link tiktok"><i class="fab fa-tiktok"></i> @${player.tiktok}</a>` : ''}
-                </div>
-            </div>
-        ` : ''}
-        ${currentUser && currentUser._id !== player._id ? `
             <div class="detail-actions">
-                <button class="btn btn-primary" onclick="openFeedbackModal('user', '${player._id}')"><i class="fas fa-star"></i> Lascia Feedback</button>
-                <button class="btn btn-secondary" onclick="shareProfile('player', '${player._id}', '${player.username}')"><i class="fas fa-share-alt"></i> Condividi</button>
+                <button class="icon-btn" onclick="shareProfile('player', '${player._id}', '${player.gamertag || player.username}');">
+                    <i class="fas fa-share-alt"></i>
+                </button>
+                ${currentUser ? `
+                    <button class="icon-btn favorite-btn" onclick="toggleFavorite('${player._id}', 'player');">
+                        <i class="${heartClass} fa-heart" data-favorite-id="${player._id}" style="color: ${heartColor};"></i>
+                    </button>
+                ` : ''}
+            </div>
+        </div>
+
+        <div class="detail-stats">
+            <div class="stat-item">
+                <i class="fas fa-gamepad"></i>
+                <div>
+                    <span class="stat-label">Piattaforma</span>
+                    <span class="stat-value">${player.platform || 'N/A'}</span>
+                </div>
+            </div>
+            <div class="stat-item">
+                <i class="fas fa-flag"></i>
+                <div>
+                    <span class="stat-label">Nazionalità</span>
+                    <span class="stat-value">${player.nationality || 'N/A'}</span>
+                </div>
+            </div>
+            <div class="stat-item">
+                <i class="fas fa-star"></i>
+                <div>
+                    <span class="stat-label">Valutazione</span>
+                    <span class="stat-value">${averageRating}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="level-section">
+            <h3>Livello</h3>
+            <div class="level-indicator">
+                <div class="level-bar">
+                    <div class="level-fill" style="width: ${levelPercentage}%"></div>
+                </div>
+                <span class="level-text">Livello ${player.level || 1}</span>
+            </div>
+        </div>
+
+        ${player.bio ? `
+            <div class="bio-section">
+                <h3>Bio</h3>
+                <p>${player.bio}</p>
             </div>
         ` : ''}
-        ${feedback && feedback.length > 0 ? `
-            <div class="info-card">
-                <h4>Feedback Ricevuti</h4>
-                <div class="feedback-list">
-                    ${feedback.map(fb => `
-                        <div class="feedback-item">
-                            <div class="feedback-header">
-                                <div class="feedback-author">${fb.fromUser ? fb.fromUser.username : 'Utente'}</div>
-                                <div class="feedback-rating">${'<i class="fas fa-star"></i>'.repeat(fb.rating)}${'<i class="far fa-star"></i>'.repeat(5 - fb.rating)}</div>
-                            </div>
-                            ${fb.tags && fb.tags.length > 0 ? `<div class="feedback-tags">${fb.tags.map(tag => `<span class="feedback-tag">${tag}</span>`).join('')}</div>` : ''}
-                            ${fb.comment ? `<p class="feedback-comment">${fb.comment}</p>` : ''}
+
+        ${currentUser && currentUser._id !== player._id ? `
+            <div class="feedback-section">
+                <h3>Lascia un Feedback</h3>
+                <form id="feedbackForm" onsubmit="handleFeedbackSubmit(event, '${player._id}')">
+                    <div class="rating-input">
+                        <label>Valutazione:</label>
+                        <div class="stars">
+                            ${[1,2,3,4,5].map(i => `
+                                <i class="far fa-star" data-rating="${i}" onclick="setRating(${i})"></i>
+                            `).join('')}
                         </div>
-                    `).join('')}
-                </div>
+                    </div>
+                    <textarea id="feedbackComment" placeholder="Commento (opzionale)" rows="3"></textarea>
+                    <button type="submit" class="btn btn-primary">Invia Feedback</button>
+                </form>
+            </div>
+        ` : ''}
+
+        ${feedback.length > 0 ? `
+            <div class="feedback-list">
+                <h3>Feedback Ricevuti</h3>
+                ${feedback.map(f => `
+                    <div class="feedback-item">
+                        <div class="feedback-header">
+                            <span class="feedback-author">${f.fromUser?.username || 'Anonimo'}</span>
+                            <div class="feedback-rating">
+                                ${[1,2,3,4,5].map(i => `
+                                    <i class="fas fa-star" style="color: ${i <= (f.rating || 0) ? '#fbbf24' : '#e5e7eb'}"></i>
+                                `).join('')}
+                            </div>
+                        </div>
+                        ${f.comment ? `<p class="feedback-comment">${f.comment}</p>` : ''}
+                        <span class="feedback-date">${new Date(f.createdAt).toLocaleDateString()}</span>
+                    </div>
+                `).join('')}
             </div>
         ` : ''}
     `;
+    
+    updateFavoriteIcons();
 }
 
-function closePlayerDetailModalFn() {
-    document.getElementById('playerDetailModal').classList.remove('active');
+function setRating(rating) {
+    selectedRating = rating;
+    document.querySelectorAll('.stars i').forEach((star, index) => {
+        if (index < rating) {
+            star.classList.remove('far');
+            star.classList.add('fas');
+            star.style.color = '#fbbf24';
+        } else {
+            star.classList.remove('fas');
+            star.classList.add('far');
+            star.style.color = '#94a3b8';
+        }
+    });
 }
 
-// ============================================
-// TEAMS SEARCH
-// ============================================
+async function handleFeedbackSubmit(e, targetId) {
+    e.preventDefault();
+    
+    if (!currentUser) {
+        showNotification('Devi effettuare il login', 'error');
+        return;
+    }
 
-async function searchTeams() {
-    const platform = document.getElementById('teamPlatformFilter').value;
-    const search = document.getElementById('teamSearchInput').value.trim();
-    const nationality = document.getElementById('teamNationalityFilter').value.trim();
+    if (selectedRating === 0) {
+        showNotification('Seleziona una valutazione', 'error');
+        return;
+    }
+
+    showLoading();
+
+    const comment = document.getElementById('feedbackComment').value;
 
     try {
-        showLoading();
-        const params = new URLSearchParams();
-        if (platform) params.append('platform', platform);
-        if (search) params.append('search', search);
-        if (nationality) params.append('nationality', nationality);
-
-        const response = await fetch(`${API_BASE}/teams?${params}`, {
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        const response = await fetch(`${API_BASE}/feedback`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({
+                targetId,
+                targetType: 'player',
+                rating: selectedRating,
+                comment
+            })
         });
 
         if (response.ok) {
+            showNotification('Feedback inviato con successo!', 'success');
+            selectedRating = 0;
+            showPlayerDetail(targetId);
+        } else {
             const data = await response.json();
-            renderTeams(data.teams);
+            showNotification(data.error || 'Errore nell\'invio del feedback', 'error');
         }
     } catch (error) {
-        showNotification('❌ Errore di connessione', 'error');
+        showNotification('Errore di connessione', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+function closePlayerDetailModalFn() {
+    document.getElementById('playerDetailModal').style.display = 'none';
+    selectedRating = 0;
+}
+
+// ==================== TEAMS SEARCH ====================
+async function searchTeams() {
+    showLoading();
+    
+    const platform = document.getElementById('teamPlatform').value;
+    const nationality = document.getElementById('teamNationality').value;
+
+    const params = new URLSearchParams();
+    if (platform) params.append('platform', platform);
+    if (nationality) params.append('nationality', nationality);
+
+    try {
+        const response = await fetch(`${API_BASE}/teams?${params.toString()}`, {
+            headers: currentUser ? {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            } : {}
+        });
+
+        if (response.ok) {
+            const teams = await response.json();
+            renderTeams(teams);
+        } else {
+            showNotification('Errore nella ricerca squadre', 'error');
+        }
+    } catch (error) {
+        showNotification('Errore di connessione', 'error');
     } finally {
         hideLoading();
     }
 }
 
 function renderTeams(teams) {
-    const container = document.getElementById('teamsResults');
-    if (!teams || teams.length === 0) {
-        container.innerHTML = '<div class="empty-state"><i class="fas fa-shield-alt"></i><p>Nessuna squadra trovata</p></div>';
+    const container = document.getElementById('teamsList');
+    
+    if (teams.length === 0) {
+        container.innerHTML = '<p class="no-results">Nessuna squadra trovata</p>';
         return;
     }
 
     container.innerHTML = teams.map(team => {
-        const isFavorite = userFavorites.squadre.some(s => s._id === team._id);
+        const isFavorite = userFavorites.squadre.includes(team._id);
+        const heartClass = isFavorite ? 'fas' : 'far';
+        const heartColor = isFavorite ? '#ef4444' : '#94a3b8';
+        
         return `
             <div class="team-card" onclick="showTeamDetail('${team._id}')">
                 <div class="team-card-header">
-                    <div class="team-avatar"><i class="fas fa-shield-alt"></i></div>
                     <div class="team-info">
-                        <h3>
-                            ${team.name}
-                            ${currentUser ? `
-                                <i class="${isFavorite ? 'fas' : 'far'} fa-heart" 
-                                   style="color: ${isFavorite ? '#ef4444' : '#94a3b8'}; cursor: pointer; margin-left: 0.5rem;" 
-                                   data-favorite-id="${team._id}"
-                                   onclick="event.stopPropagation(); toggleFavorite('${team._id}', 'squadre');"></i>
-                            ` : ''}
-                        </h3>
-                        <p class="team-platform">${team.platform}</p>
+                        <h3>${team.name}</h3>
+                        <p class="team-platform">${team.platform || 'N/A'}</p>
+                    </div>
+                    <div class="team-actions">
+                        <button class="icon-btn" onclick="event.stopPropagation(); shareProfile('team', '${team._id}', '${team.name}');">
+                            <i class="fas fa-share-alt"></i>
+                        </button>
+                        ${currentUser ? `
+                            <button class="icon-btn favorite-btn" onclick="event.stopPropagation(); toggleFavorite('${team._id}', 'team');">
+                                <i class="${heartClass} fa-heart" data-favorite-id="${team._id}" style="color: ${heartColor};"></i>
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+                <div class="team-stats">
+                    <div class="stat">
+                        <i class="fas fa-users"></i>
+                        <span>${team.members?.length || 0} membri</span>
+                    </div>
+                    <div class="stat">
+                        <i class="fas fa-flag"></i>
+                        <span>${team.nationality || 'N/A'}</span>
                     </div>
                 </div>
                 ${team.description ? `<p class="team-description">${team.description}</p>` : ''}
-                <div class="team-stats">
-                    <span class="stat"><i class="fas fa-users"></i> ${team.members.length} membri</span>
-                    <span class="stat"><i class="fas fa-flag"></i> ${team.nationality || 'N/A'}</span>
-                    <span class="stat star"><i class="fas fa-star"></i> ${team.averageRating.toFixed(1)}</span>
-                </div>
             </div>
         `;
     }).join('');
+    
+    updateFavoriteIcons();
 }
 
 async function showTeamDetail(teamId) {
+    showLoading();
+    
     try {
-        showLoading();
-        const response = await fetch(`${API_BASE}/teams?id=${teamId}`, {
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        const response = await fetch(`${API_BASE}/teams?_id=${teamId}`, {
+            headers: currentUser ? {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            } : {}
         });
 
         if (response.ok) {
-            const data = await response.json();
-            renderTeamDetailContent(data.team);
-            document.getElementById('teamDetailModal').classList.add('active');
+            const teams = await response.json();
+            if (teams.length > 0) {
+                const team = teams[0];
+                renderTeamDetailContent(team);
+                document.getElementById('teamDetailModal').style.display = 'flex';
+            }
         }
     } catch (error) {
-        showNotification('❌ Errore nel caricamento', 'error');
+        showNotification('Errore nel caricamento del dettaglio', 'error');
     } finally {
         hideLoading();
     }
 }
 
 function renderTeamDetailContent(team) {
-    const content = document.getElementById('teamDetailContent');
-    const isFavorite = userFavorites.squadre.some(s => s._id === team._id);
+    const isFavorite = userFavorites.squadre.includes(team._id);
+    const heartClass = isFavorite ? 'fas' : 'far';
+    const heartColor = isFavorite ? '#ef4444' : '#94a3b8';
+    
+    const isOwner = currentUser && currentUser._id === team.owner;
+    const isMember = currentUser && team.members?.some(m => m._id === currentUser._id);
 
-    content.innerHTML = `
-        <div class="team-detail-header">
-            <div class="detail-avatar"><i class="fas fa-shield-alt"></i></div>
-            <div class="detail-info">
-                <h2>
-                    ${team.name}
-                    ${currentUser ? `
-                        <i class="${isFavorite ? 'fas' : 'far'} fa-heart" 
-                           style="color: ${isFavorite ? '#ef4444' : '#94a3b8'}; cursor: pointer; margin-left: 0.5rem;" 
-                           data-favorite-id="${team._id}"
-                           onclick="toggleFavorite('${team._id}', 'squadre');"></i>
-                    ` : ''}
-                </h2>
-                <div class="detail-meta">
-                    <span class="meta-item"><i class="fas fa-gamepad"></i> ${team.platform}</span>
-                    <span class="meta-item"><i class="fas fa-users"></i> ${team.members.length} membri</span>
-                    <span class="meta-item"><i class="fas fa-star"></i> ${team.averageRating.toFixed(1)}</span>
+    const detailContent = document.getElementById('teamDetailContent');
+    detailContent.innerHTML = `
+        <div class="detail-header">
+            <div>
+                <h2>${team.name}</h2>
+                <p class="detail-role">${team.platform || 'N/A'}</p>
+            </div>
+            <div class="detail-actions">
+                <button class="icon-btn" onclick="shareProfile('team', '${team._id}', '${team.name}');">
+                    <i class="fas fa-share-alt"></i>
+                </button>
+                ${currentUser ? `
+                    <button class="icon-btn favorite-btn" onclick="toggleFavorite('${team._id}', 'team');">
+                        <i class="${heartClass} fa-heart" data-favorite-id="${team._id}" style="color: ${heartColor};"></i>
+                    </button>
+                ` : ''}
+            </div>
+        </div>
+
+        <div class="detail-stats">
+            <div class="stat-item">
+                <i class="fas fa-users"></i>
+                <div>
+                    <span class="stat-label">Membri</span>
+                    <span class="stat-value">${team.members?.length || 0}</span>
+                </div>
+            </div>
+            <div class="stat-item">
+                <i class="fas fa-flag"></i>
+                <div>
+                    <span class="stat-label">Nazionalità</span>
+                    <span class="stat-value">${team.nationality || 'N/A'}</span>
+                </div>
+            </div>
+            <div class="stat-item">
+                <i class="fas fa-gamepad"></i>
+                <div>
+                    <span class="stat-label">Piattaforma</span>
+                    <span class="stat-value">${team.platform || 'N/A'}</span>
                 </div>
             </div>
         </div>
-        ${team.description ? `<div class="info-card"><h4>Descrizione</h4><p>${team.description}</p></div>` : ''}
-        ${currentUser && currentUser._id !== team.captain.toString() && !team.members.some(m => m.toString() === currentUser._id) ? `
-            <div class="detail-actions">
-                <button class="btn btn-primary" onclick="requestJoinTeam('${team._id}')"><i class="fas fa-user-plus"></i> Richiedi Ingresso</button>
-                <button class="btn btn-secondary" onclick="shareProfile('team', '${team._id}', '${team.name}')"><i class="fas fa-share-alt"></i> Condividi</button>
+
+        ${team.description ? `
+            <div class="bio-section">
+                <h3>Descrizione</h3>
+                <p>${team.description}</p>
+            </div>
+        ` : ''}
+
+        ${team.members && team.members.length > 0 ? `
+            <div class="members-section">
+                <h3>Membri</h3>
+                <div class="members-list">
+                    ${team.members.map(member => `
+                        <div class="member-item">
+                            <span class="member-name">${member.gamertag || member.username}</span>
+                            <span class="member-role">${member.role || 'N/A'}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        ` : ''}
+
+        ${currentUser && !isMember && !isOwner ? `
+            <button class="btn btn-primary" onclick="requestJoinTeam('${team._id}')">
+                <i class="fas fa-user-plus"></i> Richiedi di Entrare
+            </button>
+        ` : ''}
+    `;
+    
+    updateFavoriteIcons();
+}
+
+async function requestJoinTeam(teamId) {
+    if (!currentUser) {
+        showNotification('Devi effettuare il login', 'error');
+        return;
+    }
+
+    showLoading();
+
+    try {
+        const response = await fetch(`${API_BASE}/requests`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({ teamId })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            showNotification('Richiesta inviata con successo!', 'success');
+        } else {
+            showNotification(data.error || 'Errore nell\'invio della richiesta', 'error');
+        }
+    } catch (error) {
+        showNotification('Errore di connessione', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+function closeTeamDetailModalFn() {
+    document.getElementById('teamDetailModal').style.display = 'none';
+}
+
+// ==================== PROFILE ====================
+async function loadProfile() {
+    if (!currentUser) {
+        showNotification('Devi effettuare il login', 'error');
+        navigateTo('home');
+        return;
+    }
+
+    const levelPercentage = calculateLevelPercentage(currentUser.level || 1);
+
+    document.getElementById('profileContent').innerHTML = `
+        <div class="profile-header">
+            <div class="profile-avatar">
+                <i class="fas fa-user-circle"></i>
+            </div>
+            <div class="profile-info">
+                <h2>${currentUser.gamertag || currentUser.username}</h2>
+                <p class="profile-email">${currentUser.email}</p>
+            </div>
+            <button class="btn btn-secondary" onclick="openEditProfileModal()">
+                <i class="fas fa-edit"></i> Modifica Profilo
+            </button>
+        </div>
+
+        <div class="profile-stats">
+            <div class="stat-card">
+                <i class="fas fa-gamepad"></i>
+                <div>
+                    <span class="stat-label">Piattaforma</span>
+                    <span class="stat-value">${currentUser.platform || 'N/A'}</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-futbol"></i>
+                <div>
+                    <span class="stat-label">Ruolo</span>
+                    <span class="stat-value">${currentUser.role || 'N/A'}</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-flag"></i>
+                <div>
+                    <span class="stat-label">Nazionalità</span>
+                    <span class="stat-value">${currentUser.nationality || 'N/A'}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="level-section">
+            <h3>Livello</h3>
+            <div class="level-indicator">
+                <div class="level-bar">
+                    <div class="level-fill" style="width: ${levelPercentage}%"></div>
+                </div>
+                <span class="level-text">Livello ${currentUser.level || 1}</span>
+            </div>
+        </div>
+
+        ${currentUser.bio ? `
+            <div class="bio-section">
+                <h3>Bio</h3>
+                <p>${currentUser.bio}</p>
             </div>
         ` : ''}
     `;
 }
 
-function closeTeamDetailModalFn() {
-    document.getElementById('teamDetailModal').classList.remove('active');
-}
-
-// ============================================
-// PROFILE
-// ============================================
-
-async function loadProfile() {
-    if (!currentUser) return;
-
-    document.getElementById('profileUsername').textContent = currentUser.username;
-    document.getElementById('profileLevel').textContent = currentUser.level;
-    document.getElementById('profileLevelProgress').style.width = `${calculateLevelPercentage(currentUser.level)}%`;
-    document.getElementById('profileRating').textContent = currentUser.averageRating.toFixed(1);
-    document.getElementById('profileRatingCount').textContent = currentUser.feedbackCount;
-    document.getElementById('profilePlatform').textContent = currentUser.platform;
-    document.getElementById('profileNationality').textContent = currentUser.nationality || 'Non specificata';
-    document.getElementById('profilePrimaryRole').textContent = currentUser.primaryRole;
-    document.getElementById('profileSecondaryRoles').textContent = currentUser.secondaryRoles && currentUser.secondaryRoles.length > 0 ? currentUser.secondaryRoles.join(', ') : 'Nessuno';
-    document.getElementById('profileBio').textContent = currentUser.bio || 'Nessuna bio';
-    document.getElementById('profileLookingForTeam').textContent = currentUser.lookingForTeam ? 'Sì' : 'No';
-}
-
 function openEditProfileModal() {
-    document.getElementById('editProfileModal').classList.add('active');
-    document.getElementById('editPlatform').value = currentUser.platform;
-    document.getElementById('editNationality').value = currentUser.nationality;
-    document.getElementById('editPrimaryRole').value = currentUser.primaryRole;
-    document.getElementById('editLevel').value = currentUser.level;
+    document.getElementById('editGamertag').value = currentUser.gamertag || '';
+    document.getElementById('editPlatform').value = currentUser.platform || '';
+    document.getElementById('editRole').value = currentUser.role || '';
+    document.getElementById('editNationality').value = currentUser.nationality || '';
+    document.getElementById('editLevel').value = currentUser.level || 1;
     document.getElementById('editBio').value = currentUser.bio || '';
-    document.getElementById('editLookingForTeam').checked = currentUser.lookingForTeam;
-    document.getElementById('editInstagram').value = currentUser.instagram || '';
-    document.getElementById('editTiktok').value = currentUser.tiktok || '';
+    
+    document.getElementById('editProfileModal').style.display = 'flex';
 }
 
 async function handleEditProfile(e) {
     e.preventDefault();
+    showLoading();
 
     const updates = {
+        gamertag: document.getElementById('editGamertag').value,
         platform: document.getElementById('editPlatform').value,
-        nationality: document.getElementById('editNationality').value.trim(),
-        primaryRole: document.getElementById('editPrimaryRole').value,
+        role: document.getElementById('editRole').value,
+        nationality: document.getElementById('editNationality').value,
         level: parseInt(document.getElementById('editLevel').value),
-        bio: document.getElementById('editBio').value.trim(),
-        lookingForTeam: document.getElementById('editLookingForTeam').checked,
-        instagram: document.getElementById('editInstagram').value.trim(),
-        tiktok: document.getElementById('editTiktok').value.trim()
+        bio: document.getElementById('editBio').value
     };
 
     try {
-        showLoading();
-        const response = await fetch(`${API_BASE}/users?action=update`, {
+        const response = await fetch(`${API_BASE}/users`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -989,129 +1203,290 @@ async function handleEditProfile(e) {
             body: JSON.stringify(updates)
         });
 
-        const data = await response.json();
-
         if (response.ok) {
-            currentUser = data.user;
-            document.getElementById('editProfileModal').classList.remove('active');
+            await fetchCurrentUser();
+            document.getElementById('editProfileModal').style.display = 'none';
+            showNotification('Profilo aggiornato con successo!', 'success');
             loadProfile();
-            updateUIForUser();
-            showNotification('✅ Profilo aggiornato!', 'success');
         } else {
-            showNotification('❌ ' + (data.error || 'Errore'), 'error');
+            const data = await response.json();
+            showNotification(data.error || 'Errore nell\'aggiornamento', 'error');
         }
     } catch (error) {
-        showNotification('❌ Errore di connessione', 'error');
+        showNotification('Errore di connessione', 'error');
     } finally {
         hideLoading();
     }
 }
 
-// ============================================
-// UTILITY FUNCTIONS
-// ============================================
+// ==================== NAVIGATION ====================
+function navigateTo(page) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
 
+    const pageElement = document.getElementById(`${page}Page`);
+    if (pageElement) {
+        pageElement.classList.add('active');
+    }
+
+    const navBtn = document.querySelector(`[data-page="${page}"]`);
+    if (navBtn) {
+        navBtn.classList.add('active');
+    }
+
+    if (page === 'players') {
+        searchPlayers();
+    } else if (page === 'teams') {
+        searchTeams();
+    } else if (page === 'profile' && currentUser) {
+        loadProfile();
+    } else if (page === 'favorites' && currentUser) {
+        loadFavoritesPage();
+    }
+}
+
+// ==================== UI UPDATES ====================
+function updateUIForUser() {
+    document.querySelectorAll('.auth-required').forEach(el => el.style.display = 'block');
+    document.querySelectorAll('.guest-only').forEach(el => el.style.display = 'none');
+    
+    const userNameElement = document.getElementById('userName');
+    if (userNameElement) {
+        userNameElement.textContent = currentUser.gamertag || currentUser.username;
+    }
+}
+
+function updateUIForGuest() {
+    document.querySelectorAll('.auth-required').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.guest-only').forEach(el => el.style.display = 'block');
+}
+
+function calculateLevelPercentage(level) {
+    const range = GLOBAL_MAX_LEVEL - GLOBAL_MIN_LEVEL;
+    const position = level - GLOBAL_MIN_LEVEL;
+    return Math.min(100, Math.max(0, (position / range) * 100));
+}
+
+// ==================== UTILITY FUNCTIONS ====================
 function showNotification(message, type = 'info') {
-    const notification = document.getElementById('notification');
-    if (!notification) return;
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
     notification.textContent = message;
-    notification.className = `notification ${type}`;
-    notification.style.display = 'block';
+    
+    document.body.appendChild(notification);
+    
     setTimeout(() => {
-        notification.style.display = 'none';
-    }, 5000);
+        notification.classList.add('show');
+    }, 10);
+    
+    setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => {
+            document.body.removeChild(notification);
+        }, 300);
+    }, 3000);
 }
 
 function showLoading() {
-    const overlay = document.getElementById('loadingOverlay');
-    if (overlay) overlay.classList.add('active');
+    const loading = document.getElementById('loadingOverlay');
+    if (loading) {
+        loading.style.display = 'flex';
+    }
 }
 
 function hideLoading() {
-    const overlay = document.getElementById('loadingOverlay');
-    if (overlay) overlay.classList.remove('active');
+    const loading = document.getElementById('loadingOverlay');
+    if (loading) {
+        loading.style.display = 'none';
+    }
 }
 
-// ============================================
-// EVENT LISTENERS
-// ============================================
+function populateNationalities() {
+    const selects = [
+        'registerNationality',
+        'editNationality',
+        'playerNationality',
+        'teamNationality'
+    ];
 
+    selects.forEach(selectId => {
+        const select = document.getElementById(selectId);
+        if (select && select.tagName === 'SELECT') {
+            const currentValue = select.value;
+            select.innerHTML = '<option value="">Tutte le nazionalità</option>';
+            NATIONALITIES.forEach(nat => {
+                const option = document.createElement('option');
+                option.value = nat;
+                option.textContent = nat;
+                select.appendChild(option);
+            });
+            if (currentValue) {
+                select.value = currentValue;
+            }
+        }
+    });
+
+    const datalists = document.querySelectorAll('datalist[id$="Nationalities"]');
+    datalists.forEach(datalist => {
+        datalist.innerHTML = '';
+        NATIONALITIES.forEach(nat => {
+            const option = document.createElement('option');
+            option.value = nat;
+            datalist.appendChild(option);
+        });
+    });
+}
+
+async function loadGlobalLevelLimits() {
+    GLOBAL_MIN_LEVEL = 1;
+    GLOBAL_MAX_LEVEL = 999;
+}
+
+function setupLanguageSelector() {
+    const langSelector = document.getElementById('languageSelector');
+    if (langSelector) {
+        langSelector.addEventListener('change', (e) => {
+            const lang = e.target.value;
+            localStorage.setItem('language', lang);
+            updatePageLanguage();
+        });
+        
+        const savedLang = localStorage.getItem('language') || 'it';
+        langSelector.value = savedLang;
+    }
+}
+
+function updatePageLanguage() {
+    const lang = localStorage.getItem('language') || 'it';
+}
+
+// ==================== EVENT LISTENERS ====================
 function setupEventListeners() {
-    // NAVIGATION
     document.querySelectorAll('.nav-btn').forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            e.preventDefault();
-            navigateTo(this.getAttribute('data-page'));
+        btn.addEventListener('click', () => {
+            const page = btn.getAttribute('data-page');
+            navigateTo(page);
         });
     });
 
-    // AUTH BUTTONS
-    const heroLoginBtn = document.getElementById('heroLoginBtn');
-    if (heroLoginBtn) heroLoginBtn.addEventListener('click', () => openAuthModal('login'));
+    const loginBtn = document.getElementById('loginBtn');
+    if (loginBtn) {
+        loginBtn.addEventListener('click', () => {
+            document.getElementById('loginModal').style.display = 'flex';
+        });
+    }
 
-    const heroRegisterBtn = document.getElementById('heroRegisterBtn');
-    if (heroRegisterBtn) heroRegisterBtn.addEventListener('click', () => openAuthModal('register'));
+    const registerBtn = document.getElementById('registerBtn');
+    if (registerBtn) {
+        registerBtn.addEventListener('click', () => {
+            document.getElementById('registerModal').style.display = 'flex';
+        });
+    }
 
     const logoutBtn = document.getElementById('logoutBtn');
-    if (logoutBtn) logoutBtn.addEventListener('click', logout);
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', logout);
+    }
 
-    // MODAL CLOSES
-    const closeAuthModal = document.getElementById('closeAuthModal');
-    if (closeAuthModal) closeAuthModal.addEventListener('click', closeAuthModalFn);
-
-    const closePlayerDetailModal = document.getElementById('closePlayerDetailModal');
-    if (closePlayerDetailModal) closePlayerDetailModal.addEventListener('click', closePlayerDetailModalFn);
-
-    const closeTeamDetailModal = document.getElementById('closeTeamDetailModal');
-    if (closeTeamDetailModal) closeTeamDetailModal.addEventListener('click', closeTeamDetailModalFn);
-
-    // FORMS
-    const loginFormElement = document.getElementById('loginFormElement');
-    if (loginFormElement) loginFormElement.addEventListener('submit', handleLogin);
-
-    const registerFormElement = document.getElementById('registerFormElement');
-    if (registerFormElement) registerFormElement.addEventListener('submit', handleRegister);
-
-    const forgotPasswordFormElement = document.getElementById('forgotPasswordFormElement');
-    if (forgotPasswordFormElement) forgotPasswordFormElement.addEventListener('submit', handleForgotPassword);
-
-    const editProfileForm = document.getElementById('editProfileForm');
-    if (editProfileForm) editProfileForm.addEventListener('submit', handleEditProfile);
-
-    // SEARCH BUTTONS
-    const searchPlayersBtn = document.getElementById('searchPlayersBtn');
-    if (searchPlayersBtn) searchPlayersBtn.addEventListener('click', searchPlayers);
-
-    const searchTeamsBtn = document.getElementById('searchTeamsBtn');
-    if (searchTeamsBtn) searchTeamsBtn.addEventListener('click', searchTeams);
-
-    // TAB SWITCHES
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const tab = this.dataset.tab;
-            if (tab === 'favorite-players' || tab === 'favorite-teams') {
-                switchFavoritesTab(tab);
+    document.querySelectorAll('.close-modal').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const modal = e.target.closest('.modal');
+            if (modal) {
+                modal.style.display = 'none';
             }
         });
     });
 
-    // MODAL BACKGROUNDS
     document.querySelectorAll('.modal').forEach(modal => {
         modal.addEventListener('click', (e) => {
             if (e.target === modal) {
-                modal.classList.remove('active');
+                modal.style.display = 'none';
             }
         });
     });
+
+    const loginForm = document.getElementById('loginForm');
+    if (loginForm) {
+        loginForm.addEventListener('submit', handleLogin);
+    }
+
+    const registerForm = document.getElementById('registerForm');
+    if (registerForm) {
+        registerForm.addEventListener('submit', handleRegister);
+    }
+
+    const forgotPasswordForm = document.getElementById('forgotPasswordForm');
+    if (forgotPasswordForm) {
+        forgotPasswordForm.addEventListener('submit', handleForgotPassword);
+    }
+
+    const resetPasswordForm = document.getElementById('resetPasswordForm');
+    if (resetPasswordForm) {
+        resetPasswordForm.addEventListener('submit', handleResetPassword);
+    }
+
+    const editProfileForm = document.getElementById('editProfileForm');
+    if (editProfileForm) {
+        editProfileForm.addEventListener('submit', handleEditProfile);
+    }
+
+    const searchPlayersBtn = document.getElementById('searchPlayersBtn');
+    if (searchPlayersBtn) {
+        searchPlayersBtn.addEventListener('click', searchPlayers);
+    }
+
+    const searchTeamsBtn = document.getElementById('searchTeamsBtn');
+    if (searchTeamsBtn) {
+        searchTeamsBtn.addEventListener('click', searchTeams);
+    }
+
+    const showForgotPassword = document.getElementById('showForgotPassword');
+    if (showForgotPassword) {
+        showForgotPassword.addEventListener('click', (e) => {
+            e.preventDefault();
+            document.getElementById('loginModal').style.display = 'none';
+            document.getElementById('forgotPasswordModal').style.display = 'flex';
+        });
+    }
+
+    const showRegister = document.getElementById('showRegister');
+    if (showRegister) {
+        showRegister.addEventListener('click', (e) => {
+            e.preventDefault();
+            document.getElementById('loginModal').style.display = 'none';
+            document.getElementById('registerModal').style.display = 'flex';
+        });
+    }
+
+    const showLogin = document.getElementById('showLogin');
+    if (showLogin) {
+        showLogin.addEventListener('click', (e) => {
+            e.preventDefault();
+            document.getElementById('registerModal').style.display = 'none';
+            document.getElementById('loginModal').style.display = 'flex';
+        });
+    }
+
+    const favPlayersTab = document.getElementById('favPlayersTab');
+    if (favPlayersTab) {
+        favPlayersTab.addEventListener('click', () => switchFavoritesTab('players'));
+    }
+
+    const favTeamsTab = document.getElementById('favTeamsTab');
+    if (favTeamsTab) {
+        favTeamsTab.addEventListener('click', () => switchFavoritesTab('teams'));
+    }
 }
 
-// ============================================
-// GLOBAL FUNCTIONS FOR ONCLICK
-// ============================================
+// ==================== GLOBAL WINDOW FUNCTIONS ====================
 window.showPlayerDetail = showPlayerDetail;
 window.showTeamDetail = showTeamDetail;
 window.toggleFavorite = toggleFavorite;
 window.shareProfile = shareProfile;
 window.loadFavoritesPage = loadFavoritesPage;
 window.openEditProfileModal = openEditProfileModal;
-EOFALL
+window.closePlayerDetailModalFn = closePlayerDetailModalFn;
+window.closeTeamDetailModalFn = closeTeamDetailModalFn;
+window.setRating = setRating;
+window.handleFeedbackSubmit = handleFeedbackSubmit;
+window.requestJoinTeam = requestJoinTeam;
