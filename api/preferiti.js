@@ -2,6 +2,7 @@ import { connectToDatabase } from '../lib/mongodb.js';
 import { UserModel } from '../models/User.js';
 import { TeamModel } from '../models/Team.js';
 import { authenticateRequest } from '../lib/auth.js';
+import { ObjectId } from 'mongodb';
 
 /**
  * API /api/preferiti
@@ -29,18 +30,51 @@ export default async function handler(req, res) {
     if (req.method === 'GET') {
       const preferiti = await userModel.getPreferiti(userId);
 
+      // CRITICAL FIX: Converti ObjectId in stringhe e popola i dettagli
+      const giocatoriIds = (preferiti.giocatori || []).map(id => 
+        id instanceof ObjectId ? id.toString() : id.toString()
+      );
+      const squadreIds = (preferiti.squadre || []).map(id => 
+        id instanceof ObjectId ? id.toString() : id.toString()
+      );
+
       // Popola i dettagli dei giocatori
       const giocatoriDetails = await Promise.all(
-        preferiti.giocatori.map(async (id) => {
-          const user = await userModel.findById(id.toString());
-          return user ? userModel.sanitizeUser(user) : null;
+        giocatoriIds.map(async (id) => {
+          try {
+            const user = await userModel.findById(id);
+            if (!user) return null;
+            const sanitized = userModel.sanitizeUser(user);
+            // CRITICAL FIX: Assicurati che _id sia una stringa
+            return {
+              ...sanitized,
+              _id: sanitized._id.toString()
+            };
+          } catch (error) {
+            console.error(`Error loading player ${id}:`, error);
+            return null;
+          }
         })
       );
 
       // Popola i dettagli delle squadre
       const squadreDetails = await Promise.all(
-        preferiti.squadre.map(async (id) => {
-          return await teamModel.findById(id.toString());
+        squadreIds.map(async (id) => {
+          try {
+            const team = await teamModel.findById(id);
+            if (!team) return null;
+            // CRITICAL FIX: Converti ObjectId in stringhe
+            return {
+              ...team,
+              _id: team._id.toString(),
+              captain: team.captain.toString(),
+              viceCaptain: team.viceCaptain ? team.viceCaptain.toString() : null,
+              members: team.members.map(m => m.toString())
+            };
+          } catch (error) {
+            console.error(`Error loading team ${id}:`, error);
+            return null;
+          }
         })
       );
 
@@ -62,6 +96,11 @@ export default async function handler(req, res) {
 
       if (type !== 'giocatori' && type !== 'squadre') {
         return res.status(400).json({ error: 'type deve essere "giocatori" o "squadre"' });
+      }
+
+      // CRITICAL FIX: Valida ObjectId
+      if (!ObjectId.isValid(targetId)) {
+        return res.status(400).json({ error: 'ID non valido' });
       }
 
       // Verifica che il target esista
@@ -95,6 +134,11 @@ export default async function handler(req, res) {
 
       if (type !== 'giocatori' && type !== 'squadre') {
         return res.status(400).json({ error: 'type deve essere "giocatori" o "squadre"' });
+      }
+
+      // CRITICAL FIX: Valida ObjectId
+      if (!ObjectId.isValid(targetId)) {
+        return res.status(400).json({ error: 'ID non valido' });
       }
 
       await userModel.removePreferito(userId, targetId, type);
