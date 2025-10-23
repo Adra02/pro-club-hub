@@ -8,15 +8,15 @@
   },
   "routes": [
     {
-      "src": "/api/share(.*)",
+      "src": "/api/share",
       "dest": "/api/share.js"
     },
     {
-      "src": "/api/preferiti(.*)",
+      "src": "/api/preferiti",
       "dest": "/api/preferiti.js"
     },
     {
-      "src": "/api/notifications(.*)",
+      "src": "/api/notifications",
       "dest": "/api/notifications.js"
     },
     {
