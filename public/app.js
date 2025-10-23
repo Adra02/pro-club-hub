@@ -41,6 +41,261 @@ let GLOBAL_MIN_LEVEL = 1;
 let GLOBAL_MAX_LEVEL = 999;
 let userFavorites = { giocatori: [], squadre: [] }; // NUOVO: Preferiti
 
+
+// ========================================
+// 🔗 SISTEMA DI CONDIVISIONE PROFILI
+// ========================================
+
+/**
+ * Legge i query parameters dall'URL
+ */
+function getURLParams() {
+    const params = new URLSearchParams(window.location.search);
+    return {
+        profile: params.get('profile'),
+        id: params.get('id')
+    };
+}
+
+/**
+ * Carica un profilo giocatore condiviso
+ */
+async function loadSharedPlayerProfile(playerId) {
+    try {
+        showNotification('Caricamento profilo...', 'info');
+
+        const response = await fetch(`/api/users?id=${playerId}`);
+        
+        if (!response.ok) {
+            if (response.status === 404) {
+                throw new Error('Profilo giocatore non trovato');
+            }
+            throw new Error('Errore nel caricamento del profilo');
+        }
+
+        const player = await response.json();
+
+        const feedbackResponse = await fetch(`/api/feedback?userId=${playerId}`);
+        const feedbacks = feedbackResponse.ok ? await feedbackResponse.json() : [];
+
+        document.title = `${player.username} - Pro Club Hub`;
+
+        hideHomepageForSharedProfile();
+
+        // Usa la tua funzione esistente showPlayerDetail
+        await showPlayerDetail(playerId);
+
+        addBackToHomeButton('playerDetailModal');
+
+    } catch (error) {
+        console.error('Errore caricamento profilo condiviso:', error);
+        showNotification(error.message || 'Profilo non trovato', 'error');
+        showProfileNotFoundPage('giocatore');
+    }
+}
+
+/**
+ * Carica un profilo squadra condiviso
+ */
+async function loadSharedTeamProfile(teamId) {
+    try {
+        showNotification('Caricamento squadra...', 'info');
+
+        const response = await fetch(`/api/teams?id=${teamId}`);
+        
+        if (!response.ok) {
+            if (response.status === 404) {
+                throw new Error('Squadra non trovata');
+            }
+            throw new Error('Errore nel caricamento della squadra');
+        }
+
+        const team = await response.json();
+
+        const feedbackResponse = await fetch(`/api/feedback?teamId=${teamId}`);
+        const feedbacks = feedbackResponse.ok ? await feedbackResponse.json() : [];
+
+        document.title = `${team.name} - Pro Club Hub`;
+
+        hideHomepageForSharedProfile();
+
+        // Usa la tua funzione esistente showTeamDetail
+        await showTeamDetail(teamId);
+
+        addBackToHomeButton('teamDetailModal');
+
+    } catch (error) {
+        console.error('Errore caricamento squadra condivisa:', error);
+        showNotification(error.message || 'Squadra non trovata', 'error');
+        showProfileNotFoundPage('squadra');
+    }
+}
+
+/**
+ * Nascondi homepage per profili condivisi
+ */
+function hideHomepageForSharedProfile() {
+    const mainContent = document.querySelector('.container');
+    if (mainContent) {
+        mainContent.style.display = 'none';
+    }
+
+    const navbar = document.querySelector('nav');
+    if (navbar) {
+        navbar.style.display = 'none';
+    }
+
+    const authButtons = document.querySelector('.auth-buttons');
+    if (authButtons) {
+        authButtons.style.display = 'none';
+    }
+}
+
+/**
+ * Mostra homepage
+ */
+function showHomepage() {
+    const mainContent = document.querySelector('.container');
+    if (mainContent) {
+        mainContent.style.display = 'block';
+    }
+
+    const navbar = document.querySelector('nav');
+    if (navbar) {
+        navbar.style.display = 'block';
+    }
+
+    const authButtons = document.querySelector('.auth-buttons');
+    if (authButtons) {
+        authButtons.style.display = 'flex';
+    }
+
+    document.title = 'Pro Club Hub';
+}
+
+/**
+ * Aggiunge pulsante "Torna alla Home"
+ */
+function addBackToHomeButton(modalId) {
+    const modal = document.getElementById(modalId);
+    if (!modal) return;
+
+    if (modal.querySelector('.back-to-home-btn')) return;
+
+    const modalContent = modal.querySelector('.modal-content');
+    if (!modalContent) return;
+
+    const backBtn = document.createElement('button');
+    backBtn.className = 'back-to-home-btn';
+    backBtn.innerHTML = '🏠 Torna alla Home';
+    backBtn.style.cssText = `
+        position: absolute;
+        top: 15px;
+        left: 15px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: bold;
+        z-index: 1001;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    `;
+
+    backBtn.addEventListener('mouseenter', () => {
+        backBtn.style.transform = 'translateY(-2px)';
+        backBtn.style.boxShadow = '0 6px 20px rgba(102, 126, 234, 0.6)';
+    });
+
+    backBtn.addEventListener('mouseleave', () => {
+        backBtn.style.transform = 'translateY(0)';
+        backBtn.style.boxShadow = '0 4px 15px rgba(102, 126, 234, 0.4)';
+    });
+
+    backBtn.addEventListener('click', () => {
+        modal.style.display = 'none';
+        window.history.pushState({}, '', window.location.pathname);
+        showHomepage();
+        window.location.reload();
+    });
+
+    modalContent.appendChild(backBtn);
+}
+
+/**
+ * Pagina errore "Profilo non trovato"
+ */
+function showProfileNotFoundPage(type) {
+    hideHomepageForSharedProfile();
+
+    const errorPage = document.createElement('div');
+    errorPage.id = 'profileNotFoundPage';
+    errorPage.style.cssText = `
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        text-align: center;
+        padding: 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 9999;
+    `;
+
+    errorPage.innerHTML = `
+        <div style="background: rgba(255,255,255,0.1); padding: 40px; border-radius: 20px; backdrop-filter: blur(10px); max-width: 500px;">
+            <h1 style="font-size: 72px; margin: 0;">😕</h1>
+            <h2 style="margin: 20px 0;">Profilo Non Trovato</h2>
+            <p style="margin: 10px 0; opacity: 0.9;">
+                Il ${type} che stai cercando non esiste o è stato rimosso.
+            </p>
+            <button onclick="window.location.href='/'" style="
+                margin-top: 30px;
+                background: white;
+                color: #667eea;
+                border: none;
+                padding: 15px 30px;
+                border-radius: 10px;
+                font-size: 16px;
+                font-weight: bold;
+                cursor: pointer;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+                transition: transform 0.2s;
+            " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                🏠 Vai alla Homepage
+            </button>
+        </div>
+    `;
+
+    document.body.appendChild(errorPage);
+}
+
+/**
+ * Gestione back button browser
+ */
+window.addEventListener('popstate', (event) => {
+    const urlParams = getURLParams();
+    
+    if (!urlParams.profile && !urlParams.id) {
+        showHomepage();
+        window.location.reload();
+    }
+});
+
+// ========================================
+// FINE SISTEMA CONDIVISIONE
+// ========================================
+
+
 // ============================================
 // INITIALIZATION
 // ============================================
@@ -534,254 +789,42 @@ function renderFavoriteTeams() {
 //    window.loadFavoritesPage = loadFavoritesPage;
 
 
-// ========================================
-// 🔗 SISTEMA DI CONDIVISIONE PROFILI
-// ========================================
+// ============================================
+// NUOVO: SISTEMA CONDIVISIONE
+// ============================================
 
-/**
- * Legge i query parameters dall'URL
- */
-function getURLParams() {
-    const params = new URLSearchParams(window.location.search);
-    return {
-        profile: params.get('profile'),
-        id: params.get('id')
+async function shareProfile(type, id, name) {
+    const shareData = {
+        title: `${name} - Pro Club Hub`,
+        text: type === 'player' 
+            ? `Guarda il profilo di ${name} su Pro Club Hub!`
+            : `Scopri la squadra ${name} su Pro Club Hub!`,
+        url: `https://pro-club-hub.com/share.html?type=${type}&id=${id}`
     };
-}
 
-/**
- * Carica un profilo giocatore condiviso
- */
-async function loadSharedPlayerProfile(playerId) {
     try {
-        showNotification('Caricamento profilo...', 'info');
-
-        const response = await fetch(`/api/users?id=${playerId}`);
-        
-        if (!response.ok) {
-            if (response.status === 404) {
-                throw new Error('Profilo giocatore non trovato');
-            }
-            throw new Error('Errore nel caricamento del profilo');
+        // Se disponibile Web Share API (mobile)
+        if (navigator.share) {
+            await navigator.share(shareData);
+            showNotification('✅ Condiviso con successo!', 'success');
+        } else {
+            // Fallback: copia link
+            await navigator.clipboard.writeText(shareData.url);
+            showNotification('📋 Link copiato negli appunti!', 'success');
         }
-
-        const player = await response.json();
-
-        const feedbackResponse = await fetch(`/api/feedback?userId=${playerId}`);
-        const feedbacks = feedbackResponse.ok ? await feedbackResponse.json() : [];
-
-        document.title = `${player.username} - Pro Club Hub`;
-
-        hideHomepageForSharedProfile();
-
-        // Usa la tua funzione esistente showPlayerDetail
-        await showPlayerDetail(playerId);
-
-        addBackToHomeButton('playerDetailModal');
-
     } catch (error) {
-        console.error('Errore caricamento profilo condiviso:', error);
-        showNotification(error.message || 'Profilo non trovato', 'error');
-        showProfileNotFoundPage('giocatore');
+        console.error('Share error:', error);
+        // Fallback manuale
+        const input = document.createElement('input');
+        input.value = shareData.url;
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand('copy');
+        document.body.removeChild(input);
+        showNotification('📋 Link copiato negli appunti!', 'success');
     }
 }
 
-/**
- * Carica un profilo squadra condiviso
- */
-async function loadSharedTeamProfile(teamId) {
-    try {
-        showNotification('Caricamento squadra...', 'info');
-
-        const response = await fetch(`/api/teams?id=${teamId}`);
-        
-        if (!response.ok) {
-            if (response.status === 404) {
-                throw new Error('Squadra non trovata');
-            }
-            throw new Error('Errore nel caricamento della squadra');
-        }
-
-        const team = await response.json();
-
-        const feedbackResponse = await fetch(`/api/feedback?teamId=${teamId}`);
-        const feedbacks = feedbackResponse.ok ? await feedbackResponse.json() : [];
-
-        document.title = `${team.name} - Pro Club Hub`;
-
-        hideHomepageForSharedProfile();
-
-        // Usa la tua funzione esistente showTeamDetail
-        await showTeamDetail(teamId);
-
-        addBackToHomeButton('teamDetailModal');
-
-    } catch (error) {
-        console.error('Errore caricamento squadra condivisa:', error);
-        showNotification(error.message || 'Squadra non trovata', 'error');
-        showProfileNotFoundPage('squadra');
-    }
-}
-
-/**
- * Nascondi homepage per profili condivisi
- */
-function hideHomepageForSharedProfile() {
-    const mainContent = document.querySelector('.container');
-    if (mainContent) {
-        mainContent.style.display = 'none';
-    }
-
-    const navbar = document.querySelector('nav');
-    if (navbar) {
-        navbar.style.display = 'none';
-    }
-
-    const authButtons = document.querySelector('.auth-buttons');
-    if (authButtons) {
-        authButtons.style.display = 'none';
-    }
-}
-
-/**
- * Mostra homepage
- */
-function showHomepage() {
-    const mainContent = document.querySelector('.container');
-    if (mainContent) {
-        mainContent.style.display = 'block';
-    }
-
-    const navbar = document.querySelector('nav');
-    if (navbar) {
-        navbar.style.display = 'block';
-    }
-
-    const authButtons = document.querySelector('.auth-buttons');
-    if (authButtons) {
-        authButtons.style.display = 'flex';
-    }
-
-    document.title = 'Pro Club Hub';
-}
-
-/**
- * Aggiunge pulsante "Torna alla Home"
- */
-function addBackToHomeButton(modalId) {
-    const modal = document.getElementById(modalId);
-    if (!modal) return;
-
-    if (modal.querySelector('.back-to-home-btn')) return;
-
-    const modalContent = modal.querySelector('.modal-content');
-    if (!modalContent) return;
-
-    const backBtn = document.createElement('button');
-    backBtn.className = 'back-to-home-btn';
-    backBtn.innerHTML = '🏠 Torna alla Home';
-    backBtn.style.cssText = `
-        position: absolute;
-        top: 15px;
-        left: 15px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border: none;
-        padding: 12px 24px;
-        border-radius: 8px;
-        cursor: pointer;
-        font-size: 14px;
-        font-weight: bold;
-        z-index: 1001;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-    `;
-
-    backBtn.addEventListener('mouseenter', () => {
-        backBtn.style.transform = 'translateY(-2px)';
-        backBtn.style.boxShadow = '0 6px 20px rgba(102, 126, 234, 0.6)';
-    });
-
-    backBtn.addEventListener('mouseleave', () => {
-        backBtn.style.transform = 'translateY(0)';
-        backBtn.style.boxShadow = '0 4px 15px rgba(102, 126, 234, 0.4)';
-    });
-
-    backBtn.addEventListener('click', () => {
-        modal.style.display = 'none';
-        window.history.pushState({}, '', window.location.pathname);
-        showHomepage();
-        window.location.reload();
-    });
-
-    modalContent.appendChild(backBtn);
-}
-
-/**
- * Pagina errore "Profilo non trovato"
- */
-function showProfileNotFoundPage(type) {
-    hideHomepageForSharedProfile();
-
-    const errorPage = document.createElement('div');
-    errorPage.id = 'profileNotFoundPage';
-    errorPage.style.cssText = `
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        min-height: 100vh;
-        text-align: center;
-        padding: 20px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        z-index: 9999;
-    `;
-
-    errorPage.innerHTML = `
-        <div style="background: rgba(255,255,255,0.1); padding: 40px; border-radius: 20px; backdrop-filter: blur(10px); max-width: 500px;">
-            <h1 style="font-size: 72px; margin: 0;">😕</h1>
-            <h2 style="margin: 20px 0;">Profilo Non Trovato</h2>
-            <p style="margin: 10px 0; opacity: 0.9;">
-                Il ${type} che stai cercando non esiste o è stato rimosso.
-            </p>
-            <button onclick="window.location.href='/'" style="
-                margin-top: 30px;
-                background: white;
-                color: #667eea;
-                border: none;
-                padding: 15px 30px;
-                border-radius: 10px;
-                font-size: 16px;
-                font-weight: bold;
-                cursor: pointer;
-                box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-                transition: transform 0.2s;
-            " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-                🏠 Vai alla Homepage
-            </button>
-        </div>
-    `;
-
-    document.body.appendChild(errorPage);
-}
-
-/**
- * Gestione back button browser
- */
-window.addEventListener('popstate', (event) => {
-    const urlParams = getURLParams();
-    
-    if (!urlParams.profile && !urlParams.id) {
-        showHomepage();
-        window.location.reload();
-    }
-});
 
 // ============================================
 // GESTIONE ERRORI ANTI-SPAM
@@ -3091,6 +3134,7 @@ window.unsuspendUser = unsuspendUser;
 window.deleteUser = deleteUser;
 window.toggleFavorite = toggleFavorite;
 window.shareProfile = shareProfile;
+
 
 
 
