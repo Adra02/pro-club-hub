@@ -12,14 +12,15 @@ export default async function handler(req, res) {
   try {
     const { type, id } = req.query;
 
-    console.log('Share request:', { type, id, query: req.query });
+    console.log('Share request:', { type, id, query: req.query, url: req.url });
 
     if (!type || !id) {
       return renderNotFound(res, 'Parametri mancanti. Usa: /api/share?type=player&id=xxx');
     }
 
-    // Verifica che l'ID sia valido
+    // CRITICAL FIX: Verifica che l'ID sia valido
     if (!ObjectId.isValid(id)) {
+      console.error('Invalid ObjectId:', id);
       return renderNotFound(res, 'ID non valido');
     }
 
@@ -32,6 +33,7 @@ export default async function handler(req, res) {
       const user = await userModel.findById(id);
 
       if (!user) {
+        console.error('Player not found:', id);
         return renderNotFound(res, 'Giocatore non trovato');
       }
 
@@ -44,6 +46,7 @@ export default async function handler(req, res) {
       const team = await teamModel.findById(id);
 
       if (!team) {
+        console.error('Team not found:', id);
         return renderNotFound(res, 'Squadra non trovata');
       }
 
@@ -57,10 +60,40 @@ export default async function handler(req, res) {
     return res.status(500).send(`
       <!DOCTYPE html>
       <html>
-      <head><title>Errore - Pro Club Hub</title></head>
+      <head>
+        <meta charset="UTF-8">
+        <title>Errore - Pro Club Hub</title>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            background: #0a0f1e;
+            color: #f1f5f9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 2rem;
+          }
+          .error-box {
+            background: #1e293b;
+            border: 2px solid #ef4444;
+            border-radius: 16px;
+            padding: 2rem;
+            max-width: 500px;
+            text-align: center;
+          }
+          h1 { color: #ef4444; margin-bottom: 1rem; }
+          p { color: #cbd5e1; margin-bottom: 0.5rem; }
+          code { background: #0f172a; padding: 0.5rem; border-radius: 8px; display: block; margin: 1rem 0; }
+        </style>
+      </head>
       <body>
-        <h1>Errore del server</h1>
-        <p>${error.message}</p>
+        <div class="error-box">
+          <h1>⚠️ Errore del server</h1>
+          <p>${error.message}</p>
+          <code>${error.stack?.split('\n')[0] || 'No stack trace'}</code>
+        </div>
       </body>
       </html>
     `);
@@ -80,7 +113,9 @@ function getBaseUrl(req) {
 
 function renderPlayerPreview(res, user, req) {
   const baseUrl = getBaseUrl(req);
-  const shareUrl = `${baseUrl}/api/share?type=player&id=${user._id}`;
+  // CRITICAL FIX: Converti ObjectId in stringa
+  const userId = user._id instanceof ObjectId ? user._id.toString() : user._id;
+  const shareUrl = `${baseUrl}/api/share?type=player&id=${userId}`;
 
   const html = `
 <!DOCTYPE html>
@@ -224,7 +259,9 @@ function renderPlayerPreview(res, user, req) {
 
 function renderTeamPreview(res, team, req) {
   const baseUrl = getBaseUrl(req);
-  const shareUrl = `${baseUrl}/api/share?type=team&id=${team._id}`;
+  // CRITICAL FIX: Converti ObjectId in stringa
+  const teamId = team._id instanceof ObjectId ? team._id.toString() : team._id;
+  const shareUrl = `${baseUrl}/api/share?type=team&id=${teamId}`;
 
   const html = `
 <!DOCTYPE html>
@@ -392,8 +429,19 @@ function renderNotFound(res, message) {
             text-align: center;
             padding: 2rem;
         }
-        h1 { font-size: 3rem; margin-bottom: 1rem; }
-        p { font-size: 1.2rem; color: #94a3b8; margin-bottom: 2rem; }
+        .container {
+            max-width: 500px;
+        }
+        h1 { 
+            font-size: 3rem; 
+            margin-bottom: 1rem;
+            color: #ef4444;
+        }
+        p { 
+            font-size: 1.2rem; 
+            color: #94a3b8; 
+            margin-bottom: 2rem; 
+        }
         a {
             background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
             color: white;
@@ -401,11 +449,15 @@ function renderNotFound(res, message) {
             border-radius: 12px;
             text-decoration: none;
             font-weight: 700;
+            display: inline-block;
+        }
+        a:hover {
+            transform: translateY(-3px);
         }
     </style>
 </head>
 <body>
-    <div>
+    <div class="container">
         <h1>❌ ${message}</h1>
         <p>Il contenuto che stai cercando non esiste o è stato rimosso.</p>
         <a href="${baseUrl}">Torna a Pro Club Hub</a>
