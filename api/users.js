@@ -1,60 +1,77 @@
-import { connectToDatabase } from '../lib/mongodb.js';
-import { UserModel } from '../models/User.js';
-import { authenticateRequest } from '../lib/auth.js';
-import { ObjectId } from 'mongodb';
+const { ObjectId } = require('mongodb');
+const clientPromise = require('../lib/mongodb');
+const { verifyToken } = require('../lib/auth');
 
-export default async function handler(req, res) {
-  try {
-    const userId = await authenticateRequest(req);
-    if (!userId) {
-      return res.status(401).json({ error: 'Non autenticato' });
+module.exports = async (req, res) => {
+    // CORS headers
+    res.setHeader('Access-Control-Allow-Credentials', true);
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+    res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization');
+
+    if (req.method === 'OPTIONS') {
+        res.status(200).end();
+        return;
     }
 
-    const { db } = await connectToDatabase();
-    const userModel = new UserModel(db);
-
-    // GET USER BY ID or SEARCH
     if (req.method === 'GET') {
-      const { id, role, platform, minLevel, maxLevel, search } = req.query;
+        const { id } = req.query;
 
-      // Get specific user
-      if (id) {
-        if (!ObjectId.isValid(id)) {
-          return res.status(400).json({ error: 'ID non valido' });
+        // ✅ NUOVO: Se c'è un ID specifico, permetti accesso pubblico (per profili condivisi)
+        if (id) {
+            try {
+                const client = await clientPromise;
+                const db = client.db('proclubhub');
+
+                // Verifica se l'ID è valido
+                if (!ObjectId.isValid(id)) {
+                    return res.status(404).json({ error: 'Profilo non trovato' });
+                }
+
+                const user = await db.collection('users').findOne(
+                    { _id: new ObjectId(id) },
+                    { projection: { password: 0 } } // Non includere la password
+                );
+
+                if (!user) {
+                    return res.status(404).json({ error: 'Profilo non trovato' });
+                }
+
+                return res.status(200).json(user);
+            } catch (error) {
+                console.error('Errore nel recupero del profilo:', error);
+                return res.status(500).json({ error: 'Errore nel caricamento del profilo' });
+            }
         }
 
-        const user = await userModel.findById(id);
-        if (!user) {
-          return res.status(404).json({ error: 'Utente non trovato' });
+        // ⚠️ Per tutte le altre richieste (lista utenti, etc), richiedi autenticazione
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return res.status(401).json({ error: 'Non autenticato' });
         }
 
-        const sanitizedUser = userModel.sanitizeUser(user);
-        return res.status(200).json({ user: sanitizedUser });
-      }
+        const token = authHeader.split(' ')[1];
+        const decoded = verifyToken(token);
+        
+        if (!decoded) {
+            return res.status(401).json({ error: 'Token non valido' });
+        }
 
-      // Search users
-      const filters = {};
-      if (role) filters.role = role;
-      if (platform) filters.platform = platform;
-      if (minLevel) filters.minLevel = minLevel;
-      if (maxLevel) filters.maxLevel = maxLevel;
-      if (search) filters.search = search;
-
-      const users = await userModel.search(filters);
-      const sanitizedUsers = users.map(u => userModel.sanitizeUser(u));
-
-      return res.status(200).json({ 
-        users: sanitizedUsers,
-        count: sanitizedUsers.length 
-      });
+        // ... resto del codice esistente per liste utenti, etc
+        try {
+            const client = await clientPromise;
+            const db = client.db('proclubhub');
+            
+            const users = await db.collection('users')
+                .find({}, { projection: { password: 0 } })
+                .toArray();
+            
+            return res.status(200).json(users);
+        } catch (error) {
+            console.error('Errore nel recupero degli utenti:', error);
+            return res.status(500).json({ error: 'Errore nel recupero degli utenti' });
+        }
     }
 
-    return res.status(405).json({ error: 'Method not allowed' });
-
-  } catch (error) {
-    console.error('Users endpoint error:', error);
-    return res.status(500).json({ 
-      error: 'Errore durante il recupero degli utenti' 
-    });
-  }
-}
+    res.status(405).json({ error: 'Metodo non consentito' });
+};
