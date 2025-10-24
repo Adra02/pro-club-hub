@@ -1,77 +1,123 @@
-const { ObjectId } = require('mongodb');
-const clientPromise = require('../lib/mongodb');
-const { verifyToken } = require('../lib/auth');
+// ============================================
+// API /api/users - VERSIONE COMPLETA E CORRETTA
+// ============================================
 
-module.exports = async (req, res) => {
-    // CORS headers
-    res.setHeader('Access-Control-Allow-Credentials', true);
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-    res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization');
+import { connectToDatabase } from '../lib/mongodb.js';
+import { UserModel } from '../models/User.js';
+import { authenticateRequest } from '../lib/auth.js';
+import { ObjectId } from 'mongodb';
 
-    if (req.method === 'OPTIONS') {
-        res.status(200).end();
-        return;
-    }
+/**
+ * API /api/users
+ * 
+ * GET /api/users                        - Lista giocatori con filtri
+ * GET /api/users?id=XXX                 - Ottieni singolo giocatore (pubblico per profili condivisi)
+ * GET /api/users?action=all             - Tutti gli utenti (admin only)
+ */
 
+export default async function handler(req, res) {
+  try {
+    const { db } = await connectToDatabase();
+    const userModel = new UserModel(db);
+
+    // ============================================
+    // GET - RECUPERA UTENTI
+    // ============================================
     if (req.method === 'GET') {
-        const { id } = req.query;
+      const { id, action, role, platform, search, nationality, minLevel, maxLevel } = req.query;
 
-        // ✅ NUOVO: Se c'è un ID specifico, permetti accesso pubblico (per profili condivisi)
-        if (id) {
-            try {
-                const client = await clientPromise;
-                const db = client.db('proclubhub');
-
-                // Verifica se l'ID è valido
-                if (!ObjectId.isValid(id)) {
-                    return res.status(404).json({ error: 'Profilo non trovato' });
-                }
-
-                const user = await db.collection('users').findOne(
-                    { _id: new ObjectId(id) },
-                    { projection: { password: 0 } } // Non includere la password
-                );
-
-                if (!user) {
-                    return res.status(404).json({ error: 'Profilo non trovato' });
-                }
-
-                return res.status(200).json(user);
-            } catch (error) {
-                console.error('Errore nel recupero del profilo:', error);
-                return res.status(500).json({ error: 'Errore nel caricamento del profilo' });
-            }
+      // === CASO 1: Profilo singolo (PUBBLICO per condivisione) ===
+      if (id) {
+        if (!ObjectId.isValid(id)) {
+          return res.status(400).json({ error: 'ID non valido' });
         }
 
-        // ⚠️ Per tutte le altre richieste (lista utenti, etc), richiedi autenticazione
-        const authHeader = req.headers.authorization;
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return res.status(401).json({ error: 'Non autenticato' });
-        }
-
-        const token = authHeader.split(' ')[1];
-        const decoded = verifyToken(token);
+        const user = await userModel.findById(id);
         
-        if (!decoded) {
-            return res.status(401).json({ error: 'Token non valido' });
+        if (!user) {
+          return res.status(404).json({ error: 'Utente non trovato' });
         }
 
-        // ... resto del codice esistente per liste utenti, etc
-        try {
-            const client = await clientPromise;
-            const db = client.db('proclubhub');
-            
-            const users = await db.collection('users')
-                .find({}, { projection: { password: 0 } })
-                .toArray();
-            
-            return res.status(200).json(users);
-        } catch (error) {
-            console.error('Errore nel recupero degli utenti:', error);
-            return res.status(500).json({ error: 'Errore nel recupero degli utenti' });
+        // Sanitizza (rimuovi dati sensibili)
+        const sanitizedUser = userModel.sanitizeUser(user);
+        
+        return res.status(200).json(sanitizedUser);
+      }
+
+      // === CASO 2: Lista completa (admin only) ===
+      if (action === 'all') {
+        const userId = await authenticateRequest(req);
+        
+        if (!userId || userId !== 'admin') {
+          return res.status(403).json({ error: 'Accesso negato' });
         }
+
+        const users = await userModel.getAllUsers();
+        return res.status(200).json({ 
+          users,
+          count: users.length 
+        });
+      }
+
+      // === CASO 3: Ricerca giocatori con filtri (richiede autenticazione) ===
+      const userId = await authenticateRequest(req);
+      
+      if (!userId) {
+        return res.status(401).json({ error: 'Non autenticato' });
+      }
+
+      // Costruisci i filtri
+      const filters = {};
+      
+      if (role) {
+        filters.role = role;
+      }
+      
+      if (platform) {
+        filters.platform = platform;
+      }
+      
+      if (search) {
+        filters.search = search;
+      }
+      
+      if (nationality) {
+        filters.nationality = nationality;
+      }
+      
+      if (minLevel) {
+        filters.minLevel = parseInt(minLevel);
+      }
+      
+      if (maxLevel) {
+        filters.maxLevel = parseInt(maxLevel);
+      }
+
+      // CRITICAL FIX: Usa la funzione searchAll invece di search
+      // searchAll non filtra per lookingForTeam
+      const users = await userModel.searchAll(filters);
+      
+      // Rimuovi l'utente corrente dalla lista
+      const filteredUsers = users.filter(user => 
+        user._id.toString() !== userId
+      );
+
+      return res.status(200).json({ 
+        users: filteredUsers,
+        count: filteredUsers.length 
+      });
     }
 
-    res.status(405).json({ error: 'Metodo non consentito' });
-};
+    // ============================================
+    // ALTRI METODI NON SUPPORTATI
+    // ============================================
+    return res.status(405).json({ error: 'Metodo non consentito' });
+
+  } catch (error) {
+    console.error('Users API error:', error);
+    return res.status(500).json({ 
+      error: 'Errore interno del server',
+      message: error.message 
+    });
+  }
+}
