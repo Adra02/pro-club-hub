@@ -1,6 +1,6 @@
 // ============================================
-// API ENDPOINT: /api/share.js
-// Endpoint serverless per condivisione profili pubblici
+// SHARE.JS - Endpoint API per condivisione profili
+// Endpoint serverless per recuperare dati profili pubblici
 // ============================================
 
 import { connectToDatabase } from '../lib/mongodb.js';
@@ -9,24 +9,23 @@ import { TeamModel } from '../models/Team.js';
 import { FeedbackModel } from '../models/Feedback.js';
 import { ObjectId } from 'mongodb';
 
+/**
+ * API /api/share
+ * 
+ * Endpoint PUBBLICO (non richiede autenticazione) per visualizzare profili condivisi
+ * 
+ * GET /api/share?type=player&id=XXX - Ottieni profilo giocatore
+ * GET /api/share?type=team&id=XXX   - Ottieni profilo squadra
+ */
+
 export default async function handler(req, res) {
-  // CORS headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-
-  if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Metodo non consentito' });
-  }
-
   try {
-    const { type, id } = req.query;
+    // Solo metodo GET
+    if (req.method !== 'GET') {
+      return res.status(405).json({ error: 'Metodo non consentito' });
+    }
 
-    console.log('[SHARE API] Request received:', { type, id });
+    const { type, id } = req.query;
 
     // Validazione parametri
     if (!type || !id) {
@@ -35,12 +34,14 @@ export default async function handler(req, res) {
       });
     }
 
+    // Validazione tipo
     if (type !== 'player' && type !== 'team') {
       return res.status(400).json({ 
         error: 'Il tipo deve essere "player" o "team"' 
       });
     }
 
+    // Validazione ObjectId
     if (!ObjectId.isValid(id)) {
       return res.status(400).json({ 
         error: 'ID non valido' 
@@ -52,22 +53,17 @@ export default async function handler(req, res) {
     const teamModel = new TeamModel(db);
     const feedbackModel = new FeedbackModel(db);
 
-    // === GESTIONE PROFILO GIOCATORE ===
+    // === PROFILO GIOCATORE ===
     if (type === 'player') {
-      console.log('[SHARE API] Fetching player:', id);
-      
       const player = await userModel.findById(id);
       
       if (!player) {
-        console.log('[SHARE API] Player not found:', id);
         return res.status(404).json({ 
           error: 'Giocatore non trovato' 
         });
       }
 
-      console.log('[SHARE API] Player found:', player.username);
-
-      // Sanitizza dati
+      // Sanitizza dati giocatore (rimuovi dati sensibili)
       const sanitizedPlayer = userModel.sanitizeUser(player);
 
       // Recupera squadra se presente
@@ -79,40 +75,32 @@ export default async function handler(req, res) {
       // Recupera feedback
       const feedbacks = await feedbackModel.getFeedbackForUser(id);
       
-      // Popola autori feedback
+      // Popola i nomi degli autori dei feedback
       const feedbacksWithAuthors = await Promise.all(
         feedbacks.map(async (fb) => {
           const author = await userModel.findById(fb.fromUser.toString());
           return {
-            _id: fb._id,
-            rating: fb.rating,
-            comment: fb.comment,
-            tags: fb.tags,
-            createdAt: fb.createdAt,
+            ...fb,
             fromUsername: author ? author.username : 'Utente Eliminato'
           };
         })
       );
 
-      // Calcola statistiche
+      // Calcola statistiche feedback
       const stats = await feedbackModel.calculateUserStats(id);
 
-      // Top tags
+      // Conta tag più usati
       const tagCounts = {};
       feedbacksWithAuthors.forEach(fb => {
-        if (fb.tags) {
-          fb.tags.forEach(tag => {
-            tagCounts[tag] = (tagCounts[tag] || 0) + 1;
-          });
-        }
+        fb.tags.forEach(tag => {
+          tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+        });
       });
 
       const topTags = Object.entries(tagCounts)
         .sort((a, b) => b[1] - a[1])
         .slice(0, 5)
         .map(([tag, count]) => ({ tag, count }));
-
-      console.log('[SHARE API] Sending player response');
 
       return res.status(200).json({
         data: sanitizedPlayer,
@@ -130,22 +118,17 @@ export default async function handler(req, res) {
       });
     }
 
-    // === GESTIONE PROFILO SQUADRA ===
+    // === PROFILO SQUADRA ===
     if (type === 'team') {
-      console.log('[SHARE API] Fetching team:', id);
-      
       const team = await teamModel.findById(id);
       
       if (!team) {
-        console.log('[SHARE API] Team not found:', id);
         return res.status(404).json({ 
           error: 'Squadra non trovata' 
         });
       }
 
-      console.log('[SHARE API] Team found:', team.name);
-
-      // Recupera membri
+      // Recupera dettagli membri
       const members = await Promise.all(
         team.members.map(async (memberId) => {
           const member = await userModel.findById(memberId.toString());
@@ -166,32 +149,26 @@ export default async function handler(req, res) {
       // Recupera feedback
       const feedbacks = await feedbackModel.getFeedbackForTeam(id);
       
-      // Popola autori feedback
+      // Popola i nomi degli autori dei feedback
       const feedbacksWithAuthors = await Promise.all(
         feedbacks.map(async (fb) => {
           const author = await userModel.findById(fb.fromUser.toString());
           return {
-            _id: fb._id,
-            rating: fb.rating,
-            comment: fb.comment,
-            tags: fb.tags,
-            createdAt: fb.createdAt,
+            ...fb,
             fromUsername: author ? author.username : 'Utente Eliminato'
           };
         })
       );
 
-      // Calcola statistiche
+      // Calcola statistiche feedback
       const stats = await feedbackModel.calculateTeamStats(id);
 
-      // Top tags
+      // Conta tag più usati
       const tagCounts = {};
       feedbacksWithAuthors.forEach(fb => {
-        if (fb.tags) {
-          fb.tags.forEach(tag => {
-            tagCounts[tag] = (tagCounts[tag] || 0) + 1;
-          });
-        }
+        fb.tags.forEach(tag => {
+          tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+        });
       });
 
       const topTags = Object.entries(tagCounts)
@@ -199,22 +176,9 @@ export default async function handler(req, res) {
         .slice(0, 5)
         .map(([tag, count]) => ({ tag, count }));
 
-      console.log('[SHARE API] Sending team response');
-
       return res.status(200).json({
         data: {
-          _id: team._id,
-          name: team.name,
-          description: team.description,
-          platform: team.platform,
-          nationality: team.nationality,
-          lookingForPlayers: team.lookingForPlayers,
-          instagram: team.instagram,
-          tiktok: team.tiktok,
-          liveLink: team.liveLink,
-          averageRating: team.averageRating,
-          feedbackCount: team.feedbackCount,
-          createdAt: team.createdAt,
+          ...team,
           membersCount: members.filter(m => m !== null).length
         },
         members: members.filter(m => m !== null),
@@ -228,10 +192,9 @@ export default async function handler(req, res) {
     }
 
   } catch (error) {
-    console.error('[SHARE API] Error:', error);
+    console.error('Share endpoint error:', error);
     return res.status(500).json({ 
-      error: 'Errore durante il caricamento del profilo',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      error: 'Errore durante il caricamento del profilo' 
     });
   }
 }
