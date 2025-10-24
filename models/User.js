@@ -117,7 +117,6 @@ export class UserModel {
     const validatedLevel = await this.validateLevel(level);
     const hashedPassword = await bcrypt.hash(password, 12);
 
-
     // NUOVO: Aggiungi campo preferiti
     const user = {
       username,
@@ -439,6 +438,63 @@ export class UserModel {
     return users;
   }
 
+  // ============================================
+  // NUOVA FUNZIONE: searchAll()
+  // ============================================
+  async searchAll(filters = {}) {
+    const query = { 
+      profileCompleted: true,
+      isSuspended: { $ne: true } 
+    };
+
+    // NON filtriamo per lookingForTeam - mostriamo tutti i giocatori
+
+    if (filters.role) {
+      query.$or = [
+        { primaryRole: filters.role },
+        { secondaryRoles: filters.role }
+      ];
+    }
+
+    if (filters.platform) {
+      query.platform = filters.platform;
+    }
+
+    if (filters.nationality) {
+      query.nationality = filters.nationality;
+    }
+
+    if (filters.minLevel) {
+      query.level = { $gte: parseInt(filters.minLevel) };
+    }
+
+    if (filters.maxLevel) {
+      query.level = query.level || {};
+      query.level.$lte = parseInt(filters.maxLevel);
+    }
+
+    if (filters.search) {
+      query.$or = [
+        { username: { $regex: filters.search, $options: 'i' } },
+        { bio: { $regex: filters.search, $options: 'i' } }
+      ];
+    }
+
+    // Solo utenti attivi nell'ultimo anno
+    const oneYearAgo = new Date();
+    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+    query.lastActive = { $gte: oneYearAgo };
+
+    const users = await this.collection
+      .find(query)
+      .project({ password: 0, resetToken: 0, resetTokenExpiry: 0, email: 0 })
+      .sort({ averageRating: -1, level: -1 })
+      .limit(50)
+      .toArray();
+
+    return users;
+  }
+
   async setTeam(userId, teamId) {
     if (!ObjectId.isValid(userId)) return false;
 
@@ -530,5 +586,3 @@ export class UserModel {
     return sanitized;
   }
 }
-
-
