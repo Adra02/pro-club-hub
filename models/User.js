@@ -117,72 +117,6 @@ export class UserModel {
     const validatedLevel = await this.validateLevel(level);
     const hashedPassword = await bcrypt.hash(password, 12);
 
-// AGGIUNTA AL FILE models/User.js
-// Aggiungi questa funzione alla classe UserModel
-// ============================================
-
-/**
- * NUOVA FUNZIONE: searchAll()
- * 
- * A differenza di search(), questa funzione NON filtra per lookingForTeam
- * Mostra TUTTI i giocatori disponibili in base ai filtri
- * 
- * Aggiungi questa funzione nella classe UserModel dopo la funzione search()
- */
-
-async searchAll(filters = {}) {
-  const query = { 
-    profileCompleted: true,
-    isSuspended: { $ne: true } 
-  };
-
-  // NON filtriamo per lookingForTeam - mostriamo tutti i giocatori
-
-  if (filters.role) {
-    query.$or = [
-      { primaryRole: filters.role },
-      { secondaryRoles: filters.role }
-    ];
-  }
-
-  if (filters.platform) {
-    query.platform = filters.platform;
-  }
-
-  if (filters.nationality) {
-    query.nationality = filters.nationality;
-  }
-
-  if (filters.minLevel) {
-    query.level = { $gte: parseInt(filters.minLevel) };
-  }
-
-  if (filters.maxLevel) {
-    query.level = query.level || {};
-    query.level.$lte = parseInt(filters.maxLevel);
-  }
-
-  if (filters.search) {
-    query.$or = [
-      { username: { $regex: filters.search, $options: 'i' } },
-      { bio: { $regex: filters.search, $options: 'i' } }
-    ];
-  }
-
-  // Solo utenti attivi nell'ultimo anno
-  const oneYearAgo = new Date();
-  oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-  query.lastActive = { $gte: oneYearAgo };
-
-  const users = await this.collection
-    .find(query)
-    .project({ password: 0, resetToken: 0, resetTokenExpiry: 0, email: 0 })
-    .sort({ averageRating: -1, level: -1 })
-    .limit(50)
-    .toArray();
-
-  return users;
-}
 
     // NUOVO: Aggiungi campo preferiti
     const user = {
@@ -596,4 +530,5 @@ async searchAll(filters = {}) {
     return sanitized;
   }
 }
+
 
