@@ -1301,8 +1301,8 @@ function renderTeamDetail(team, feedback) {
             <div class="detail-section">
                 <h3><i class="fas fa-users"></i> Membri</h3>
                 <div class="team-members-list">
-                    ${team.populatedMembers && team.populatedMembers.length > 0 
-                        ? team.populatedMembers.map(member => `
+                    ${team.memberDetails && team.memberDetails.length > 0 
+                        ? team.memberDetails.map(member => `
                             <div class="member-item">
                                 <div class="member-info">
                                     <i class="fas fa-user-circle"></i>
