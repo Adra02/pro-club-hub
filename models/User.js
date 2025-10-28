@@ -2,18 +2,18 @@ import { ObjectId } from 'mongodb';
 import bcrypt from 'bcryptjs';
 
 export const ROLES = [
-  'Portiere (POR)',
-  'Difensore Centrale (DC)',
-  'Terzino Destro (TD)',
-  'Terzino Sinistro (TS)',
-  'Centrocampista Difensivo (CDC)',
-  'Centrocampista (CC)',
-  'Centrocampista Offensivo (COC)',
-  'Esterno Destro (ED)',
-  'Esterno Sinistro (ES)',
-  'Ala Destra (AD)',
-  'Ala Sinistra (AS)',
-  'Attaccante (ATT)'
+  'GK',
+  'CB',
+  'RB',
+  'LB',
+  'CDM',
+  'CM',
+  'CAM',
+  'RM',
+  'LM',
+  'RW',
+  'LW',
+  'ST'
 ];
 
 // AGGIORNAMENTO: Piattaforme modificate
@@ -586,3 +586,4 @@ export class UserModel {
     return sanitized;
   }
 }
+
