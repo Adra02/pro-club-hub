@@ -1,13 +1,23 @@
 // ============================================
-// API /api/auth - VERSIONE CORRETTA ✅
-// Tutti gli errori risolti!
+// API /api/auth - VERSIONE FINALE CORRETTA
 // ============================================
 
 import { connectToDatabase } from '../lib/mongodb.js';
 import { UserModel } from '../models/User.js';
-import { authenticateRequest, generateToken } from '../lib/auth.js';
-import { sendResetEmail } from '../lib/email.js';
+import { generateToken, authenticateRequest } from '../lib/auth.js';
+import { sendWelcomeEmail, sendPasswordResetEmail } from '../lib/email.js';
 import crypto from 'crypto';
+
+/**
+ * API /api/auth
+ * 
+ * POST   /api/auth?action=register       - Registra nuovo utente
+ * POST   /api/auth?action=login          - Login utente
+ * GET    /api/auth?action=me             - Ottieni dati utente corrente
+ * PUT    /api/auth?action=me             - Aggiorna profilo utente
+ * POST   /api/auth?action=forgot         - Richiedi reset password
+ * POST   /api/auth?action=reset          - Reset password con token
+ */
 
 export default async function handler(req, res) {
   try {
@@ -22,10 +32,12 @@ export default async function handler(req, res) {
         const { username, email, password, primaryRole, platform, level, nationality } = req.body;
 
         if (!username || !email || !password || !primaryRole || !platform) {
-          return res.status(400).json({ error: 'Tutti i campi sono obbligatori' });
+          return res.status(400).json({ 
+            error: 'Username, email, password, ruolo e piattaforma sono obbligatori' 
+          });
         }
 
-        const user = await userModel.create({
+        const newUser = await userModel.create({
           username,
           email,
           password,
@@ -35,8 +47,10 @@ export default async function handler(req, res) {
           nationality: nationality || 'Italia'
         });
 
-        const token = generateToken(user._id.toString());
-        const sanitizedUser = userModel.sanitizeUser(user);
+        await sendWelcomeEmail(email, username);
+
+        const token = generateToken(newUser._id.toString());
+        const sanitizedUser = userModel.sanitizeUser(newUser);
 
         return res.status(201).json({
           message: 'Registrazione completata con successo',
@@ -45,13 +59,10 @@ export default async function handler(req, res) {
         });
 
       } catch (error) {
-        console.error('Register error:', error);
-        
-        if (error.message.includes('già in uso')) {
-          return res.status(409).json({ error: error.message });
-        }
-        
-        return res.status(500).json({ error: 'Errore durante la registrazione. Riprova.' });
+        console.error('Registration error:', error);
+        return res.status(400).json({ 
+          error: error.message || 'Errore durante la registrazione. Riprova.' 
+        });
       }
     }
 
@@ -125,21 +136,23 @@ export default async function handler(req, res) {
     }
 
     // ============================================
-    // GET ME
+    // GET CURRENT USER
     // ============================================
     if (req.method === 'GET' && req.url.includes('action=me')) {
       try {
         const userId = await authenticateRequest(req);
+        
         if (!userId) {
           return res.status(401).json({ error: 'Non autenticato' });
         }
 
-        // ADMIN
+        // ADMIN CHECK
         if (userId === 'admin') {
+          const adminEmail = process.env.ADMIN_EMAIL;
           const adminUser = {
             _id: 'admin',
             username: 'Admin',
-            email: process.env.ADMIN_EMAIL,
+            email: adminEmail,
             isAdmin: true,
             level: 1,
             platform: 'All',
@@ -152,31 +165,31 @@ export default async function handler(req, res) {
             lookingForTeam: false,
             profileCompleted: true
           };
-          return res.status(200).json({ user: adminUser });
+          return res.status(200).json(adminUser);
         }
 
         const user = await userModel.findById(userId);
+        
         if (!user) {
           return res.status(404).json({ error: 'Utente non trovato' });
         }
 
-        await userModel.updateLastActive(userId);
-
         const sanitizedUser = userModel.sanitizeUser(user);
-        return res.status(200).json({ user: sanitizedUser });
+        return res.status(200).json(sanitizedUser);
 
       } catch (error) {
-        console.error('Get me error:', error);
-        return res.status(500).json({ error: 'Errore durante il recupero del profilo' });
+        console.error('Get user error:', error);
+        return res.status(500).json({ error: 'Errore nel recupero dati utente' });
       }
     }
 
     // ============================================
-    // UPDATE ME
+    // UPDATE PROFILE
     // ============================================
     if (req.method === 'PUT' && req.url.includes('action=me')) {
       try {
         const userId = await authenticateRequest(req);
+        
         if (!userId) {
           return res.status(401).json({ error: 'Non autenticato' });
         }
@@ -186,40 +199,17 @@ export default async function handler(req, res) {
         }
 
         const updates = req.body;
+        delete updates._id;
+        delete updates.email;
+        delete updates.password;
+        delete updates.isAdmin;
 
-        // Validazione livello
-        if (updates.level !== undefined) {
-          const levelNum = parseInt(updates.level);
-          
-          if (isNaN(levelNum)) {
-            return res.status(400).json({ error: 'Il livello deve essere un numero' });
-          }
+        const updatedUser = await userModel.updateProfile(userId, updates);
 
-          const limits = await userModel.getLevelLimits();
-          
-          if (levelNum < limits.minLevel) {
-            updates.level = limits.minLevel;
-          } else if (levelNum > limits.maxLevel) {
-            updates.level = limits.maxLevel;
-          } else {
-            updates.level = levelNum;
-          }
+        if (!updatedUser) {
+          return res.status(404).json({ error: 'Utente non trovato' });
         }
 
-        // Validazione social
-        if (updates.instagram !== undefined || updates.tiktok !== undefined) {
-          const currentUser = await userModel.findById(userId);
-          const newInstagram = updates.instagram !== undefined ? updates.instagram : currentUser.instagram;
-          const newTiktok = updates.tiktok !== undefined ? updates.tiktok : currentUser.tiktok;
-
-          if (!newInstagram && !newTiktok) {
-            return res.status(400).json({ 
-              error: 'Devi avere almeno un social (Instagram O TikTok)' 
-            });
-          }
-        }
-
-        const updatedUser = await userModel.update(userId, updates);
         const sanitizedUser = userModel.sanitizeUser(updatedUser);
 
         return res.status(200).json({
@@ -228,15 +218,17 @@ export default async function handler(req, res) {
         });
 
       } catch (error) {
-        console.error('Update me error:', error);
-        return res.status(500).json({ error: 'Errore durante l\'aggiornamento del profilo' });
+        console.error('Update profile error:', error);
+        return res.status(500).json({ 
+          error: error.message || 'Errore durante l\'aggiornamento' 
+        });
       }
     }
 
     // ============================================
     // FORGOT PASSWORD
     // ============================================
-    if (req.method === 'POST' && req.url.includes('action=forgot-password')) {
+    if (req.method === 'POST' && req.url.includes('action=forgot')) {
       try {
         const { email } = req.body;
 
@@ -248,118 +240,57 @@ export default async function handler(req, res) {
         
         if (!user) {
           return res.status(200).json({ 
-            message: 'Se l\'email esiste, riceverai un link per il reset' 
+            message: 'Se l\'email esiste, riceverai le istruzioni per il reset' 
           });
         }
 
         const resetToken = crypto.randomBytes(32).toString('hex');
-        const resetTokenExpiry = new Date(Date.now() + 3600000);
+        const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+        const expiry = new Date(Date.now() + 3600000);
 
-        await userModel.update(user._id.toString(), {
-          resetToken,
-          resetTokenExpiry
-        });
+        await userModel.setResetToken(user._id.toString(), hashedToken, expiry);
+        await sendPasswordResetEmail(user.email, user.username, resetToken);
 
-        await sendResetEmail(email, resetToken);
-
-        return res.status(200).json({
-          message: 'Email di reset inviata con successo'
+        return res.status(200).json({ 
+          message: 'Se l\'email esiste, riceverai le istruzioni per il reset' 
         });
 
       } catch (error) {
         console.error('Forgot password error:', error);
-        return res.status(500).json({ error: 'Errore durante l\'invio dell\'email' });
+        return res.status(500).json({ error: 'Errore durante il reset password' });
       }
     }
 
     // ============================================
     // RESET PASSWORD
     // ============================================
-    if (req.method === 'POST' && req.url.includes('action=reset-password')) {
+    if (req.method === 'POST' && req.url.includes('action=reset')) {
       try {
-        const { token, password } = req.body;
+        const { token, newPassword } = req.body;
 
-        if (!token || !password) {
-          return res.status(400).json({ error: 'Token e password richiesti' });
+        if (!token || !newPassword) {
+          return res.status(400).json({ error: 'Token e nuova password richiesti' });
         }
 
-        if (password.length < 6) {
-          return res.status(400).json({ error: 'Password deve essere almeno 6 caratteri' });
-        }
+        const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+        const success = await userModel.resetPassword(hashedToken, newPassword);
 
-        const user = await userModel.findByResetToken(token);
-
-        if (!user || !user.resetTokenExpiry || user.resetTokenExpiry < new Date()) {
+        if (!success) {
           return res.status(400).json({ error: 'Token non valido o scaduto' });
         }
 
-        await userModel.updatePassword(user._id.toString(), password);
-        
-        await userModel.update(user._id.toString(), {
-          resetToken: null,
-          resetTokenExpiry: null
-        });
-
-        return res.status(200).json({
-          message: 'Password aggiornata con successo'
-        });
+        return res.status(200).json({ message: 'Password reimpostata con successo' });
 
       } catch (error) {
         console.error('Reset password error:', error);
-        return res.status(500).json({ error: 'Errore durante il reset della password' });
+        return res.status(500).json({ error: 'Errore durante il reset password' });
       }
     }
 
-    // ============================================
-    // REQUEST RESET (alternativo)
-    // ============================================
-    if (req.method === 'POST' && req.url.includes('action=request-reset')) {
-      try {
-        const { email } = req.body;
-
-        if (!email) {
-          return res.status(400).json({ error: 'Email richiesta' });
-        }
-
-        const user = await userModel.findByEmail(email);
-        
-        if (!user) {
-          return res.status(200).json({ 
-            message: 'Se l\'email esiste, riceverai un link per il reset' 
-          });
-        }
-
-        const resetToken = crypto.randomBytes(32).toString('hex');
-        const resetTokenExpiry = new Date(Date.now() + 3600000);
-
-        await userModel.update(user._id.toString(), {
-          resetToken,
-          resetTokenExpiry
-        });
-
-        await sendResetEmail(email, resetToken);
-
-        return res.status(200).json({
-          message: 'Email di reset inviata con successo'
-        });
-
-      } catch (error) {
-        console.error('Request reset error:', error);
-        return res.status(500).json({ error: 'Errore durante l\'invio dell\'email' });
-      }
-    }
-
-    // ============================================
-    // 404 - ENDPOINT NON TROVATO
-    // ============================================
     return res.status(404).json({ error: 'Endpoint non trovato' });
 
   } catch (error) {
-    // CATCH GLOBALE - cattura errori non gestiti
-    console.error('Auth handler error:', error);
-    return res.status(500).json({ 
-      error: 'Errore interno del server',
-      message: error.message 
-    });
+    console.error('Auth endpoint error:', error);
+    return res.status(500).json({ error: 'Errore del server' });
   }
 }
