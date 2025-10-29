@@ -1,9 +1,28 @@
+// ============================================
+// API /api/admin - VERSIONE FINALE CORRETTA
+// ============================================
+
 import { connectToDatabase } from '../lib/mongodb.js';
 import { UserModel } from '../models/User.js';
 import { TeamModel } from '../models/Team.js';
 import { TeamRequestModel } from '../models/TeamRequest.js';
 import { authenticateRequest } from '../lib/auth.js';
 import { sendNewsletterEmail } from '../lib/email.js';
+
+/**
+ * API /api/admin
+ * 
+ * GET    /api/admin?action=stats          - Statistiche dashboard
+ * GET    /api/admin?action=users          - Lista tutti gli utenti
+ * GET    /api/admin?action=level-settings - Ottieni limiti livello
+ * POST   /api/admin?action=level-settings - Aggiorna limiti livello
+ * POST   /api/admin?action=suspend        - Sospendi utente
+ * POST   /api/admin?action=unsuspend      - Riabilita utente
+ * DELETE /api/admin?action=user           - Elimina utente
+ * DELETE /api/admin?action=teams          - Elimina tutte le squadre
+ * POST   /api/admin?action=reset-profiles - Reset tutti i profili
+ * POST   /api/admin?action=newsletter     - Invia newsletter
+ */
 
 export default async function handler(req, res) {
   try {
@@ -19,7 +38,9 @@ export default async function handler(req, res) {
     const requestModel = new TeamRequestModel(db);
     const settingsCollection = db.collection('settings');
 
+    // ============================================
     // GET STATS
+    // ============================================
     if (req.method === 'GET' && req.url.includes('action=stats')) {
       const totalUsers = await userModel.countAll();
       const totalTeams = await teamModel.countAll();
@@ -34,13 +55,17 @@ export default async function handler(req, res) {
       });
     }
 
+    // ============================================
     // GET USERS LIST
+    // ============================================
     if (req.method === 'GET' && req.url.includes('action=users')) {
       const users = await userModel.getAllUsers();
       return res.status(200).json({ users });
     }
 
+    // ============================================
     // GET LEVEL SETTINGS
+    // ============================================
     if (req.method === 'GET' && req.url.includes('action=level-settings')) {
       const settings = await settingsCollection.findOne({ _id: 'level_limits' });
       return res.status(200).json({
@@ -49,7 +74,9 @@ export default async function handler(req, res) {
       });
     }
 
+    // ============================================
     // UPDATE LEVEL SETTINGS
+    // ============================================
     if (req.method === 'POST' && req.url.includes('action=level-settings')) {
       const { minLevel, maxLevel } = req.body;
 
@@ -89,14 +116,12 @@ export default async function handler(req, res) {
         { upsert: true }
       );
 
-      // CRITICAL FIX: Aggiorna automaticamente tutti gli utenti fuori range
-      // Porta gli utenti sotto il minimo al nuovo minimo
+      // Aggiorna automaticamente tutti gli utenti fuori range
       await db.collection('users').updateMany(
         { level: { $lt: min } },
         { $set: { level: min, updatedAt: new Date() } }
       );
 
-      // Porta gli utenti sopra il massimo al nuovo massimo
       await db.collection('users').updateMany(
         { level: { $gt: max } },
         { $set: { level: max, updatedAt: new Date() } }
@@ -109,28 +134,36 @@ export default async function handler(req, res) {
       });
     }
 
+    // ============================================
     // SUSPEND USER
+    // ============================================
     if (req.method === 'POST' && req.url.includes('action=suspend')) {
       const { userId: targetUserId } = req.body;
       await userModel.suspendUser(targetUserId, true);
       return res.status(200).json({ message: 'Utente sospeso' });
     }
 
+    // ============================================
     // UNSUSPEND USER
+    // ============================================
     if (req.method === 'POST' && req.url.includes('action=unsuspend')) {
       const { userId: targetUserId } = req.body;
       await userModel.suspendUser(targetUserId, false);
       return res.status(200).json({ message: 'Utente riabilitato' });
     }
 
+    // ============================================
     // DELETE USER
+    // ============================================
     if (req.method === 'DELETE' && req.url.includes('action=user')) {
       const { userId: targetUserId } = req.body;
       await userModel.deleteUser(targetUserId);
       return res.status(200).json({ message: 'Utente eliminato' });
     }
 
+    // ============================================
     // DELETE ALL TEAMS
+    // ============================================
     if (req.method === 'DELETE' && req.url.includes('action=teams')) {
       const count = await teamModel.deleteAll();
       
@@ -146,7 +179,9 @@ export default async function handler(req, res) {
       });
     }
 
+    // ============================================
     // RESET PROFILES
+    // ============================================
     if (req.method === 'POST' && req.url.includes('action=reset-profiles')) {
       await db.collection('users').updateMany(
         {},
@@ -171,7 +206,9 @@ export default async function handler(req, res) {
       return res.status(200).json({ message: 'Profili resettati con successo' });
     }
 
+    // ============================================
     // SEND NEWSLETTER
+    // ============================================
     if (req.method === 'POST' && req.url.includes('action=newsletter')) {
       const { subject, message } = req.body;
 
