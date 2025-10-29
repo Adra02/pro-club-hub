@@ -1,5 +1,5 @@
 // ============================================
-// API /api/admin - VERSIONE CORRETTA ✅
+// API /api/admin - CON SUPPORTO ADMIN HARDCODED ✅
 // ============================================
 
 import { connectToDatabase } from '../lib/mongodb.js';
@@ -35,10 +35,21 @@ export default async function handler(req, res) {
     const { db } = await connectToDatabase();
     const userModel = new UserModel(db);
     
-    // ✅ CORREZIONE: Controlla isAdmin nel database
-    const user = await userModel.findById(userId);
+    // ✅ CONTROLLO ADMIN: Hardcoded O Database
+    let isAdmin = false;
     
-    if (!user || !user.isAdmin) {
+    if (userId === 'admin') {
+      // Admin hardcoded dalle Environment Variables
+      isAdmin = true;
+    } else {
+      // Controlla nel database
+      const user = await userModel.findById(userId);
+      if (user && user.isAdmin) {
+        isAdmin = true;
+      }
+    }
+
+    if (!isAdmin) {
       return res.status(403).json({ error: 'Accesso negato - Solo admin' });
     }
 
