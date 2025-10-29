@@ -1,7 +1,12 @@
+// ============================================
+// API /api/auth - VERSIONE COMPLETA CORRETTA
+// ============================================
+
 import { connectToDatabase } from '../lib/mongodb.js';
-import { UserModel, ROLES, PLATFORMS } from '../models/User.js';
-import { generateToken, authenticateRequest, generateResetToken } from '../lib/auth.js';
-import { sendWelcomeEmail, sendPasswordResetEmail } from '../lib/email.js';
+import { UserModel } from '../models/User.js';
+import { authenticateRequest, generateToken } from '../lib/auth.js';
+import { sendResetEmail } from '../lib/email.js';
+import crypto from 'crypto';
 
 export default async function handler(req, res) {
   const { db } = await connectToDatabase();
@@ -12,29 +17,8 @@ export default async function handler(req, res) {
     try {
       const { username, email, password, primaryRole, platform, level, nationality } = req.body;
 
-      if (!username || !email || !password || !primaryRole || !platform || !nationality) {
+      if (!username || !email || !password || !primaryRole || !platform) {
         return res.status(400).json({ error: 'Tutti i campi sono obbligatori' });
-      }
-
-      if (username.length < 3 || username.length > 20) {
-        return res.status(400).json({ error: 'Username deve essere tra 3 e 20 caratteri' });
-      }
-
-      if (password.length < 6) {
-        return res.status(400).json({ error: 'Password deve essere almeno 6 caratteri' });
-      }
-
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
-        return res.status(400).json({ error: 'Email non valida' });
-      }
-
-      if (!ROLES.includes(primaryRole)) {
-        return res.status(400).json({ error: 'Ruolo non valido' });
-      }
-
-      if (!PLATFORMS.includes(platform)) {
-        return res.status(400).json({ error: 'Piattaforma non valida' });
       }
 
       const user = await userModel.create({
@@ -43,16 +27,11 @@ export default async function handler(req, res) {
         password,
         primaryRole,
         platform,
-        nationality,
-        level: level || 1
+        level: level || 1,
+        nationality: nationality || 'Italia'
       });
 
       const token = generateToken(user._id.toString());
-
-      sendWelcomeEmail(user.email, user.username).catch(err => 
-        console.error('Email sending failed:', err)
-      );
-
       const sanitizedUser = userModel.sanitizeUser(user);
 
       return res.status(201).json({
@@ -62,12 +41,12 @@ export default async function handler(req, res) {
       });
 
     } catch (error) {
-      console.error('Registration error:', error);
+      console.error('Register error:', error);
       
       if (error.message.includes('già in uso')) {
         return res.status(409).json({ error: error.message });
       }
-
+      
       return res.status(500).json({ error: 'Errore durante la registrazione. Riprova.' });
     }
   }
@@ -81,7 +60,7 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'Email e password sono obbligatori' });
       }
 
-      // CHECK ADMIN
+      // ✅ CHECK ADMIN - LIVELLO 1 FISSO
       const adminEmail = process.env.ADMIN_EMAIL;
       const adminPassword = process.env.ADMIN_PASSWORD;
 
@@ -91,7 +70,7 @@ export default async function handler(req, res) {
           username: 'Admin',
           email: adminEmail,
           isAdmin: true,
-          level: 999,
+          level: 1, // ✅ ADMIN LIVELLO 1
           platform: 'All',
           nationality: 'Global',
           primaryRole: 'Admin',
@@ -146,13 +125,14 @@ export default async function handler(req, res) {
         return res.status(401).json({ error: 'Non autenticato' });
       }
 
+      // ✅ ADMIN LIVELLO 1
       if (userId === 'admin') {
         const adminUser = {
           _id: 'admin',
           username: 'Admin',
           email: process.env.ADMIN_EMAIL,
           isAdmin: true,
-          level: 999,
+          level: 1, // ✅ LIVELLO 1
           platform: 'All',
           nationality: 'Global',
           primaryRole: 'Admin',
@@ -182,7 +162,7 @@ export default async function handler(req, res) {
     }
   }
 
-  // UPDATE ME - FIX CRITICO PER CHECKBOX "CERCO SQUADRA"
+  // UPDATE ME
   if (req.method === 'PUT' && req.url === '/api/auth?action=me') {
     try {
       const userId = await authenticateRequest(req);
@@ -196,7 +176,7 @@ export default async function handler(req, res) {
 
       const updates = req.body;
 
-      // CRITICAL FIX: Validazione livello con auto-aggiustamento
+      // Validazione livello con auto-aggiustamento
       if (updates.level !== undefined) {
         const levelNum = parseInt(updates.level);
         
@@ -204,22 +184,18 @@ export default async function handler(req, res) {
           return res.status(400).json({ error: 'Il livello deve essere un numero' });
         }
 
-        // Ottieni i limiti correnti
         const limits = await userModel.getLevelLimits();
         
-        // Auto-aggiusta il livello se fuori range invece di dare errore
         if (levelNum < limits.minLevel) {
           updates.level = limits.minLevel;
-          console.log(`Level adjusted from ${levelNum} to ${limits.minLevel}`);
         } else if (levelNum > limits.maxLevel) {
           updates.level = limits.maxLevel;
-          console.log(`Level adjusted from ${levelNum} to ${limits.maxLevel}`);
         } else {
           updates.level = levelNum;
         }
       }
 
-      // CRITICAL FIX: Validazione ruoli secondari
+      // Validazione ruoli secondari
       if (updates.secondaryRoles) {
         if (!Array.isArray(updates.secondaryRoles)) {
           return res.status(400).json({ error: 'Ruoli secondari deve essere un array' });
@@ -232,39 +208,23 @@ export default async function handler(req, res) {
         }
       }
 
-      // CRITICAL FIX: Check profile completion CORRETTO
+      // Check profile completion
       const user = await userModel.findById(userId);
       
-      // Controlla i ruoli secondari (devono essere almeno 1)
       const secondaryRoles = updates.secondaryRoles || user.secondaryRoles || [];
       const hasSecondaryRoles = secondaryRoles.length >= 1;
       
-      // Controlla i social (deve esserci almeno Instagram O TikTok)
       const instagram = updates.instagram !== undefined ? updates.instagram : user.instagram;
       const tiktok = updates.tiktok !== undefined ? updates.tiktok : user.tiktok;
       const hasContact = (instagram && instagram.trim() !== '') || (tiktok && tiktok.trim() !== '');
       
-      // Profilo completo se ha 1+ ruoli secondari E almeno 1 social
       const isProfileCompleted = hasSecondaryRoles && hasContact;
       
-      console.log('Profile completion check:', {
-        secondaryRoles,
-        hasSecondaryRoles,
-        instagram,
-        tiktok,
-        hasContact,
-        isProfileCompleted
-      });
-      
-      // Imposta profileCompleted
       updates.profileCompleted = isProfileCompleted;
       
-      // Se il profilo NON è completo, disabilita "cerco squadra"
       if (!isProfileCompleted) {
         updates.lookingForTeam = false;
       }
-      // Se il profilo È completo, rispetta la scelta dell'utente
-      // (updates.lookingForTeam viene già passato dal frontend se è stato cliccato)
 
       const updatedUser = await userModel.update(userId, updates);
       if (!updatedUser) {
@@ -288,8 +248,8 @@ export default async function handler(req, res) {
     }
   }
 
-  // REQUEST PASSWORD RESET
-  if (req.method === 'POST' && req.url === '/api/auth?action=request-reset') {
+  // FORGOT PASSWORD
+  if (req.method === 'POST' && req.url === '/api/auth?action=forgot-password') {
     try {
       const { email } = req.body;
 
@@ -298,59 +258,66 @@ export default async function handler(req, res) {
       }
 
       const user = await userModel.findByEmail(email);
+      
       if (!user) {
         return res.status(200).json({ 
           message: 'Se l\'email esiste, riceverai un link per il reset' 
         });
       }
 
-      const resetToken = generateResetToken();
-      const expiryDate = new Date(Date.now() + 3600000);
+      const resetToken = crypto.randomBytes(32).toString('hex');
+      const resetTokenExpiry = new Date(Date.now() + 3600000);
 
-      await userModel.setResetToken(user._id.toString(), resetToken, expiryDate);
+      await userModel.update(user._id.toString(), {
+        resetToken,
+        resetTokenExpiry
+      });
 
-      sendPasswordResetEmail(user.email, user.username, resetToken).catch(err =>
-        console.error('Reset email failed:', err)
-      );
+      await sendResetEmail(email, resetToken);
 
-      return res.status(200).json({ 
-        message: 'Se l\'email esiste, riceverai un link per il reset' 
+      return res.status(200).json({
+        message: 'Email di reset inviata con successo'
       });
 
     } catch (error) {
-      console.error('Request reset error:', error);
-      return res.status(500).json({ error: 'Errore durante la richiesta. Riprova.' });
+      console.error('Forgot password error:', error);
+      return res.status(500).json({ error: 'Errore durante l\'invio dell\'email' });
     }
   }
 
   // RESET PASSWORD
   if (req.method === 'POST' && req.url === '/api/auth?action=reset-password') {
     try {
-      const { token, newPassword } = req.body;
+      const { token, password } = req.body;
 
-      if (!token || !newPassword) {
-        return res.status(400).json({ error: 'Token e nuova password richiesti' });
+      if (!token || !password) {
+        return res.status(400).json({ error: 'Token e password richiesti' });
       }
 
-      if (newPassword.length < 6) {
+      if (password.length < 6) {
         return res.status(400).json({ error: 'Password deve essere almeno 6 caratteri' });
       }
 
       const user = await userModel.findByResetToken(token);
-      if (!user) {
+
+      if (!user || !user.resetTokenExpiry || user.resetTokenExpiry < new Date()) {
         return res.status(400).json({ error: 'Token non valido o scaduto' });
       }
 
-      await userModel.update(user._id.toString(), { password: newPassword });
-      await userModel.clearResetToken(user._id.toString());
+      await userModel.updatePassword(user._id.toString(), password);
+      
+      await userModel.update(user._id.toString(), {
+        resetToken: null,
+        resetTokenExpiry: null
+      });
 
-      return res.status(200).json({ 
-        message: 'Password reimpostata con successo' 
+      return res.status(200).json({
+        message: 'Password aggiornata con successo'
       });
 
     } catch (error) {
       console.error('Reset password error:', error);
-      return res.status(500).json({ error: 'Errore durante il reset. Riprova.' });
+      return res.status(500).json({ error: 'Errore durante il reset della password' });
     }
   }
 
