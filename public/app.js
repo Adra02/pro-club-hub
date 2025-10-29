@@ -1079,13 +1079,25 @@ function renderPlayerDetail(player, feedback) {
                 </div>
             ` : ''}
 
-            ${player.instagram || player.tiktok ? `
-                <div class="detail-section">
-                    <h3><i class="fas fa-share-alt"></i> Social</h3>
-                    ${player.instagram ? `<p><i class="fab fa-instagram"></i> <a href="https://instagram.com/${player.instagram}" target="_blank">@${player.instagram}</a></p>` : ''}
-                    ${player.tiktok ? `<p><i class="fab fa-tiktok"></i> <a href="https://tiktok.com/@${player.tiktok}" target="_blank">@${player.tiktok}</a></p>` : ''}
-                </div>
+          ${player.instagram || player.tiktok ? `
+    <div class="detail-section">
+        <h3><i class="fas fa-share-alt"></i> Social</h3>
+        <div class="social-links-colored">
+            ${player.instagram ? `
+                <a href="https://instagram.com/${player.instagram}" target="_blank" class="social-link-box instagram">
+                    <i class="fab fa-instagram"></i>
+                    <span>@${player.instagram}</span>
+                </a>
             ` : ''}
+            ${player.tiktok ? `
+                <a href="https://tiktok.com/@${player.tiktok}" target="_blank" class="social-link-box tiktok">
+                    <i class="fab fa-tiktok"></i>
+                    <span>@${player.tiktok}</span>
+                </a>
+            ` : ''}
+        </div>
+    </div>
+` : ''}
 
             <div class="detail-section">
                 <p><strong>Cerca squadra:</strong> ${player.lookingForTeam ? '✅ Sì' : '❌ No'}</p>
@@ -2443,4 +2455,5 @@ window.toggleFavorite = toggleFavorite;
 window.shareProfile = shareProfile;
 
 console.log('📦 app.js caricato completamente');
+
 
