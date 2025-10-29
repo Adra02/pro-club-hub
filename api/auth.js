@@ -1,14 +1,24 @@
 // ============================================
-// API /api/auth - VERSIONE COMPLETA CORRETTA ✅
+// API /api/auth - VERSIONE CORRETTA FINALE ✅
 // ============================================
 
 import { connectToDatabase } from '../lib/mongodb.js';
 import { UserModel } from '../models/User.js';
 import { authenticateRequest, generateToken } from '../lib/auth.js';
+// ✅ IMPORT CORRETTO - sendPasswordResetEmail (non sendResetEmail!)
 import { sendPasswordResetEmail } from '../lib/email.js';
 import crypto from 'crypto';
 
 export default async function handler(req, res) {
+  // Gestisci CORS
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   try {
     const { db } = await connectToDatabase();
     const userModel = new UserModel(db);
@@ -75,7 +85,7 @@ export default async function handler(req, res) {
           return res.status(403).json({ error: 'Account sospeso. Contatta l\'amministratore.' });
         }
 
-        // ✅ CORREZIONE: verifyPassword corretto
+        // ✅ Verifica password usando il metodo corretto
         const isValid = await userModel.verifyPassword(password, user.password);
         
         if (!isValid) {
@@ -93,7 +103,10 @@ export default async function handler(req, res) {
 
       } catch (error) {
         console.error('Login error:', error);
-        return res.status(500).json({ error: 'Errore durante il login' });
+        return res.status(500).json({ 
+          error: 'Errore durante il login',
+          details: error.message 
+        });
       }
     }
 
@@ -192,6 +205,7 @@ export default async function handler(req, res) {
         const user = await userModel.findByEmail(email);
         
         if (!user) {
+          // Per sicurezza, restituiamo sempre lo stesso messaggio
           return res.status(200).json({ 
             message: 'Se l\'email esiste, riceverai un link per il reset' 
           });
@@ -205,6 +219,7 @@ export default async function handler(req, res) {
           resetTokenExpiry
         });
 
+        // ✅ USA LA FUNZIONE CORRETTA: sendPasswordResetEmail
         await sendPasswordResetEmail(email, user.username, resetToken);
 
         return res.status(200).json({
@@ -257,7 +272,7 @@ export default async function handler(req, res) {
     return res.status(404).json({ error: 'Endpoint non trovato' });
 
   } catch (error) {
-    console.error('Auth API error:', error);
+    console.error('❌ Auth API error:', error);
     return res.status(500).json({ 
       error: 'Errore del server',
       details: error.message 
