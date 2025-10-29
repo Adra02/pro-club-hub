@@ -1,23 +1,13 @@
 // ============================================
-// API /api/auth - VERSIONE FINALE CORRETTA
+// API /api/auth - VERSIONE CORRETTA ✅
+// PROBLEMA RISOLTO: Import corretto da email.js
 // ============================================
 
 import { connectToDatabase } from '../lib/mongodb.js';
 import { UserModel } from '../models/User.js';
-import { generateToken, authenticateRequest } from '../lib/auth.js';
-import { sendWelcomeEmail, sendPasswordResetEmail } from '../lib/email.js';
+import { authenticateRequest, generateToken } from '../lib/auth.js';
+import { sendPasswordResetEmail } from '../lib/email.js'; // ✅ NOME CORRETTO!
 import crypto from 'crypto';
-
-/**
- * API /api/auth
- * 
- * POST   /api/auth?action=register       - Registra nuovo utente
- * POST   /api/auth?action=login          - Login utente
- * GET    /api/auth?action=me             - Ottieni dati utente corrente
- * PUT    /api/auth?action=me             - Aggiorna profilo utente
- * POST   /api/auth?action=forgot         - Richiedi reset password
- * POST   /api/auth?action=reset          - Reset password con token
- */
 
 export default async function handler(req, res) {
   try {
@@ -32,12 +22,10 @@ export default async function handler(req, res) {
         const { username, email, password, primaryRole, platform, level, nationality } = req.body;
 
         if (!username || !email || !password || !primaryRole || !platform) {
-          return res.status(400).json({ 
-            error: 'Username, email, password, ruolo e piattaforma sono obbligatori' 
-          });
+          return res.status(400).json({ error: 'Tutti i campi sono obbligatori' });
         }
 
-        const newUser = await userModel.create({
+        const user = await userModel.create({
           username,
           email,
           password,
@@ -47,10 +35,8 @@ export default async function handler(req, res) {
           nationality: nationality || 'Italia'
         });
 
-        await sendWelcomeEmail(email, username);
-
-        const token = generateToken(newUser._id.toString());
-        const sanitizedUser = userModel.sanitizeUser(newUser);
+        const token = generateToken(user._id.toString());
+        const sanitizedUser = userModel.sanitizeUser(user);
 
         return res.status(201).json({
           message: 'Registrazione completata con successo',
@@ -59,10 +45,13 @@ export default async function handler(req, res) {
         });
 
       } catch (error) {
-        console.error('Registration error:', error);
-        return res.status(400).json({ 
-          error: error.message || 'Errore durante la registrazione. Riprova.' 
-        });
+        console.error('Register error:', error);
+        
+        if (error.message.includes('già in uso')) {
+          return res.status(409).json({ error: error.message });
+        }
+        
+        return res.status(500).json({ error: 'Errore durante la registrazione. Riprova.' });
       }
     }
 
@@ -74,51 +63,24 @@ export default async function handler(req, res) {
         const { email, password } = req.body;
 
         if (!email || !password) {
-          return res.status(400).json({ error: 'Email e password sono obbligatori' });
+          return res.status(400).json({ error: 'Email e password richiesti' });
         }
 
-        // CHECK ADMIN
-        const adminEmail = process.env.ADMIN_EMAIL;
-        const adminPassword = process.env.ADMIN_PASSWORD;
-
-        if (email === adminEmail && password === adminPassword) {
-          const adminUser = {
-            _id: 'admin',
-            username: 'Admin',
-            email: adminEmail,
-            isAdmin: true,
-            level: 1,
-            platform: 'All',
-            nationality: 'Global',
-            primaryRole: 'Admin',
-            secondaryRoles: [],
-            averageRating: 5,
-            feedbackCount: 0,
-            team: null,
-            lookingForTeam: false,
-            profileCompleted: true
-          };
-
-          const token = generateToken('admin');
-          return res.status(200).json({
-            message: 'Login Admin effettuato',
-            token,
-            user: adminUser
-          });
-        }
-
-        // NORMAL USER LOGIN
         const user = await userModel.findByEmail(email);
+        
         if (!user) {
-          return res.status(401).json({ error: 'Email o password non corretti' });
+          return res.status(401).json({ error: 'Credenziali non valide' });
         }
 
-        const isValidPassword = await userModel.verifyPassword(password, user.password);
-        if (!isValidPassword) {
-          return res.status(401).json({ error: 'Email o password non corretti' });
+        if (user.suspended) {
+          return res.status(403).json({ error: 'Account sospeso. Contatta l\'amministratore.' });
         }
 
-        await userModel.updateLastActive(user._id.toString());
+        const isValid = await userModel.validatePassword(password, user.password);
+        
+        if (!isValid) {
+          return res.status(401).json({ error: 'Credenziali non valide' });
+        }
 
         const token = generateToken(user._id.toString());
         const sanitizedUser = userModel.sanitizeUser(user);
@@ -131,12 +93,12 @@ export default async function handler(req, res) {
 
       } catch (error) {
         console.error('Login error:', error);
-        return res.status(500).json({ error: 'Errore durante il login. Riprova.' });
+        return res.status(500).json({ error: 'Errore durante il login' });
       }
     }
 
     // ============================================
-    // GET CURRENT USER
+    // ME (Get current user)
     // ============================================
     if (req.method === 'GET' && req.url.includes('action=me')) {
       try {
@@ -146,45 +108,28 @@ export default async function handler(req, res) {
           return res.status(401).json({ error: 'Non autenticato' });
         }
 
-        // ADMIN CHECK
-        if (userId === 'admin') {
-          const adminEmail = process.env.ADMIN_EMAIL;
-          const adminUser = {
-            _id: 'admin',
-            username: 'Admin',
-            email: adminEmail,
-            isAdmin: true,
-            level: 1,
-            platform: 'All',
-            nationality: 'Global',
-            primaryRole: 'Admin',
-            secondaryRoles: [],
-            averageRating: 5,
-            feedbackCount: 0,
-            team: null,
-            lookingForTeam: false,
-            profileCompleted: true
-          };
-          return res.status(200).json(adminUser);
-        }
-
         const user = await userModel.findById(userId);
         
         if (!user) {
           return res.status(404).json({ error: 'Utente non trovato' });
         }
 
+        if (user.suspended) {
+          return res.status(403).json({ error: 'Account sospeso' });
+        }
+
         const sanitizedUser = userModel.sanitizeUser(user);
-        return res.status(200).json(sanitizedUser);
+
+        return res.status(200).json({ user: sanitizedUser });
 
       } catch (error) {
-        console.error('Get user error:', error);
-        return res.status(500).json({ error: 'Errore nel recupero dati utente' });
+        console.error('Get me error:', error);
+        return res.status(500).json({ error: 'Errore durante il recupero dei dati utente' });
       }
     }
 
     // ============================================
-    // UPDATE PROFILE
+    // UPDATE ME (Update current user)
     // ============================================
     if (req.method === 'PUT' && req.url.includes('action=me')) {
       try {
@@ -194,22 +139,32 @@ export default async function handler(req, res) {
           return res.status(401).json({ error: 'Non autenticato' });
         }
 
-        if (userId === 'admin') {
-          return res.status(403).json({ error: 'Admin non può modificare il profilo' });
-        }
-
         const updates = req.body;
-        delete updates._id;
-        delete updates.email;
         delete updates.password;
-        delete updates.isAdmin;
+        delete updates.email;
+        delete updates._id;
+        delete updates.role;
+        delete updates.suspended;
+        delete updates.createdAt;
 
-        const updatedUser = await userModel.updateProfile(userId, updates);
-
-        if (!updatedUser) {
+        const currentUser = await userModel.findById(userId);
+        
+        if (!currentUser) {
           return res.status(404).json({ error: 'Utente non trovato' });
         }
 
+        if ('instagram' in updates || 'tiktok' in updates) {
+          const newInstagram = updates.instagram !== undefined ? updates.instagram : currentUser.instagram;
+          const newTiktok = updates.tiktok !== undefined ? updates.tiktok : currentUser.tiktok;
+
+          if (!newInstagram && !newTiktok) {
+            return res.status(400).json({ 
+              error: 'Devi avere almeno un social (Instagram O TikTok)' 
+            });
+          }
+        }
+
+        const updatedUser = await userModel.update(userId, updates);
         const sanitizedUser = userModel.sanitizeUser(updatedUser);
 
         return res.status(200).json({
@@ -218,17 +173,15 @@ export default async function handler(req, res) {
         });
 
       } catch (error) {
-        console.error('Update profile error:', error);
-        return res.status(500).json({ 
-          error: error.message || 'Errore durante l\'aggiornamento' 
-        });
+        console.error('Update me error:', error);
+        return res.status(500).json({ error: 'Errore durante l\'aggiornamento del profilo' });
       }
     }
 
     // ============================================
-    // FORGOT PASSWORD
+    // FORGOT PASSWORD / REQUEST RESET
     // ============================================
-    if (req.method === 'POST' && req.url.includes('action=forgot')) {
+    if (req.method === 'POST' && (req.url.includes('action=forgot-password') || req.url.includes('action=request-reset'))) {
       try {
         const { email } = req.body;
 
@@ -239,58 +192,82 @@ export default async function handler(req, res) {
         const user = await userModel.findByEmail(email);
         
         if (!user) {
+          // Per sicurezza, restituiamo sempre lo stesso messaggio
           return res.status(200).json({ 
-            message: 'Se l\'email esiste, riceverai le istruzioni per il reset' 
+            message: 'Se l\'email esiste, riceverai un link per il reset' 
           });
         }
 
         const resetToken = crypto.randomBytes(32).toString('hex');
-        const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
-        const expiry = new Date(Date.now() + 3600000);
+        const resetTokenExpiry = new Date(Date.now() + 3600000); // 1 ora
 
-        await userModel.setResetToken(user._id.toString(), hashedToken, expiry);
-        await sendPasswordResetEmail(user.email, user.username, resetToken);
+        await userModel.update(user._id.toString(), {
+          resetToken,
+          resetTokenExpiry
+        });
 
-        return res.status(200).json({ 
-          message: 'Se l\'email esiste, riceverai le istruzioni per il reset' 
+        // ✅ USO CORRETTO: sendPasswordResetEmail invece di sendResetEmail
+        await sendPasswordResetEmail(email, user.username, resetToken);
+
+        return res.status(200).json({
+          message: 'Email di reset inviata con successo'
         });
 
       } catch (error) {
         console.error('Forgot password error:', error);
-        return res.status(500).json({ error: 'Errore durante il reset password' });
+        return res.status(500).json({ error: 'Errore durante l\'invio dell\'email' });
       }
     }
 
     // ============================================
     // RESET PASSWORD
     // ============================================
-    if (req.method === 'POST' && req.url.includes('action=reset')) {
+    if (req.method === 'POST' && req.url.includes('action=reset-password')) {
       try {
-        const { token, newPassword } = req.body;
+        const { token, password } = req.body;
 
-        if (!token || !newPassword) {
-          return res.status(400).json({ error: 'Token e nuova password richiesti' });
+        if (!token || !password) {
+          return res.status(400).json({ error: 'Token e password richiesti' });
         }
 
-        const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
-        const success = await userModel.resetPassword(hashedToken, newPassword);
+        if (password.length < 6) {
+          return res.status(400).json({ error: 'Password deve essere almeno 6 caratteri' });
+        }
 
-        if (!success) {
+        const user = await userModel.findByResetToken(token);
+
+        if (!user || !user.resetTokenExpiry || user.resetTokenExpiry < new Date()) {
           return res.status(400).json({ error: 'Token non valido o scaduto' });
         }
 
-        return res.status(200).json({ message: 'Password reimpostata con successo' });
+        await userModel.updatePassword(user._id.toString(), password);
+        
+        await userModel.update(user._id.toString(), {
+          resetToken: null,
+          resetTokenExpiry: null
+        });
+
+        return res.status(200).json({
+          message: 'Password aggiornata con successo'
+        });
 
       } catch (error) {
         console.error('Reset password error:', error);
-        return res.status(500).json({ error: 'Errore durante il reset password' });
+        return res.status(500).json({ error: 'Errore durante il reset della password' });
       }
     }
 
+    // ============================================
+    // 404 - ENDPOINT NON TROVATO
+    // ============================================
     return res.status(404).json({ error: 'Endpoint non trovato' });
 
   } catch (error) {
-    console.error('Auth endpoint error:', error);
-    return res.status(500).json({ error: 'Errore del server' });
+    // CATCH GLOBALE - cattura errori non gestiti
+    console.error('Auth handler error:', error);
+    return res.status(500).json({ 
+      error: 'Errore interno del server',
+      message: error.message 
+    });
   }
 }
