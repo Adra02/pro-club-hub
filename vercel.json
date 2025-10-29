@@ -1,6 +1,25 @@
 {
   "version": 2,
   "functions": {
+    "headers": [
+  {
+    "source": "/api/(.*)",
+    "headers": [
+      {
+        "key": "Access-Control-Allow-Origin",
+        "value": "*"
+      },
+      {
+        "key": "Access-Control-Allow-Methods",
+        "value": "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+      },
+      {
+        "key": "Access-Control-Allow-Headers",
+        "value": "X-Requested-With, Content-Type, Authorization"
+      }
+    ]
+  }
+],
     "api/**/*.js": {
       "memory": 1024,
       "maxDuration": 10
@@ -49,3 +68,4 @@
     }
   ]
 }
+
