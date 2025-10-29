@@ -2117,3 +2117,54 @@ a.btn * {
         color: black;
     }
 }
+
+
+/* ============ LINK SOCIAL COLORATI ============ */
+.social-links-colored {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.social-link-box {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem;
+    border-radius: 12px;
+    text-decoration: none;
+    color: white;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.social-link-box i {
+    font-size: 1.5rem;
+}
+
+.social-link-box.instagram {
+    background: linear-gradient(135deg, #833AB4 0%, #C13584 50%, #F77737 100%);
+    border-color: rgba(195, 53, 132, 0.5);
+}
+
+.social-link-box.instagram:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 30px rgba(193, 53, 132, 0.4);
+    border-color: rgba(195, 53, 132, 0.8);
+}
+
+.social-link-box.tiktok {
+    background: linear-gradient(135deg, #000000 0%, #00f2ea 100%);
+    border-color: rgba(0, 242, 234, 0.5);
+}
+
+.social-link-box.tiktok:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 30px rgba(0, 242, 234, 0.4);
+    border-color: rgba(0, 242, 234, 0.8);
+}
+
+.social-link-box span {
+    font-size: 1.1rem;
+}
