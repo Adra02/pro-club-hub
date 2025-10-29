@@ -1,5 +1,5 @@
 // ============================================
-// API /api/admin - VERSIONE FINALE CORRETTA
+// API /api/admin - VERSIONE CORRETTA ✅
 // ============================================
 
 import { connectToDatabase } from '../lib/mongodb.js';
@@ -28,37 +28,46 @@ export default async function handler(req, res) {
   try {
     const userId = await authenticateRequest(req);
     
-    if (!userId || userId !== 'admin') {
-      return res.status(403).json({ error: 'Accesso negato' });
+    if (!userId) {
+      return res.status(401).json({ error: 'Non autenticato' });
     }
 
     const { db } = await connectToDatabase();
     const userModel = new UserModel(db);
+    
+    // ✅ CORREZIONE: Controlla isAdmin nel database
+    const user = await userModel.findById(userId);
+    
+    if (!user || !user.isAdmin) {
+      return res.status(403).json({ error: 'Accesso negato - Solo admin' });
+    }
+
     const teamModel = new TeamModel(db);
     const requestModel = new TeamRequestModel(db);
-    const settingsCollection = db.collection('settings');
 
     // ============================================
     // GET STATS
     // ============================================
-    if (req.method === 'GET' && req.url.includes('action=stats')) {
+    if (req.method === 'GET' && req.query.action === 'stats') {
       const totalUsers = await userModel.countAll();
       const totalTeams = await teamModel.countAll();
       const inactiveUsers = await userModel.countInactive();
       const pendingRequests = await requestModel.countPending();
 
       return res.status(200).json({
-        totalUsers,
-        totalTeams,
-        inactiveUsers,
-        pendingRequests
+        stats: {
+          totalUsers,
+          totalTeams,
+          inactiveUsers,
+          pendingRequests
+        }
       });
     }
 
     // ============================================
-    // GET USERS LIST
+    // GET USERS
     // ============================================
-    if (req.method === 'GET' && req.url.includes('action=users')) {
+    if (req.method === 'GET' && req.query.action === 'users') {
       const users = await userModel.getAllUsers();
       return res.status(200).json({ users });
     }
@@ -66,115 +75,89 @@ export default async function handler(req, res) {
     // ============================================
     // GET LEVEL SETTINGS
     // ============================================
-    if (req.method === 'GET' && req.url.includes('action=level-settings')) {
-      const settings = await settingsCollection.findOne({ _id: 'level_limits' });
-      return res.status(200).json({
-        minLevel: settings?.minLevel || 1,
-        maxLevel: settings?.maxLevel || 999
-      });
+    if (req.method === 'GET' && req.query.action === 'level-settings') {
+      const limits = await userModel.getLevelLimits();
+      return res.status(200).json(limits);
     }
 
     // ============================================
     // UPDATE LEVEL SETTINGS
     // ============================================
-    if (req.method === 'POST' && req.url.includes('action=level-settings')) {
+    if (req.method === 'POST' && req.query.action === 'level-settings') {
       const { minLevel, maxLevel } = req.body;
 
       if (!minLevel || !maxLevel) {
-        return res.status(400).json({ error: 'Livello minimo e massimo richiesti' });
+        return res.status(400).json({ error: 'minLevel e maxLevel richiesti' });
       }
 
-      const min = parseInt(minLevel);
-      const max = parseInt(maxLevel);
-
-      if (isNaN(min) || isNaN(max)) {
-        return res.status(400).json({ error: 'I livelli devono essere numeri validi' });
-      }
-
-      if (min < 1) {
-        return res.status(400).json({ error: 'Il livello minimo deve essere almeno 1' });
-      }
-
-      if (max < min) {
-        return res.status(400).json({ error: 'Il livello massimo deve essere maggiore o uguale al minimo' });
-      }
-
-      if (max > 9999) {
-        return res.status(400).json({ error: 'Il livello massimo non può superare 9999' });
-      }
-
-      // Salva i nuovi limiti
-      await settingsCollection.updateOne(
-        { _id: 'level_limits' },
-        { 
-          $set: { 
-            minLevel: min, 
-            maxLevel: max, 
-            updatedAt: new Date() 
-          } 
-        },
-        { upsert: true }
-      );
-
-      // Aggiorna automaticamente tutti gli utenti fuori range
-      await db.collection('users').updateMany(
-        { level: { $lt: min } },
-        { $set: { level: min, updatedAt: new Date() } }
-      );
-
-      await db.collection('users').updateMany(
-        { level: { $gt: max } },
-        { $set: { level: max, updatedAt: new Date() } }
-      );
+      await userModel.updateLevelLimits(parseInt(minLevel), parseInt(maxLevel));
 
       return res.status(200).json({
-        message: 'Limiti livello aggiornati con successo. Utenti aggiornati automaticamente.',
-        minLevel: min,
-        maxLevel: max
+        message: 'Limiti livello aggiornati',
+        minLevel: parseInt(minLevel),
+        maxLevel: parseInt(maxLevel)
       });
     }
 
     // ============================================
     // SUSPEND USER
     // ============================================
-    if (req.method === 'POST' && req.url.includes('action=suspend')) {
+    if (req.method === 'POST' && req.query.action === 'suspend') {
       const { userId: targetUserId } = req.body;
+
+      if (!targetUserId) {
+        return res.status(400).json({ error: 'userId richiesto' });
+      }
+
       await userModel.suspendUser(targetUserId, true);
-      return res.status(200).json({ message: 'Utente sospeso' });
+
+      return res.status(200).json({
+        message: 'Utente sospeso con successo'
+      });
     }
 
     // ============================================
     // UNSUSPEND USER
     // ============================================
-    if (req.method === 'POST' && req.url.includes('action=unsuspend')) {
+    if (req.method === 'POST' && req.query.action === 'unsuspend') {
       const { userId: targetUserId } = req.body;
+
+      if (!targetUserId) {
+        return res.status(400).json({ error: 'userId richiesto' });
+      }
+
       await userModel.suspendUser(targetUserId, false);
-      return res.status(200).json({ message: 'Utente riabilitato' });
+
+      return res.status(200).json({
+        message: 'Utente riabilitato con successo'
+      });
     }
 
     // ============================================
     // DELETE USER
     // ============================================
-    if (req.method === 'DELETE' && req.url.includes('action=user')) {
+    if (req.method === 'DELETE' && req.query.action === 'user') {
       const { userId: targetUserId } = req.body;
+
+      if (!targetUserId) {
+        return res.status(400).json({ error: 'userId richiesto' });
+      }
+
       await userModel.deleteUser(targetUserId);
-      return res.status(200).json({ message: 'Utente eliminato' });
+
+      return res.status(200).json({
+        message: 'Utente eliminato con successo'
+      });
     }
 
     // ============================================
     // DELETE ALL TEAMS
     // ============================================
-    if (req.method === 'DELETE' && req.url.includes('action=teams')) {
+    if (req.method === 'DELETE' && req.query.action === 'teams') {
       const count = await teamModel.deleteAll();
-      
-      // Reset team field for all users
-      await db.collection('users').updateMany(
-        {},
-        { $set: { team: null, lookingForTeam: false } }
-      );
 
       return res.status(200).json({
-        message: 'Tutte le squadre eliminate',
+        message: `${count} squadre eliminate`,
         count
       });
     }
@@ -182,42 +165,28 @@ export default async function handler(req, res) {
     // ============================================
     // RESET PROFILES
     // ============================================
-    if (req.method === 'POST' && req.url.includes('action=reset-profiles')) {
-      await db.collection('users').updateMany(
-        {},
-        {
-          $set: {
-            level: 1,
-            secondaryRoles: [],
-            bio: '',
-            lookingForTeam: false,
-            profileCompleted: false,
-            team: null,
-            averageRating: 0,
-            feedbackCount: 0,
-            updatedAt: new Date()
-          }
-        }
-      );
+    if (req.method === 'POST' && req.query.action === 'reset-profiles') {
+      const count = await userModel.resetInactiveUsers();
 
-      // Delete all feedback
-      await db.collection('feedback').deleteMany({});
-
-      return res.status(200).json({ message: 'Profili resettati con successo' });
+      return res.status(200).json({
+        message: `${count} profili resettati`,
+        count
+      });
     }
 
     // ============================================
     // SEND NEWSLETTER
     // ============================================
-    if (req.method === 'POST' && req.url.includes('action=newsletter')) {
+    if (req.method === 'POST' && req.query.action === 'newsletter') {
       const { subject, message } = req.body;
 
       if (!subject || !message) {
-        return res.status(400).json({ error: 'Oggetto e messaggio richiesti' });
+        return res.status(400).json({ error: 'Subject e message richiesti' });
       }
 
       const users = await userModel.getAllUsers();
       let sent = 0;
+      let failed = 0;
 
       for (const user of users) {
         try {
@@ -225,19 +194,24 @@ export default async function handler(req, res) {
           sent++;
         } catch (error) {
           console.error(`Failed to send to ${user.email}:`, error);
+          failed++;
         }
       }
 
       return res.status(200).json({
-        message: 'Newsletter inviata',
-        sent
+        message: `Newsletter inviata a ${sent} utenti`,
+        sent,
+        failed
       });
     }
 
-    return res.status(404).json({ error: 'Endpoint non trovato' });
+    return res.status(404).json({ error: 'Azione non trovata' });
 
   } catch (error) {
-    console.error('Admin endpoint error:', error);
-    return res.status(500).json({ error: 'Errore del server' });
+    console.error('❌ Admin API error:', error);
+    return res.status(500).json({
+      error: 'Errore del server',
+      details: error.message
+    });
   }
 }
