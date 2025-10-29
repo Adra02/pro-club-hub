@@ -249,7 +249,7 @@ export default async function handler(req, res) {
   }
 
   // FORGOT PASSWORD
-  if (req.method === 'POST' && req.url === '/api/auth?action=forgot-password') {
+      if (req.method === 'POST' && req.url.includes('action=forgot-password')) {
     try {
       const { email } = req.body;
 
