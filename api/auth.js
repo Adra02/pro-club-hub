@@ -1,11 +1,10 @@
 // ============================================
-// API /api/auth - VERSIONE CORRETTA FINALE ✅
+// API /api/auth - CON LOGIN ADMIN HARDCODED ✅
 // ============================================
 
 import { connectToDatabase } from '../lib/mongodb.js';
 import { UserModel } from '../models/User.js';
 import { authenticateRequest, generateToken } from '../lib/auth.js';
-// ✅ IMPORT CORRETTO - sendPasswordResetEmail (non sendResetEmail!)
 import { sendPasswordResetEmail } from '../lib/email.js';
 import crypto from 'crypto';
 
@@ -65,7 +64,7 @@ export default async function handler(req, res) {
     }
 
     // ============================================
-    // LOGIN
+    // LOGIN (CON ADMIN HARDCODED) ✅
     // ============================================
     if (req.method === 'POST' && req.url.includes('action=login')) {
       try {
@@ -75,6 +74,40 @@ export default async function handler(req, res) {
           return res.status(400).json({ error: 'Email e password richiesti' });
         }
 
+        // ✅ CONTROLLO ADMIN HARDCODED
+        const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
+        const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+
+        if (ADMIN_EMAIL && ADMIN_PASSWORD && email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+          console.log('✅ Admin login diretto');
+          
+          // Genera token speciale per admin
+          const adminToken = generateToken('admin');
+          
+          // Crea oggetto admin fittizio
+          const adminUser = {
+            _id: 'admin',
+            username: 'Admin',
+            email: ADMIN_EMAIL,
+            isAdmin: true,
+            profileCompleted: true,
+            platform: 'PC',
+            primaryRole: 'Admin',
+            level: 999,
+            averageRating: 5,
+            feedbackCount: 0,
+            lookingForTeam: false,
+            nationality: 'Italia'
+          };
+
+          return res.status(200).json({
+            message: 'Login admin effettuato con successo',
+            token: adminToken,
+            user: adminUser
+          });
+        }
+
+        // Login normale per utenti normali
         const user = await userModel.findByEmail(email);
         
         if (!user) {
@@ -85,7 +118,6 @@ export default async function handler(req, res) {
           return res.status(403).json({ error: 'Account sospeso. Contatta l\'amministratore.' });
         }
 
-        // ✅ Verifica password usando il metodo corretto
         const isValid = await userModel.verifyPassword(password, user.password);
         
         if (!isValid) {
@@ -121,6 +153,28 @@ export default async function handler(req, res) {
           return res.status(401).json({ error: 'Non autenticato' });
         }
 
+        // ✅ CONTROLLO ADMIN SPECIALE
+        if (userId === 'admin') {
+          const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
+          
+          const adminUser = {
+            _id: 'admin',
+            username: 'Admin',
+            email: ADMIN_EMAIL || 'admin@proclubhub.com',
+            isAdmin: true,
+            profileCompleted: true,
+            platform: 'PC',
+            primaryRole: 'Admin',
+            level: 999,
+            averageRating: 5,
+            feedbackCount: 0,
+            lookingForTeam: false,
+            nationality: 'Italia'
+          };
+
+          return res.status(200).json({ user: adminUser });
+        }
+
         const user = await userModel.findById(userId);
         
         if (!user) {
@@ -150,6 +204,11 @@ export default async function handler(req, res) {
         
         if (!userId) {
           return res.status(401).json({ error: 'Non autenticato' });
+        }
+
+        // ✅ Admin non può modificare il profilo (è hardcoded)
+        if (userId === 'admin') {
+          return res.status(400).json({ error: 'L\'admin non può modificare il profilo' });
         }
 
         const updates = req.body;
@@ -205,7 +264,6 @@ export default async function handler(req, res) {
         const user = await userModel.findByEmail(email);
         
         if (!user) {
-          // Per sicurezza, restituiamo sempre lo stesso messaggio
           return res.status(200).json({ 
             message: 'Se l\'email esiste, riceverai un link per il reset' 
           });
@@ -219,7 +277,6 @@ export default async function handler(req, res) {
           resetTokenExpiry
         });
 
-        // ✅ USA LA FUNZIONE CORRETTA: sendPasswordResetEmail
         await sendPasswordResetEmail(email, user.username, resetToken);
 
         return res.status(200).json({
