@@ -118,7 +118,7 @@ export default async function handler(req, res) {
   }
 
   // GET ME
-  if (req.method === 'GET' && req.url === '/api/auth?action=me') {
+  if (req.method === 'GET' && req.url.includes('action=me')) { {
     try {
       const userId = await authenticateRequest(req);
       if (!userId) {
