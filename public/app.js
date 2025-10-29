@@ -267,380 +267,6 @@ function updateUIForGuest() {
 // EVENT LISTENERS
 // ============================================
 
-// ============================================
-// ADMIN PANEL - GESTIONE COMPLETA
-// ============================================
-
-async function loadAdminPanel() {
-    if (!currentUser || !currentUser.isAdmin) {
-        console.log('❌ Accesso admin negato');
-        return;
-    }
-
-    console.log('🔧 Caricamento pannello admin...');
-    
-    try {
-        showLoading();
-        
-        // Carica statistiche
-        const statsResponse = await fetch(`${API_BASE}/admin?action=stats`, {
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-        });
-
-        if (statsResponse.ok) {
-            const data = await statsResponse.json();
-            document.getElementById('totalUsers').textContent = data.stats.totalUsers;
-            document.getElementById('totalTeams').textContent = data.stats.totalTeams;
-            document.getElementById('inactiveUsers').textContent = data.stats.inactiveUsers;
-            document.getElementById('pendingRequests').textContent = data.stats.pendingRequests;
-        }
-
-        // Carica impostazioni livelli
-        const levelsResponse = await fetch(`${API_BASE}/admin?action=level-settings`, {
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-        });
-
-        if (levelsResponse.ok) {
-            const data = await levelsResponse.json();
-            document.getElementById('adminMinLevel').value = data.minLevel;
-            document.getElementById('adminMaxLevel').value = data.maxLevel;
-        }
-
-        // Carica utenti
-        await loadAllUsers();
-
-    } catch (error) {
-        console.error('❌ Errore caricamento admin panel:', error);
-        showNotification('❌ Errore caricamento pannello admin', 'error');
-    } finally {
-        hideLoading();
-    }
-}
-
-async function loadAllUsers() {
-    try {
-        const response = await fetch(`${API_BASE}/admin?action=users`, {
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-        });
-
-        if (response.ok) {
-            const data = await response.json();
-            renderUsersList(data.users);
-        } else {
-            showNotification('❌ Errore caricamento utenti', 'error');
-        }
-    } catch (error) {
-        console.error('❌ Errore caricamento utenti:', error);
-        showNotification('❌ Errore di connessione', 'error');
-    }
-}
-
-function renderUsersList(users) {
-    const container = document.getElementById('usersList');
-    if (!container) return;
-
-    if (!users || users.length === 0) {
-        container.innerHTML = '<p style="text-align: center; color: #94a3b8;">Nessun utente trovato</p>';
-        return;
-    }
-
-    container.innerHTML = users.map(user => `
-        <div class="user-item" style="background: rgba(15, 23, 42, 0.6); padding: 20px; border-radius: 12px; margin-bottom: 15px; border: 1px solid rgba(148, 163, 184, 0.1);">
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
-                <div style="flex: 1; min-width: 200px;">
-                    <h4 style="margin: 0 0 8px 0; color: #f1f5f9; font-size: 18px;">
-                        <i class="fas fa-user"></i> ${user.username}
-                        ${user.isAdmin ? '<span style="background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); padding: 2px 8px; border-radius: 6px; font-size: 12px; margin-left: 8px;">ADMIN</span>' : ''}
-                        ${user.isSuspended ? '<span style="background: #ef4444; padding: 2px 8px; border-radius: 6px; font-size: 12px; margin-left: 8px;">SOSPESO</span>' : ''}
-                    </h4>
-                    <p style="margin: 4px 0; color: #94a3b8; font-size: 14px;">
-                        <i class="fas fa-envelope"></i> ${user.email}
-                    </p>
-                    <p style="margin: 4px 0; color: #94a3b8; font-size: 14px;">
-                        <i class="fas fa-gamepad"></i> ${user.primaryRole} | ${user.platform} | Livello ${user.level}
-                    </p>
-                    <p style="margin: 4px 0; color: #94a3b8; font-size: 14px;">
-                        <i class="fas fa-star"></i> ${user.averageRating?.toFixed(1) || '0.0'} (${user.feedbackCount || 0} feedback)
-                    </p>
-                    <p style="margin: 4px 0; color: #64748b; font-size: 12px;">
-                        <i class="fas fa-calendar"></i> Registrato: ${new Date(user.createdAt).toLocaleDateString()}
-                    </p>
-                </div>
-                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                    ${!user.isAdmin ? `
-                        ${!user.isSuspended ? `
-                            <button class="btn btn-warning btn-sm" onclick="suspendUser('${user._id}')">
-                                <i class="fas fa-ban"></i> Sospendi
-                            </button>
-                        ` : `
-                            <button class="btn btn-success btn-sm" onclick="unsuspendUser('${user._id}')">
-                                <i class="fas fa-check-circle"></i> Riabilita
-                            </button>
-                        `}
-                        <button class="btn btn-danger btn-sm" onclick="deleteUser('${user._id}', '${user.username}')">
-                            <i class="fas fa-trash"></i> Elimina
-                        </button>
-                    ` : '<span style="color: #94a3b8; font-size: 14px; padding: 8px;">Account Amministratore</span>'}
-                </div>
-            </div>
-        </div>
-    `).join('');
-}
-
-async function handleLevelSettings(e) {
-    e.preventDefault();
-
-    const minLevel = parseInt(document.getElementById('adminMinLevel').value);
-    const maxLevel = parseInt(document.getElementById('adminMaxLevel').value);
-
-    if (minLevel >= maxLevel) {
-        showNotification('❌ Il livello minimo deve essere inferiore al massimo', 'error');
-        return;
-    }
-
-    if (minLevel < 1 || maxLevel > 9999) {
-        showNotification('❌ I livelli devono essere tra 1 e 9999', 'error');
-        return;
-    }
-
-    try {
-        showLoading();
-        const response = await fetch(`${API_BASE}/admin?action=level-settings`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            },
-            body: JSON.stringify({ minLevel, maxLevel })
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-            showNotification('✅ Limiti livello aggiornati con successo!', 'success');
-            GLOBAL_MIN_LEVEL = minLevel;
-            GLOBAL_MAX_LEVEL = maxLevel;
-            updateLevelInputLimits(minLevel, maxLevel);
-        } else {
-            showNotification('❌ ' + (data.error || 'Errore aggiornamento limiti'), 'error');
-        }
-    } catch (error) {
-        console.error('❌ Errore aggiornamento livelli:', error);
-        showNotification('❌ Errore di connessione', 'error');
-    } finally {
-        hideLoading();
-    }
-}
-
-async function suspendUser(userId) {
-    if (!confirm('Sei sicuro di voler sospendere questo utente?')) return;
-
-    try {
-        showLoading();
-        const response = await fetch(`${API_BASE}/admin?action=suspend`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            },
-            body: JSON.stringify({ userId })
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-            showNotification('✅ Utente sospeso con successo', 'success');
-            await loadAllUsers();
-        } else {
-            showNotification('❌ ' + (data.error || 'Errore sospensione utente'), 'error');
-        }
-    } catch (error) {
-        console.error('❌ Errore sospensione utente:', error);
-        showNotification('❌ Errore di connessione', 'error');
-    } finally {
-        hideLoading();
-    }
-}
-
-async function unsuspendUser(userId) {
-    if (!confirm('Sei sicuro di voler riabilitare questo utente?')) return;
-
-    try {
-        showLoading();
-        const response = await fetch(`${API_BASE}/admin?action=unsuspend`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            },
-            body: JSON.stringify({ userId })
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-            showNotification('✅ Utente riabilitato con successo', 'success');
-            await loadAllUsers();
-        } else {
-            showNotification('❌ ' + (data.error || 'Errore riabilitazione utente'), 'error');
-        }
-    } catch (error) {
-        console.error('❌ Errore riabilitazione utente:', error);
-        showNotification('❌ Errore di connessione', 'error');
-    } finally {
-        hideLoading();
-    }
-}
-
-async function deleteUser(userId, username) {
-    if (!confirm(`Sei ASSOLUTAMENTE sicuro di voler eliminare l'utente "${username}"?\n\nQuesta azione è IRREVERSIBILE e cancellerà:\n- Il profilo utente\n- Tutti i suoi feedback\n- Le sue squadre (se capitano)\n- Le sue richieste\n\nDigita "ELIMINA" per confermare.`)) {
-        return;
-    }
-
-    const confirmText = prompt('Digita "ELIMINA" per confermare l\'eliminazione:');
-    if (confirmText !== 'ELIMINA') {
-        showNotification('❌ Eliminazione annullata', 'info');
-        return;
-    }
-
-    try {
-        showLoading();
-        const response = await fetch(`${API_BASE}/admin?action=user`, {
-            method: 'DELETE',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            },
-            body: JSON.stringify({ userId })
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-            showNotification('✅ Utente eliminato con successo', 'success');
-            await loadAllUsers();
-        } else {
-            showNotification('❌ ' + (data.error || 'Errore eliminazione utente'), 'error');
-        }
-    } catch (error) {
-        console.error('❌ Errore eliminazione utente:', error);
-        showNotification('❌ Errore di connessione', 'error');
-    } finally {
-        hideLoading();
-    }
-}
-
-async function handleDeleteAllTeams() {
-    if (!confirm('Sei ASSOLUTAMENTE sicuro di voler eliminare TUTTE le squadre?\n\nQuesta azione è IRREVERSIBILE!')) {
-        return;
-    }
-
-    const confirmText = prompt('Digita "ELIMINA TUTTO" per confermare:');
-    if (confirmText !== 'ELIMINA TUTTO') {
-        showNotification('❌ Operazione annullata', 'info');
-        return;
-    }
-
-    try {
-        showLoading();
-        const response = await fetch(`${API_BASE}/admin?action=teams`, {
-            method: 'DELETE',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-            showNotification(`✅ ${data.count} squadre eliminate con successo`, 'success');
-            await loadAdminPanel();
-        } else {
-            showNotification('❌ ' + (data.error || 'Errore eliminazione squadre'), 'error');
-        }
-    } catch (error) {
-        console.error('❌ Errore eliminazione squadre:', error);
-        showNotification('❌ Errore di connessione', 'error');
-    } finally {
-        hideLoading();
-    }
-}
-
-async function handleResetProfiles() {
-    if (!confirm('Sei sicuro di voler resettare i profili inattivi?\n\nVerranno resettati i profili degli utenti inattivi da più di 30 giorni.')) {
-        return;
-    }
-
-    try {
-        showLoading();
-        const response = await fetch(`${API_BASE}/admin?action=reset-profiles`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-            showNotification(`✅ ${data.count} profili resettati con successo`, 'success');
-            await loadAdminPanel();
-        } else {
-            showNotification('❌ ' + (data.error || 'Errore reset profili'), 'error');
-        }
-    } catch (error) {
-        console.error('❌ Errore reset profili:', error);
-        showNotification('❌ Errore di connessione', 'error');
-    } finally {
-        hideLoading();
-    }
-}
-
-async function handleNewsletterSubmit(e) {
-    e.preventDefault();
-
-    const subject = document.getElementById('newsletterSubject').value.trim();
-    const message = document.getElementById('newsletterMessage').value.trim();
-
-    if (!subject || !message) {
-        showNotification('❌ Oggetto e messaggio sono obbligatori', 'error');
-        return;
-    }
-
-    if (!confirm(`Inviare la newsletter a tutti gli utenti?\n\nOggetto: ${subject}`)) {
-        return;
-    }
-
-    try {
-        showLoading();
-        const response = await fetch(`${API_BASE}/admin?action=newsletter`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            },
-            body: JSON.stringify({ subject, message })
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-            showNotification(`✅ Newsletter inviata a ${data.sent} utenti!`, 'success');
-            document.getElementById('newsletterForm').reset();
-        } else {
-            showNotification('❌ ' + (data.error || 'Errore invio newsletter'), 'error');
-        }
-    } catch (error) {
-        console.error('❌ Errore invio newsletter:', error);
-        showNotification('❌ Errore di connessione', 'error');
-    } finally {
-        hideLoading();
-    }
-}
-
-
 function setupEventListeners() {
     console.log('🔧 Configurazione event listeners...');
     
@@ -2812,6 +2438,380 @@ function hideLoading() {
     if (overlay) overlay.classList.remove('active');
 }
 
+
+// ============================================
+// ADMIN PANEL - GESTIONE COMPLETA
+// ============================================
+
+async function loadAdminPanel() {
+    if (!currentUser || !currentUser.isAdmin) {
+        console.log('❌ Accesso admin negato');
+        return;
+    }
+
+    console.log('🔧 Caricamento pannello admin...');
+    
+    try {
+        showLoading();
+        
+        // Carica statistiche
+        const statsResponse = await fetch(`${API_BASE}/admin?action=stats`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+
+        if (statsResponse.ok) {
+            const data = await statsResponse.json();
+            document.getElementById('totalUsers').textContent = data.stats.totalUsers;
+            document.getElementById('totalTeams').textContent = data.stats.totalTeams;
+            document.getElementById('inactiveUsers').textContent = data.stats.inactiveUsers;
+            document.getElementById('pendingRequests').textContent = data.stats.pendingRequests;
+        }
+
+        // Carica impostazioni livelli
+        const levelsResponse = await fetch(`${API_BASE}/admin?action=level-settings`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+
+        if (levelsResponse.ok) {
+            const data = await levelsResponse.json();
+            document.getElementById('adminMinLevel').value = data.minLevel;
+            document.getElementById('adminMaxLevel').value = data.maxLevel;
+        }
+
+        // Carica utenti
+        await loadAllUsers();
+
+    } catch (error) {
+        console.error('❌ Errore caricamento admin panel:', error);
+        showNotification('❌ Errore caricamento pannello admin', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+async function loadAllUsers() {
+    try {
+        const response = await fetch(`${API_BASE}/admin?action=users`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            renderUsersList(data.users);
+        } else {
+            showNotification('❌ Errore caricamento utenti', 'error');
+        }
+    } catch (error) {
+        console.error('❌ Errore caricamento utenti:', error);
+        showNotification('❌ Errore di connessione', 'error');
+    }
+}
+
+function renderUsersList(users) {
+    const container = document.getElementById('usersList');
+    if (!container) return;
+
+    if (!users || users.length === 0) {
+        container.innerHTML = '<p style="text-align: center; color: #94a3b8;">Nessun utente trovato</p>';
+        return;
+    }
+
+    container.innerHTML = users.map(user => `
+        <div class="user-item" style="background: rgba(15, 23, 42, 0.6); padding: 20px; border-radius: 12px; margin-bottom: 15px; border: 1px solid rgba(148, 163, 184, 0.1);">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                <div style="flex: 1; min-width: 200px;">
+                    <h4 style="margin: 0 0 8px 0; color: #f1f5f9; font-size: 18px;">
+                        <i class="fas fa-user"></i> ${user.username}
+                        ${user.isAdmin ? '<span style="background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); padding: 2px 8px; border-radius: 6px; font-size: 12px; margin-left: 8px;">ADMIN</span>' : ''}
+                        ${user.isSuspended ? '<span style="background: #ef4444; padding: 2px 8px; border-radius: 6px; font-size: 12px; margin-left: 8px;">SOSPESO</span>' : ''}
+                    </h4>
+                    <p style="margin: 4px 0; color: #94a3b8; font-size: 14px;">
+                        <i class="fas fa-envelope"></i> ${user.email}
+                    </p>
+                    <p style="margin: 4px 0; color: #94a3b8; font-size: 14px;">
+                        <i class="fas fa-gamepad"></i> ${user.primaryRole} | ${user.platform} | Livello ${user.level}
+                    </p>
+                    <p style="margin: 4px 0; color: #94a3b8; font-size: 14px;">
+                        <i class="fas fa-star"></i> ${user.averageRating?.toFixed(1) || '0.0'} (${user.feedbackCount || 0} feedback)
+                    </p>
+                    <p style="margin: 4px 0; color: #64748b; font-size: 12px;">
+                        <i class="fas fa-calendar"></i> Registrato: ${new Date(user.createdAt).toLocaleDateString()}
+                    </p>
+                </div>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    ${!user.isAdmin ? `
+                        ${!user.isSuspended ? `
+                            <button class="btn btn-warning btn-sm" onclick="suspendUser('${user._id}')">
+                                <i class="fas fa-ban"></i> Sospendi
+                            </button>
+                        ` : `
+                            <button class="btn btn-success btn-sm" onclick="unsuspendUser('${user._id}')">
+                                <i class="fas fa-check-circle"></i> Riabilita
+                            </button>
+                        `}
+                        <button class="btn btn-danger btn-sm" onclick="deleteUser('${user._id}', '${user.username}')">
+                            <i class="fas fa-trash"></i> Elimina
+                        </button>
+                    ` : '<span style="color: #94a3b8; font-size: 14px; padding: 8px;">Account Amministratore</span>'}
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+async function handleLevelSettings(e) {
+    e.preventDefault();
+
+    const minLevel = parseInt(document.getElementById('adminMinLevel').value);
+    const maxLevel = parseInt(document.getElementById('adminMaxLevel').value);
+
+    if (minLevel >= maxLevel) {
+        showNotification('❌ Il livello minimo deve essere inferiore al massimo', 'error');
+        return;
+    }
+
+    if (minLevel < 1 || maxLevel > 9999) {
+        showNotification('❌ I livelli devono essere tra 1 e 9999', 'error');
+        return;
+    }
+
+    try {
+        showLoading();
+        const response = await fetch(`${API_BASE}/admin?action=level-settings`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({ minLevel, maxLevel })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            showNotification('✅ Limiti livello aggiornati con successo!', 'success');
+            GLOBAL_MIN_LEVEL = minLevel;
+            GLOBAL_MAX_LEVEL = maxLevel;
+            updateLevelInputLimits(minLevel, maxLevel);
+        } else {
+            showNotification('❌ ' + (data.error || 'Errore aggiornamento limiti'), 'error');
+        }
+    } catch (error) {
+        console.error('❌ Errore aggiornamento livelli:', error);
+        showNotification('❌ Errore di connessione', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+async function suspendUser(userId) {
+    if (!confirm('Sei sicuro di voler sospendere questo utente?')) return;
+
+    try {
+        showLoading();
+        const response = await fetch(`${API_BASE}/admin?action=suspend`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({ userId })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            showNotification('✅ Utente sospeso con successo', 'success');
+            await loadAllUsers();
+        } else {
+            showNotification('❌ ' + (data.error || 'Errore sospensione utente'), 'error');
+        }
+    } catch (error) {
+        console.error('❌ Errore sospensione utente:', error);
+        showNotification('❌ Errore di connessione', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+async function unsuspendUser(userId) {
+    if (!confirm('Sei sicuro di voler riabilitare questo utente?')) return;
+
+    try {
+        showLoading();
+        const response = await fetch(`${API_BASE}/admin?action=unsuspend`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({ userId })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            showNotification('✅ Utente riabilitato con successo', 'success');
+            await loadAllUsers();
+        } else {
+            showNotification('❌ ' + (data.error || 'Errore riabilitazione utente'), 'error');
+        }
+    } catch (error) {
+        console.error('❌ Errore riabilitazione utente:', error);
+        showNotification('❌ Errore di connessione', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+async function deleteUser(userId, username) {
+    if (!confirm(`Sei ASSOLUTAMENTE sicuro di voler eliminare l'utente "${username}"?\n\nQuesta azione è IRREVERSIBILE e cancellerà:\n- Il profilo utente\n- Tutti i suoi feedback\n- Le sue squadre (se capitano)\n- Le sue richieste\n\nDigita "ELIMINA" per confermare.`)) {
+        return;
+    }
+
+    const confirmText = prompt('Digita "ELIMINA" per confermare l\'eliminazione:');
+    if (confirmText !== 'ELIMINA') {
+        showNotification('❌ Eliminazione annullata', 'info');
+        return;
+    }
+
+    try {
+        showLoading();
+        const response = await fetch(`${API_BASE}/admin?action=user`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({ userId })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            showNotification('✅ Utente eliminato con successo', 'success');
+            await loadAllUsers();
+        } else {
+            showNotification('❌ ' + (data.error || 'Errore eliminazione utente'), 'error');
+        }
+    } catch (error) {
+        console.error('❌ Errore eliminazione utente:', error);
+        showNotification('❌ Errore di connessione', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+async function handleDeleteAllTeams() {
+    if (!confirm('Sei ASSOLUTAMENTE sicuro di voler eliminare TUTTE le squadre?\n\nQuesta azione è IRREVERSIBILE!')) {
+        return;
+    }
+
+    const confirmText = prompt('Digita "ELIMINA TUTTO" per confermare:');
+    if (confirmText !== 'ELIMINA TUTTO') {
+        showNotification('❌ Operazione annullata', 'info');
+        return;
+    }
+
+    try {
+        showLoading();
+        const response = await fetch(`${API_BASE}/admin?action=teams`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            showNotification(`✅ ${data.count} squadre eliminate con successo`, 'success');
+            await loadAdminPanel();
+        } else {
+            showNotification('❌ ' + (data.error || 'Errore eliminazione squadre'), 'error');
+        }
+    } catch (error) {
+        console.error('❌ Errore eliminazione squadre:', error);
+        showNotification('❌ Errore di connessione', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+async function handleResetProfiles() {
+    if (!confirm('Sei sicuro di voler resettare i profili inattivi?\n\nVerranno resettati i profili degli utenti inattivi da più di 30 giorni.')) {
+        return;
+    }
+
+    try {
+        showLoading();
+        const response = await fetch(`${API_BASE}/admin?action=reset-profiles`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            showNotification(`✅ ${data.count} profili resettati con successo`, 'success');
+            await loadAdminPanel();
+        } else {
+            showNotification('❌ ' + (data.error || 'Errore reset profili'), 'error');
+        }
+    } catch (error) {
+        console.error('❌ Errore reset profili:', error);
+        showNotification('❌ Errore di connessione', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+async function handleNewsletterSubmit(e) {
+    e.preventDefault();
+
+    const subject = document.getElementById('newsletterSubject').value.trim();
+    const message = document.getElementById('newsletterMessage').value.trim();
+
+    if (!subject || !message) {
+        showNotification('❌ Oggetto e messaggio sono obbligatori', 'error');
+        return;
+    }
+
+    if (!confirm(`Inviare la newsletter a tutti gli utenti?\n\nOggetto: ${subject}`)) {
+        return;
+    }
+
+    try {
+        showLoading();
+        const response = await fetch(`${API_BASE}/admin?action=newsletter`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({ subject, message })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            showNotification(`✅ Newsletter inviata a ${data.sent} utenti!`, 'success');
+            document.getElementById('newsletterForm').reset();
+        } else {
+            showNotification('❌ ' + (data.error || 'Errore invio newsletter'), 'error');
+        }
+    } catch (error) {
+        console.error('❌ Errore invio newsletter:', error);
+        showNotification('❌ Errore di connessione', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
 // ============================================
 // GLOBAL FUNCTIONS FOR ONCLICK
 // ============================================
@@ -2832,3 +2832,4 @@ window.unsuspendUser = unsuspendUser;
 window.deleteUser = deleteUser;
 
 console.log('📦 app.js caricato completamente');
+
