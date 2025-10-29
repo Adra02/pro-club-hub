@@ -1,22 +1,14 @@
+// ============================================
+// MODELS /models/User.js - VERSIONE COMPLETA CORRETTA ✅
+// ============================================
+
 import { ObjectId } from 'mongodb';
 import bcrypt from 'bcryptjs';
 
 export const ROLES = [
-  'GK',
-  'CB',
-  'RB',
-  'LB',
-  'CDM',
-  'CM',
-  'CAM',
-  'RM',
-  'LM',
-  'RW',
-  'LW',
-  'ST'
+  'GK', 'CB', 'RB', 'LB', 'CDM', 'CM', 'CAM', 'RM', 'LM', 'RW', 'LW', 'ST'
 ];
 
-// AGGIORNAMENTO: Piattaforme modificate
 export const PLATFORMS = ['PlayStation 5', 'Xbox Series X/S', 'PC'];
 
 export const NATIONALITIES = [
@@ -117,7 +109,6 @@ export class UserModel {
     const validatedLevel = await this.validateLevel(level);
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // NUOVO: Aggiungi campo preferiti
     const user = {
       username,
       email: email.toLowerCase(),
@@ -135,14 +126,11 @@ export class UserModel {
       averageRating: 0,
       lookingForTeam: false,
       profileCompleted: false,
-      // NUOVO: Sistema preferiti
       preferiti: {
         giocatori: [],
         squadre: []
       },
-      // NUOVO: FCM Token per notifiche push
       fcmToken: fcmToken || null,
-      // NUOVO: Sistema anti-spam
       lastRequestTimestamp: null,
       requestCount: 0,
       resetToken: null,
@@ -178,6 +166,7 @@ export class UserModel {
     });
   }
 
+  // ✅ METODO CRITICO: Verifica password
   async verifyPassword(plainPassword, hashedPassword) {
     return await bcrypt.compare(plainPassword, hashedPassword);
   }
@@ -188,7 +177,7 @@ export class UserModel {
     const allowedFields = [
       'username', 'primaryRole', 'secondaryRoles',
       'platform', 'level', 'instagram', 'tiktok', 'bio', 'lookingForTeam', 
-      'nationality', 'profileCompleted', 'fcmToken'
+      'nationality', 'profileCompleted', 'fcmToken', 'resetToken', 'resetTokenExpiry'
     ];
 
     const filteredData = {};
@@ -232,7 +221,6 @@ export class UserModel {
     return result;
   }
 
-  // NUOVO: Metodi per gestire preferiti
   async addPreferito(userId, targetId, type) {
     if (!ObjectId.isValid(userId) || !ObjectId.isValid(targetId)) {
       throw new Error('ID non valido');
@@ -274,225 +262,78 @@ export class UserModel {
   }
 
   async getPreferiti(userId) {
-    if (!ObjectId.isValid(userId)) return { giocatori: [], squadre: [] };
+    if (!ObjectId.isValid(userId)) {
+      return { giocatori: [], squadre: [] };
+    }
 
-    const user = await this.findById(userId);
+    const user = await this.collection.findOne(
+      { _id: new ObjectId(userId) },
+      { projection: { preferiti: 1 } }
+    );
+
     return user?.preferiti || { giocatori: [], squadre: [] };
   }
 
-  // NUOVO: Sistema anti-spam
-  async checkRateLimit(userId) {
-    if (!ObjectId.isValid(userId)) throw new Error('ID non valido');
+  async search(filters) {
+    const query = { profileCompleted: true };
+
+    if (filters.role) {
+      query.$or = [
+        { primaryRole: filters.role },
+        { secondaryRoles: filters.role }
+      ];
+    }
+
+    if (filters.platform) {
+      query.platform = filters.platform;
+    }
+
+    if (filters.nationality) {
+      query.nationality = filters.nationality;
+    }
+
+    if (filters.minLevel || filters.maxLevel) {
+      query.level = {};
+      if (filters.minLevel) query.level.$gte = parseInt(filters.minLevel);
+      if (filters.maxLevel) query.level.$lte = parseInt(filters.maxLevel);
+    }
+
+    if (filters.search) {
+      query.$or = [
+        { username: { $regex: filters.search, $options: 'i' } },
+        { bio: { $regex: filters.search, $options: 'i' } }
+      ];
+    }
+
+    return await this.collection
+      .find(query)
+      .sort({ level: -1, averageRating: -1 })
+      .limit(50)
+      .toArray();
+  }
+
+  async updateRating(userId, newRating) {
+    if (!ObjectId.isValid(userId)) return false;
 
     const user = await this.findById(userId);
-    if (!user) throw new Error('Utente non trovato');
+    if (!user) return false;
 
-    const now = Date.now();
-    const tenMinutesAgo = now - (10 * 60 * 1000);
-
-    // Reset se sono passati 10 minuti
-    if (!user.lastRequestTimestamp || user.lastRequestTimestamp < tenMinutesAgo) {
-      await this.collection.updateOne(
-        { _id: new ObjectId(userId) },
-        { 
-          $set: { 
-            lastRequestTimestamp: now,
-            requestCount: 1,
-            updatedAt: new Date()
-          }
-        }
-      );
-      return { allowed: true, remaining: 14 };
-    }
-
-    // Controlla se ha superato il limite
-    if (user.requestCount >= 15) {
-      const timeRemaining = Math.ceil((tenMinutesAgo + (10 * 60 * 1000) - now) / 1000 / 60);
-      throw new Error(`Hai raggiunto il limite massimo di 15 richieste ogni 10 minuti. Riprova tra ${timeRemaining} minuti.`);
-    }
-
-    // Incrementa il contatore
-    await this.collection.updateOne(
-      { _id: new ObjectId(userId) },
-      { 
-        $inc: { requestCount: 1 },
-        $set: { updatedAt: new Date() }
-      }
-    );
-
-    return { allowed: true, remaining: 15 - user.requestCount - 1 };
-  }
-
-  async setResetToken(userId, token, expiryDate) {
-    if (!ObjectId.isValid(userId)) return false;
+    const totalRating = user.averageRating * user.feedbackCount + newRating;
+    const newFeedbackCount = user.feedbackCount + 1;
+    const newAverageRating = totalRating / newFeedbackCount;
 
     await this.collection.updateOne(
       { _id: new ObjectId(userId) },
       {
         $set: {
-          resetToken: token,
-          resetTokenExpiry: expiryDate,
+          averageRating: newAverageRating,
+          feedbackCount: newFeedbackCount,
           updatedAt: new Date()
         }
       }
     );
+
     return true;
-  }
-
-  async clearResetToken(userId) {
-    if (!ObjectId.isValid(userId)) return false;
-
-    await this.collection.updateOne(
-      { _id: new ObjectId(userId) },
-      {
-        $set: {
-          resetToken: null,
-          resetTokenExpiry: null,
-          updatedAt: new Date()
-        }
-      }
-    );
-    return true;
-  }
-
-  async updateFeedbackStats(userId, averageRating, feedbackCount) {
-    if (!ObjectId.isValid(userId)) return false;
-
-    await this.collection.updateOne(
-      { _id: new ObjectId(userId) },
-      {
-        $set: {
-          averageRating: Math.round(averageRating * 10) / 10,
-          feedbackCount,
-          updatedAt: new Date()
-        }
-      }
-    );
-    return true;
-  }
-
-  async updateLastActive(userId) {
-    if (!ObjectId.isValid(userId)) return false;
-
-    await this.collection.updateOne(
-      { _id: new ObjectId(userId) },
-      {
-        $set: {
-          lastActive: new Date(),
-          updatedAt: new Date()
-        }
-      }
-    );
-    return true;
-  }
-
-  async search(filters = {}) {
-    const query = { 
-      lookingForTeam: true, 
-      profileCompleted: true,
-      isSuspended: { $ne: true } 
-    };
-
-    if (filters.role) {
-      query.$or = [
-        { primaryRole: filters.role },
-        { secondaryRoles: filters.role }
-      ];
-    }
-
-    if (filters.platform) {
-      query.platform = filters.platform;
-    }
-
-    if (filters.nationality) {
-      query.nationality = filters.nationality;
-    }
-
-    if (filters.minLevel) {
-      query.level = { $gte: parseInt(filters.minLevel) };
-    }
-
-    if (filters.maxLevel) {
-      query.level = query.level || {};
-      query.level.$lte = parseInt(filters.maxLevel);
-    }
-
-    if (filters.search) {
-      query.$or = [
-        { username: { $regex: filters.search, $options: 'i' } },
-        { bio: { $regex: filters.search, $options: 'i' } }
-      ];
-    }
-
-    const oneYearAgo = new Date();
-    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-    query.lastActive = { $gte: oneYearAgo };
-
-    const users = await this.collection
-      .find(query)
-      .project({ password: 0, resetToken: 0, resetTokenExpiry: 0, email: 0 })
-      .sort({ averageRating: -1, level: -1 })
-      .limit(50)
-      .toArray();
-
-    return users;
-  }
-
-  // ============================================
-  // NUOVA FUNZIONE: searchAll()
-  // ============================================
-  async searchAll(filters = {}) {
-    const query = { 
-      profileCompleted: true,
-      isSuspended: { $ne: true } 
-    };
-
-    // NON filtriamo per lookingForTeam - mostriamo tutti i giocatori
-
-    if (filters.role) {
-      query.$or = [
-        { primaryRole: filters.role },
-        { secondaryRoles: filters.role }
-      ];
-    }
-
-    if (filters.platform) {
-      query.platform = filters.platform;
-    }
-
-    if (filters.nationality) {
-      query.nationality = filters.nationality;
-    }
-
-    if (filters.minLevel) {
-      query.level = { $gte: parseInt(filters.minLevel) };
-    }
-
-    if (filters.maxLevel) {
-      query.level = query.level || {};
-      query.level.$lte = parseInt(filters.maxLevel);
-    }
-
-    if (filters.search) {
-      query.$or = [
-        { username: { $regex: filters.search, $options: 'i' } },
-        { bio: { $regex: filters.search, $options: 'i' } }
-      ];
-    }
-
-    // Solo utenti attivi nell'ultimo anno
-    const oneYearAgo = new Date();
-    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-    query.lastActive = { $gte: oneYearAgo };
-
-    const users = await this.collection
-      .find(query)
-      .project({ password: 0, resetToken: 0, resetTokenExpiry: 0, email: 0 })
-      .sort({ averageRating: -1, level: -1 })
-      .limit(50)
-      .toArray();
-
-    return users;
   }
 
   async setTeam(userId, teamId) {
@@ -500,12 +341,12 @@ export class UserModel {
 
     await this.collection.updateOne(
       { _id: new ObjectId(userId) },
-      { 
-        $set: { 
-          team: teamId ? new ObjectId(teamId) : null, 
+      {
+        $set: {
+          team: teamId ? new ObjectId(teamId) : null,
           lookingForTeam: false,
-          updatedAt: new Date() 
-        } 
+          updatedAt: new Date()
+        }
       }
     );
     return true;
@@ -554,15 +395,14 @@ export class UserModel {
     try {
       const users = await this.collection
         .find({})
-        .project({ 
-          password: 0, 
-          resetToken: 0, 
-          resetTokenExpiry: 0 
+        .project({
+          password: 0,
+          resetToken: 0,
+          resetTokenExpiry: 0
         })
         .sort({ createdAt: -1 })
         .toArray();
-      
-      console.log(`✅ getAllUsers returned ${users.length} users`);
+
       return users;
     } catch (error) {
       console.error('Error in getAllUsers:', error);
@@ -586,4 +426,3 @@ export class UserModel {
     return sanitized;
   }
 }
-
