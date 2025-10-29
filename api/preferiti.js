@@ -1,21 +1,24 @@
 // ============================================
-// API /api/preferiti - VERSIONE FINALE CORRETTA
+// API /api/notifications - VERSIONE FINALE CORRETTA
 // ============================================
 
 import { connectToDatabase } from '../lib/mongodb.js';
+import { NotificationModel, NOTIFICATION_TYPES } from '../models/Notification.js';
 import { UserModel } from '../models/User.js';
-import { TeamModel } from '../models/Team.js';
 import { authenticateRequest } from '../lib/auth.js';
-import { ObjectId } from 'mongodb';
 
 /**
- * API /api/preferiti
+ * API /api/notifications
  * 
- * Gestisce il sistema preferiti per giocatori e squadre
+ * Gestisce le notifiche push tramite Firebase Cloud Messaging (FCM)
+ * Un unico endpoint per risparmiare funzioni Vercel
  * 
- * GET    /api/preferiti                  - Ottieni preferiti dell'utente
- * POST   /api/preferiti?action=add       - Aggiungi a preferiti
- * POST   /api/preferiti?action=remove    - Rimuovi da preferiti (cambiato da DELETE a POST)
+ * GET    /api/notifications                     - Ottieni notifiche utente
+ * POST   /api/notifications?action=create       - Crea nuova notifica (interno)
+ * PATCH  /api/notifications?action=read         - Segna come letta
+ * PATCH  /api/notifications?action=read-all     - Segna tutte come lette
+ * DELETE /api/notifications?action=delete       - Elimina notifica
+ * POST   /api/notifications?action=register-fcm - Registra FCM token
  */
 
 export default async function handler(req, res) {
@@ -26,142 +29,169 @@ export default async function handler(req, res) {
     }
 
     const { db } = await connectToDatabase();
+    const notificationModel = new NotificationModel(db);
     const userModel = new UserModel(db);
-    const teamModel = new TeamModel(db);
 
     // ============================================
-    // GET - Ottieni preferiti
+    // GET - Ottieni notifiche
     // ============================================
     if (req.method === 'GET') {
-      const preferiti = await userModel.getPreferiti(userId);
-
-      // Converti ObjectId in stringhe e popola i dettagli
-      const giocatoriIds = (preferiti.giocatori || []).map(id => 
-        id instanceof ObjectId ? id.toString() : id.toString()
-      );
-      const squadreIds = (preferiti.squadre || []).map(id => 
-        id instanceof ObjectId ? id.toString() : id.toString()
+      const { unreadOnly } = req.query;
+      
+      const notifications = await notificationModel.getUserNotifications(
+        userId,
+        unreadOnly === 'true'
       );
 
-      // Popola i dettagli dei giocatori
-      const giocatoriDetails = await Promise.all(
-        giocatoriIds.map(async (id) => {
-          try {
-            const user = await userModel.findById(id);
-            if (!user) return null;
-            const sanitized = userModel.sanitizeUser(user);
-            return {
-              ...sanitized,
-              _id: sanitized._id.toString()
-            };
-          } catch (error) {
-            console.error(`Error loading player ${id}:`, error);
-            return null;
-          }
+      // Popola i dettagli dell'utente mittente
+      const notificationsWithDetails = await Promise.all(
+        notifications.map(async (notif) => {
+          const fromUser = await userModel.findById(notif.fromUserId.toString());
+          return {
+            ...notif,
+            fromUser: fromUser ? userModel.sanitizeUser(fromUser) : null
+          };
         })
       );
 
-      // Popola i dettagli delle squadre
-      const squadreDetails = await Promise.all(
-        squadreIds.map(async (id) => {
-          try {
-            const team = await teamModel.findById(id);
-            if (!team) return null;
-            return {
-              ...team,
-              _id: team._id.toString(),
-              captain: team.captain.toString(),
-              viceCaptain: team.viceCaptain ? team.viceCaptain.toString() : null,
-              members: team.members.map(m => m.toString())
-            };
-          } catch (error) {
-            console.error(`Error loading team ${id}:`, error);
-            return null;
-          }
-        })
-      );
+      const unreadCount = await notificationModel.getUnreadCount(userId);
 
       return res.status(200).json({
-        preferiti: {
-          giocatori: giocatoriDetails.filter(g => g !== null),
-          squadre: squadreDetails.filter(s => s !== null)
-        }
+        notifications: notificationsWithDetails,
+        unreadCount
       });
     }
 
     // ============================================
-    // POST - Aggiungi a preferiti
+    // POST - Crea notifica (interno - usato da altri endpoint)
     // ============================================
-    if (req.method === 'POST' && req.url.includes('action=add')) {
-      const { targetId, type } = req.body;
+    if (req.method === 'POST' && req.url.includes('action=create')) {
+      const { toUserId, type, message, data } = req.body;
 
-      if (!targetId || !type) {
-        return res.status(400).json({ error: 'targetId e type sono richiesti' });
+      if (!toUserId || !type || !message) {
+        return res.status(400).json({ error: 'toUserId, type e message sono richiesti' });
       }
 
-      if (type !== 'giocatori' && type !== 'squadre') {
-        return res.status(400).json({ error: 'type deve essere "giocatori" o "squadre"' });
-      }
+      const notification = await notificationModel.create({
+        toUserId,
+        fromUserId: userId,
+        type,
+        message,
+        data: data || {}
+      });
 
-      // Valida ObjectId
-      if (!ObjectId.isValid(targetId)) {
-        return res.status(400).json({ error: 'ID non valido' });
-      }
+      // Invia notifica push tramite FCM
+      await sendPushNotification(toUserId, notification, userModel);
 
-      // Verifica che il target esista
-      if (type === 'giocatori') {
-        const target = await userModel.findById(targetId);
-        if (!target) {
-          return res.status(404).json({ error: 'Giocatore non trovato' });
-        }
-      } else {
-        const target = await teamModel.findById(targetId);
-        if (!target) {
-          return res.status(404).json({ error: 'Squadra non trovata' });
-        }
-      }
-
-      await userModel.addPreferito(userId, targetId, type);
-
-      return res.status(200).json({
-        message: 'Aggiunto ai preferiti',
-        success: true
+      return res.status(201).json({
+        message: 'Notifica creata',
+        notification
       });
     }
 
     // ============================================
-    // POST - Rimuovi da preferiti (era DELETE, ora POST)
+    // POST - Registra FCM Token
     // ============================================
-    if (req.method === 'POST' && req.url.includes('action=remove')) {
-      const { targetId, type } = req.body;
+    if (req.method === 'POST' && req.url.includes('action=register-fcm')) {
+      const { fcmToken } = req.body;
 
-      if (!targetId || !type) {
-        return res.status(400).json({ error: 'targetId e type sono richiesti' });
+      if (!fcmToken) {
+        return res.status(400).json({ error: 'FCM Token richiesto' });
       }
 
-      if (type !== 'giocatori' && type !== 'squadre') {
-        return res.status(400).json({ error: 'type deve essere "giocatori" o "squadre"' });
-      }
-
-      // Valida ObjectId
-      if (!ObjectId.isValid(targetId)) {
-        return res.status(400).json({ error: 'ID non valido' });
-      }
-
-      await userModel.removePreferito(userId, targetId, type);
+      await userModel.updateFCMToken(userId, fcmToken);
 
       return res.status(200).json({
-        message: 'Rimosso dai preferiti',
-        success: true
+        message: 'FCM Token registrato con successo'
+      });
+    }
+
+    // ============================================
+    // PATCH - Segna come letta
+    // ============================================
+    if (req.method === 'PATCH' && req.url.includes('action=read')) {
+      const { notificationId } = req.body;
+
+      if (!notificationId) {
+        return res.status(400).json({ error: 'notificationId richiesto' });
+      }
+
+      await notificationModel.markAsRead(notificationId, userId);
+
+      return res.status(200).json({
+        message: 'Notifica segnata come letta'
+      });
+    }
+
+    // ============================================
+    // PATCH - Segna tutte come lette
+    // ============================================
+    if (req.method === 'PATCH' && req.url.includes('action=read-all')) {
+      await notificationModel.markAllAsRead(userId);
+
+      return res.status(200).json({
+        message: 'Tutte le notifiche segnate come lette'
+      });
+    }
+
+    // ============================================
+    // DELETE - Elimina notifica
+    // ============================================
+    if (req.method === 'DELETE' && req.url.includes('action=delete')) {
+      const { notificationId } = req.body;
+
+      if (!notificationId) {
+        return res.status(400).json({ error: 'notificationId richiesto' });
+      }
+
+      await notificationModel.delete(notificationId, userId);
+
+      return res.status(200).json({
+        message: 'Notifica eliminata'
       });
     }
 
     return res.status(404).json({ error: 'Endpoint non trovato' });
 
   } catch (error) {
-    console.error('Preferiti endpoint error:', error);
+    console.error('Notifications endpoint error:', error);
     return res.status(500).json({
       error: error.message || 'Errore durante l\'operazione'
     });
+  }
+}
+
+/**
+ * Invia notifica push tramite Firebase Cloud Messaging
+ */
+async function sendPushNotification(toUserId, notification, userModel) {
+  try {
+    const user = await userModel.findById(toUserId);
+    
+    if (!user || !user.fcmToken) {
+      console.log('User has no FCM token, skipping push notification');
+      return;
+    }
+
+    // TODO: Implementare invio FCM quando il servizio è configurato
+    console.log('Push notification would be sent to:', user.fcmToken);
+    
+    // Esempio di payload FCM:
+    // const message = {
+    //   token: user.fcmToken,
+    //   notification: {
+    //     title: '🔔 Pro Club Hub',
+    //     body: notification.message
+    //   },
+    //   data: {
+    //     notificationId: notification._id.toString(),
+    //     type: notification.type,
+    //     ...notification.data
+    //   }
+    // };
+    // await admin.messaging().send(message);
+
+  } catch (error) {
+    console.error('Error sending push notification:', error);
   }
 }
