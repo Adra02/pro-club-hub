@@ -1,3 +1,7 @@
+// ============================================
+// I18N.JS - TRADUZIONI COMPLETE CON "PREFERITI"
+// ============================================
+
 const translations = {
   it: {
     loading: 'Caricamento...',
@@ -5,10 +9,18 @@ const translations = {
       home: 'Home',
       players: 'Giocatori',
       teams: 'Squadre',
+      favorites: 'Preferiti',  // ✅ AGGIUNTO
       requests: 'Richieste',
       profile: 'Profilo',
       admin: 'Admin',
       logout: 'Esci'
+    },
+    favorites: {  // ✅ NUOVA SEZIONE
+      title: 'I Miei Preferiti',
+      players: 'Giocatori Preferiti',
+      teams: 'Squadre Preferite',
+      noPlayers: 'Nessun giocatore nei preferiti',
+      noTeams: 'Nessuna squadra nei preferiti'
     },
     home: {
       title: 'Benvenuto su Pro Club Hub',
@@ -153,10 +165,18 @@ const translations = {
       home: 'Home',
       players: 'Players',
       teams: 'Teams',
+      favorites: 'Favorites',  // ✅ AGGIUNTO
       requests: 'Requests',
       profile: 'Profile',
       admin: 'Admin',
       logout: 'Logout'
+    },
+    favorites: {  // ✅ NUOVA SEZIONE
+      title: 'My Favorites',
+      players: 'Favorite Players',
+      teams: 'Favorite Teams',
+      noPlayers: 'No players in favorites',
+      noTeams: 'No teams in favorites'
     },
     home: {
       title: 'Welcome to Pro Club Hub',
@@ -301,10 +321,18 @@ const translations = {
       home: 'Inicio',
       players: 'Jugadores',
       teams: 'Equipos',
+      favorites: 'Favoritos',  // ✅ AGGIUNTO
       requests: 'Solicitudes',
       profile: 'Perfil',
       admin: 'Admin',
       logout: 'Salir'
+    },
+    favorites: {  // ✅ NUOVA SEZIONE
+      title: 'Mis Favoritos',
+      players: 'Jugadores Favoritos',
+      teams: 'Equipos Favoritos',
+      noPlayers: 'No hay jugadores en favoritos',
+      noTeams: 'No hay equipos en favoritos'
     },
     home: {
       title: 'Bienvenido a Pro Club Hub',
@@ -435,7 +463,7 @@ const translations = {
       newsletter: {
         title: 'Enviar Newsletter',
         subject: 'Asunto',
-        message: 'Mensaje',
+        message: 'Mensaj',
         send: 'Enviar a Todos los Usuarios'
       },
       users: {
@@ -449,10 +477,18 @@ const translations = {
       home: 'Accueil',
       players: 'Joueurs',
       teams: 'Équipes',
+      favorites: 'Favoris',  // ✅ AGGIUNTO
       requests: 'Demandes',
       profile: 'Profil',
       admin: 'Admin',
       logout: 'Déconnexion'
+    },
+    favorites: {  // ✅ NUOVA SEZIONE
+      title: 'Mes Favoris',
+      players: 'Joueurs Favoris',
+      teams: 'Équipes Favorites',
+      noPlayers: 'Aucun joueur dans les favoris',
+      noTeams: 'Aucune équipe dans les favoris'
     },
     home: {
       title: 'Bienvenue sur Pro Club Hub',
@@ -597,10 +633,18 @@ const translations = {
       home: 'Início',
       players: 'Jogadores',
       teams: 'Equipes',
+      favorites: 'Favoritos',  // ✅ AGGIUNTO
       requests: 'Solicitações',
       profile: 'Perfil',
       admin: 'Admin',
       logout: 'Sair'
+    },
+    favorites: {  // ✅ NUOVA SEZIONE
+      title: 'Meus Favoritos',
+      players: 'Jogadores Favoritos',
+      teams: 'Equipes Favoritas',
+      noPlayers: 'Nenhum jogador nos favoritos',
+      noTeams: 'Nenhuma equipe nos favoritos'
     },
     home: {
       title: 'Bem-vindo ao Pro Club Hub',
@@ -643,12 +687,12 @@ const translations = {
     common: {
       level: 'Nível',
       feedback: 'feedback',
-      search: 'Procurar',
+      search: 'Pesquisar',
       save: 'Salvar Alterações'
     },
     players: {
       title: 'Procurar Jogadores',
-      searchPlaceholder: '🔍 Procurar por nome...',
+      searchPlaceholder: '🔍 Pesquisar por nome...',
       allRoles: 'Todas as funções',
       allPlatforms: 'Todas as plataformas',
       nationality: 'Nacionalidade',
@@ -659,15 +703,15 @@ const translations = {
       title: 'Equipes',
       create: 'Criar Equipe',
       createTitle: 'Criar Equipe',
-      searchPlaceholder: '🔍 Procurar equipe...',
+      searchPlaceholder: '🔍 Pesquisar equipe...',
       allPlatforms: 'Todas as plataformas',
       nationality: 'Nacionalidade',
       nameLabel: 'Nome da Equipe',
       descriptionLabel: 'Descrição',
       platformLabel: 'Plataforma',
       nationalityLabel: 'Nacionalidade',
-      instagramLabel: 'Instagram (usuário)',
-      tiktokLabel: 'TikTok (usuário)',
+      instagramLabel: 'Instagram (nome de usuário)',
+      tiktokLabel: 'TikTok (nome de usuário)',
       liveLinkLabel: 'Link ao Vivo (Twitch/YouTube)',
       lookingForPlayersCheckbox: 'Procurando jogadores',
       selectPlatform: 'Selecionar plataforma'
@@ -691,8 +735,8 @@ const translations = {
       lookingForTeam: 'Procurando Equipe',
       lookingForTeamCheckbox: 'Procurando equipe',
       social: 'Redes',
-      instagramLabel: 'Instagram (usuário)',
-      tiktokLabel: 'TikTok (usuário)',
+      instagramLabel: 'Instagram (nome de usuário)',
+      tiktokLabel: 'TikTok (nome de usuário)',
       resetPassword: 'Alterar Senha (via Email)',
       feedbackReceived: 'Feedback Recebido'
     },
@@ -736,6 +780,162 @@ const translations = {
       },
       users: {
         title: 'Gerenciamento de Usuários'
+      }
+    }
+  },
+  de: {  // ✅ AGGIUNTO TEDESCO
+    loading: 'Laden...',
+    nav: {
+      home: 'Startseite',
+      players: 'Spieler',
+      teams: 'Teams',
+      favorites: 'Favoriten',  // ✅ AGGIUNTO
+      requests: 'Anfragen',
+      profile: 'Profil',
+      admin: 'Admin',
+      logout: 'Abmelden'
+    },
+    favorites: {  // ✅ NUOVA SEZIONE
+      title: 'Meine Favoriten',
+      players: 'Lieblingsspieler',
+      teams: 'Lieblingsteams',
+      noPlayers: 'Keine Spieler in den Favoriten',
+      noTeams: 'Keine Teams in den Favoriten'
+    },
+    home: {
+      title: 'Willkommen bei Pro Club Hub',
+      subtitle: 'Die ultimative Community für Pro Club Spieler',
+      feature1: {
+        title: 'Spieler Finden',
+        desc: 'Suche Spieler nach Rolle, Level und Plattform'
+      },
+      feature2: {
+        title: 'Teams Erstellen',
+        desc: 'Bilde dein Team und trete gemeinsam an'
+      },
+      feature3: {
+        title: 'Feedback Geben',
+        desc: 'Bewerte Spieler und baue deinen Ruf auf'
+      }
+    },
+    auth: {
+      login: 'Anmelden',
+      register: 'Registrieren',
+      emailLabel: 'E-Mail',
+      passwordLabel: 'Passwort',
+      usernameLabel: 'Benutzername',
+      roleLabel: 'Hauptrolle',
+      platformLabel: 'Plattform',
+      nationalityLabel: 'Nationalität',
+      levelLabel: 'Level',
+      selectRole: 'Rolle auswählen',
+      selectPlatform: 'Plattform auswählen',
+      noAccount: 'Noch kein Konto?',
+      haveAccount: 'Bereits ein Konto?',
+      registerLink: 'Registrieren',
+      loginLink: 'Anmelden',
+      forgotPassword: 'Passwort vergessen?',
+      recoverPassword: 'Passwort Wiederherstellen',
+      recoverPasswordDesc: 'Gib deine E-Mail ein und wir senden dir einen Link zum Zurücksetzen deines Passworts.',
+      sendLink: 'Link Senden',
+      backToLogin: 'Zurück zum Login'
+    },
+    common: {
+      level: 'Level',
+      feedback: 'Feedback',
+      search: 'Suchen',
+      save: 'Änderungen Speichern'
+    },
+    players: {
+      title: 'Spieler Suchen',
+      searchPlaceholder: '🔍 Nach Namen suchen...',
+      allRoles: 'Alle Rollen',
+      allPlatforms: 'Alle Plattformen',
+      nationality: 'Nationalität',
+      minLevel: 'Mindestlevel:',
+      maxLevel: 'Maximallevel:'
+    },
+    teams: {
+      title: 'Teams',
+      create: 'Team Erstellen',
+      createTitle: 'Team Erstellen',
+      searchPlaceholder: '🔍 Team suchen...',
+      allPlatforms: 'Alle Plattformen',
+      nationality: 'Nationalität',
+      nameLabel: 'Teamname',
+      descriptionLabel: 'Beschreibung',
+      platformLabel: 'Plattform',
+      nationalityLabel: 'Nationalität',
+      instagramLabel: 'Instagram (Benutzername)',
+      tiktokLabel: 'TikTok (Benutzername)',
+      liveLinkLabel: 'Live-Link (Twitch/YouTube)',
+      lookingForPlayersCheckbox: 'Suche Spieler',
+      selectPlatform: 'Plattform auswählen'
+    },
+    requests: {
+      title: 'Anfragen',
+      received: 'Empfangen',
+      sent: 'Gesendet'
+    },
+    profile: {
+      edit: 'Profil Bearbeiten',
+      editTitle: 'Profil Bearbeiten',
+      email: 'E-Mail',
+      platform: 'Plattform',
+      nationality: 'Nationalität',
+      primaryRole: 'Hauptrolle',
+      secondaryRoles: 'Nebenrollen',
+      secondaryRolesLabel: 'Nebenrollen (max 2)',
+      bio: 'Bio',
+      bioLabel: 'Bio',
+      lookingForTeam: 'Suche Team',
+      lookingForTeamCheckbox: 'Suche Team',
+      social: 'Soziale Netzwerke',
+      instagramLabel: 'Instagram (Benutzername)',
+      tiktokLabel: 'TikTok (Benutzername)',
+      resetPassword: 'Passwort Ändern (via E-Mail)',
+      feedbackReceived: 'Erhaltenes Feedback'
+    },
+    feedback: {
+      title: 'Feedback Geben',
+      ratingLabel: 'Bewertung',
+      tagsLabel: 'Tags (optional)',
+      commentLabel: 'Kommentar (optional)',
+      submit: 'Feedback Senden',
+      tags: {
+        serious: 'Ernsthaft',
+        communicative: 'Kommunikativ',
+        fun: 'Lustig',
+        toxic: 'Toxisch',
+        teamPlayer: 'Teamspieler',
+        leader: 'Anführer',
+        reliable: 'Zuverlässig',
+        punctual: 'Pünktlich',
+        technical: 'Technisch',
+        tactical: 'Taktisch'
+      }
+    },
+    admin: {
+      title: 'Admin-Panel',
+      stats: {
+        users: 'Gesamte Benutzer',
+        teams: 'Gesamte Teams',
+        inactive: 'Inaktive Benutzer',
+        requests: 'Ausstehende Anfragen'
+      },
+      actions: {
+        title: 'Admin-Aktionen',
+        deleteTeams: 'Alle Teams Löschen',
+        resetProfiles: 'Spielerprofile Zurücksetzen'
+      },
+      newsletter: {
+        title: 'Newsletter Senden',
+        subject: 'Betreff',
+        message: 'Nachricht',
+        send: 'An Alle Benutzer Senden'
+      },
+      users: {
+        title: 'Benutzerverwaltung'
       }
     }
   }
