@@ -1,5 +1,5 @@
 // ============================================
-// API /api/users - VERSIONE COMPLETA E CORRETTA
+// API /api/users - VERSIONE FINALE CORRETTA
 // ============================================
 
 import { connectToDatabase } from '../lib/mongodb.js';
@@ -77,47 +77,34 @@ export default async function handler(req, res) {
         filters.platform = platform;
       }
       
-      if (search) {
-        filters.search = search;
-      }
-      
       if (nationality) {
         filters.nationality = nationality;
       }
-      
-      if (minLevel) {
-        filters.minLevel = parseInt(minLevel);
-      }
-      
-      if (maxLevel) {
-        filters.maxLevel = parseInt(maxLevel);
+
+      if (minLevel || maxLevel) {
+        filters.level = {};
+        if (minLevel) filters.level.$gte = parseInt(minLevel);
+        if (maxLevel) filters.level.$lte = parseInt(maxLevel);
       }
 
-      // CRITICAL FIX: Usa la funzione searchAll invece di search
-      // searchAll non filtra per lookingForTeam
-      const users = await userModel.searchAll(filters);
-      
-      // Rimuovi l'utente corrente dalla lista
-      const filteredUsers = users.filter(user => 
-        user._id.toString() !== userId
-      );
+      // Cerca giocatori
+      const players = await userModel.searchPlayers(filters, search);
 
-      return res.status(200).json({ 
-        users: filteredUsers,
-        count: filteredUsers.length 
+      // Sanitizza tutti gli utenti
+      const sanitizedPlayers = players.map(player => userModel.sanitizeUser(player));
+
+      return res.status(200).json({
+        players: sanitizedPlayers,
+        count: sanitizedPlayers.length
       });
     }
 
-    // ============================================
-    // ALTRI METODI NON SUPPORTATI
-    // ============================================
     return res.status(405).json({ error: 'Metodo non consentito' });
 
   } catch (error) {
-    console.error('Users API error:', error);
+    console.error('Users endpoint error:', error);
     return res.status(500).json({ 
-      error: 'Errore interno del server',
-      message: error.message 
+      error: error.message || 'Errore del server' 
     });
   }
 }
