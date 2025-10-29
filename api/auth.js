@@ -163,7 +163,7 @@ export default async function handler(req, res) {
   }
 
   // UPDATE ME
-  if (req.method === 'PUT' && req.url === '/api/auth?action=me') {
+  if (req.method === 'PUT' && req.url.includes('action=me')) { {
     try {
       const userId = await authenticateRequest(req);
       if (!userId) {
