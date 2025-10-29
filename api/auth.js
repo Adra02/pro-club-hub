@@ -1,12 +1,12 @@
 // ============================================
-// API /api/auth - VERSIONE CORRETTA ✅
-// PROBLEMA RISOLTO: Import corretto da email.js
+// API /api/auth - VERSIONE DEFINITIVA CORRETTA ✅
+// PROBLEMA RISOLTO: sendPasswordResetEmail invece di sendResetEmail
 // ============================================
 
 import { connectToDatabase } from '../lib/mongodb.js';
 import { UserModel } from '../models/User.js';
 import { authenticateRequest, generateToken } from '../lib/auth.js';
-import { sendPasswordResetEmail } from '../lib/email.js'; // ✅ NOME CORRETTO!
+import { sendPasswordResetEmail } from '../lib/email.js'; // ✅ CORRETTO!
 import crypto from 'crypto';
 
 export default async function handler(req, res) {
@@ -206,7 +206,7 @@ export default async function handler(req, res) {
           resetTokenExpiry
         });
 
-        // ✅ USO CORRETTO: sendPasswordResetEmail invece di sendResetEmail
+        // ✅ CORREZIONE PRINCIPALE: sendPasswordResetEmail invece di sendResetEmail
         await sendPasswordResetEmail(email, user.username, resetToken);
 
         return res.status(200).json({
