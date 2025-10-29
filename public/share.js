@@ -2,7 +2,7 @@
 // SHARE.JS - Logica pagina condivisione profili
 // ============================================
 
-const API_BASE = 'https://pro-club-hub.com/api';
+const API_BASE = '/api';
 
 // Al caricamento della pagina
 document.addEventListener('DOMContentLoaded', () => {
