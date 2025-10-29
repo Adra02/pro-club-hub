@@ -2827,8 +2827,12 @@ window.rejectRequest = rejectRequest;
 window.cancelRequest = cancelRequest;
 window.toggleFavorite = toggleFavorite;
 window.shareProfile = shareProfile;
+window.suspendUser = suspendUser;
+window.unsuspendUser = unsuspendUser;
+window.deleteUser = deleteUser;
 
 console.log('📦 app.js caricato completamente');
+
 
 
 
