@@ -1,3 +1,7 @@
+// ============================================
+// API /api/preferiti - VERSIONE FINALE CORRETTA
+// ============================================
+
 import { connectToDatabase } from '../lib/mongodb.js';
 import { UserModel } from '../models/User.js';
 import { TeamModel } from '../models/Team.js';
@@ -11,7 +15,7 @@ import { ObjectId } from 'mongodb';
  * 
  * GET    /api/preferiti                  - Ottieni preferiti dell'utente
  * POST   /api/preferiti?action=add       - Aggiungi a preferiti
- * DELETE /api/preferiti?action=remove    - Rimuovi da preferiti
+ * POST   /api/preferiti?action=remove    - Rimuovi da preferiti (cambiato da DELETE a POST)
  */
 
 export default async function handler(req, res) {
@@ -25,11 +29,13 @@ export default async function handler(req, res) {
     const userModel = new UserModel(db);
     const teamModel = new TeamModel(db);
 
+    // ============================================
     // GET - Ottieni preferiti
+    // ============================================
     if (req.method === 'GET') {
       const preferiti = await userModel.getPreferiti(userId);
 
-      // CRITICAL FIX: Converti ObjectId in stringhe e popola i dettagli
+      // Converti ObjectId in stringhe e popola i dettagli
       const giocatoriIds = (preferiti.giocatori || []).map(id => 
         id instanceof ObjectId ? id.toString() : id.toString()
       );
@@ -83,8 +89,10 @@ export default async function handler(req, res) {
       });
     }
 
+    // ============================================
     // POST - Aggiungi a preferiti
-    if (req.method === 'POST' && req.query.action === 'add') {
+    // ============================================
+    if (req.method === 'POST' && req.url.includes('action=add')) {
       const { targetId, type } = req.body;
 
       if (!targetId || !type) {
@@ -95,7 +103,7 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'type deve essere "giocatori" o "squadre"' });
       }
 
-      // CRITICAL FIX: Valida ObjectId
+      // Valida ObjectId
       if (!ObjectId.isValid(targetId)) {
         return res.status(400).json({ error: 'ID non valido' });
       }
@@ -121,8 +129,10 @@ export default async function handler(req, res) {
       });
     }
 
-    // DELETE - Rimuovi da preferiti
-    if (req.method === 'DELETE' && req.query.action === 'remove') {
+    // ============================================
+    // POST - Rimuovi da preferiti (era DELETE, ora POST)
+    // ============================================
+    if (req.method === 'POST' && req.url.includes('action=remove')) {
       const { targetId, type } = req.body;
 
       if (!targetId || !type) {
@@ -133,7 +143,7 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'type deve essere "giocatori" o "squadre"' });
       }
 
-      // CRITICAL FIX: Valida ObjectId
+      // Valida ObjectId
       if (!ObjectId.isValid(targetId)) {
         return res.status(400).json({ error: 'ID non valido' });
       }
