@@ -1,6 +1,8 @@
 // ============================================
-// API /api/auth - VERSIONE DEFINITIVA CORRETTA ✅
-// PROBLEMA RISOLTO: sendPasswordResetEmail invece di sendResetEmail
+// API /api/auth - VERSIONE DEFINITIVA CORRETTA ✅✅
+// TUTTI I PROBLEMI RISOLTI:
+// 1. sendPasswordResetEmail invece di sendResetEmail
+// 2. verifyPassword invece di validatePassword
 // ============================================
 
 import { connectToDatabase } from '../lib/mongodb.js';
@@ -76,7 +78,8 @@ export default async function handler(req, res) {
           return res.status(403).json({ error: 'Account sospeso. Contatta l\'amministratore.' });
         }
 
-        const isValid = await userModel.validatePassword(password, user.password);
+        // ✅ CORREZIONE: verifyPassword invece di validatePassword
+        const isValid = await userModel.verifyPassword(password, user.password);
         
         if (!isValid) {
           return res.status(401).json({ error: 'Credenziali non valide' });
@@ -206,7 +209,7 @@ export default async function handler(req, res) {
           resetTokenExpiry
         });
 
-        // ✅ CORREZIONE PRINCIPALE: sendPasswordResetEmail invece di sendResetEmail
+        // ✅ CORRETTO: sendPasswordResetEmail invece di sendResetEmail
         await sendPasswordResetEmail(email, user.username, resetToken);
 
         return res.status(200).json({
