@@ -1,4 +1,14 @@
+// ============================================
+// API /api/health - Health Check
+// ============================================
+
 import { connectToDatabase } from '../lib/mongodb.js';
+
+/**
+ * API /api/health
+ * 
+ * GET /api/health - Verifica stato del server e database
+ */
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
