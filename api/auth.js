@@ -13,7 +13,7 @@ export default async function handler(req, res) {
   const userModel = new UserModel(db);
 
   // REGISTER
-  if (req.method === 'POST' && req.url === '/api/auth?action=register') {
+  if (req.method === 'POST' && req.url.includes('action=register')) {
     try {
       const { username, email, password, primaryRole, platform, level, nationality } = req.body;
 
