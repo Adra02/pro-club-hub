@@ -743,7 +743,7 @@ async function loadProfile() {
 }
 
 function renderProfileFeedback(feedback) {
-    const container = document.getElementById('profileFeedback');
+    const container = document.getElementById('profileFeedbackList');
 
     if (!feedback || feedback.length === 0) {
         container.innerHTML = '<p class="empty-feedback">Nessun feedback ricevuto ancora</p>';
@@ -2443,3 +2443,4 @@ window.toggleFavorite = toggleFavorite;
 window.shareProfile = shareProfile;
 
 console.log('📦 app.js caricato completamente');
+
