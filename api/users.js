@@ -1,5 +1,5 @@
 // ============================================
-// API /api/users - VERSIONE FINALE CORRETTA
+// API /api/users - VERSIONE CORRETTA ✅
 // ============================================
 
 import { connectToDatabase } from '../lib/mongodb.js';
@@ -16,6 +16,15 @@ import { ObjectId } from 'mongodb';
  */
 
 export default async function handler(req, res) {
+  // Gestisci CORS
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   try {
     const { db } = await connectToDatabase();
     const userModel = new UserModel(db);
@@ -82,19 +91,22 @@ export default async function handler(req, res) {
       }
 
       if (minLevel || maxLevel) {
-        filters.level = {};
-        if (minLevel) filters.level.$gte = parseInt(minLevel);
-        if (maxLevel) filters.level.$lte = parseInt(maxLevel);
+        if (minLevel) filters.minLevel = minLevel;
+        if (maxLevel) filters.maxLevel = maxLevel;
       }
 
-      // Cerca giocatori
-      const players = await userModel.searchPlayers(filters, search);
+      if (search) {
+        filters.search = search;
+      }
+
+      // ✅ CORREZIONE: Chiama search() invece di searchPlayers()
+      const players = await userModel.search(filters);
 
       // Sanitizza tutti gli utenti
       const sanitizedPlayers = players.map(player => userModel.sanitizeUser(player));
 
       return res.status(200).json({
-        players: sanitizedPlayers,
+        users: sanitizedPlayers,
         count: sanitizedPlayers.length
       });
     }
@@ -102,9 +114,10 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Metodo non consentito' });
 
   } catch (error) {
-    console.error('Users endpoint error:', error);
+    console.error('❌ Users endpoint error:', error);
     return res.status(500).json({ 
-      error: error.message || 'Errore del server' 
+      error: 'Errore del server',
+      details: error.message 
     });
   }
 }
