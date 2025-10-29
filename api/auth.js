@@ -1,14 +1,11 @@
 // ============================================
-// API /api/auth - VERSIONE DEFINITIVA CORRETTA ✅✅
-// TUTTI I PROBLEMI RISOLTI:
-// 1. sendPasswordResetEmail invece di sendResetEmail
-// 2. verifyPassword invece di validatePassword
+// API /api/auth - VERSIONE COMPLETA CORRETTA ✅
 // ============================================
 
 import { connectToDatabase } from '../lib/mongodb.js';
 import { UserModel } from '../models/User.js';
 import { authenticateRequest, generateToken } from '../lib/auth.js';
-import { sendPasswordResetEmail } from '../lib/email.js'; // ✅ CORRETTO!
+import { sendPasswordResetEmail } from '../lib/email.js';
 import crypto from 'crypto';
 
 export default async function handler(req, res) {
@@ -74,11 +71,11 @@ export default async function handler(req, res) {
           return res.status(401).json({ error: 'Credenziali non valide' });
         }
 
-        if (user.suspended) {
+        if (user.isSuspended) {
           return res.status(403).json({ error: 'Account sospeso. Contatta l\'amministratore.' });
         }
 
-        // ✅ CORREZIONE: verifyPassword invece di validatePassword
+        // ✅ CORREZIONE: verifyPassword corretto
         const isValid = await userModel.verifyPassword(password, user.password);
         
         if (!isValid) {
@@ -117,7 +114,7 @@ export default async function handler(req, res) {
           return res.status(404).json({ error: 'Utente non trovato' });
         }
 
-        if (user.suspended) {
+        if (user.isSuspended) {
           return res.status(403).json({ error: 'Account sospeso' });
         }
 
@@ -195,7 +192,6 @@ export default async function handler(req, res) {
         const user = await userModel.findByEmail(email);
         
         if (!user) {
-          // Per sicurezza, restituiamo sempre lo stesso messaggio
           return res.status(200).json({ 
             message: 'Se l\'email esiste, riceverai un link per il reset' 
           });
@@ -209,7 +205,6 @@ export default async function handler(req, res) {
           resetTokenExpiry
         });
 
-        // ✅ CORRETTO: sendPasswordResetEmail invece di sendResetEmail
         await sendPasswordResetEmail(email, user.username, resetToken);
 
         return res.status(200).json({
@@ -227,31 +222,30 @@ export default async function handler(req, res) {
     // ============================================
     if (req.method === 'POST' && req.url.includes('action=reset-password')) {
       try {
-        const { token, password } = req.body;
+        const { token, newPassword } = req.body;
 
-        if (!token || !password) {
+        if (!token || !newPassword) {
           return res.status(400).json({ error: 'Token e password richiesti' });
         }
 
-        if (password.length < 6) {
+        if (newPassword.length < 6) {
           return res.status(400).json({ error: 'Password deve essere almeno 6 caratteri' });
         }
 
         const user = await userModel.findByResetToken(token);
-
-        if (!user || !user.resetTokenExpiry || user.resetTokenExpiry < new Date()) {
+        
+        if (!user) {
           return res.status(400).json({ error: 'Token non valido o scaduto' });
         }
 
-        await userModel.updatePassword(user._id.toString(), password);
-        
         await userModel.update(user._id.toString(), {
+          password: newPassword,
           resetToken: null,
           resetTokenExpiry: null
         });
 
         return res.status(200).json({
-          message: 'Password aggiornata con successo'
+          message: 'Password reimpostata con successo'
         });
 
       } catch (error) {
@@ -260,17 +254,13 @@ export default async function handler(req, res) {
       }
     }
 
-    // ============================================
-    // 404 - ENDPOINT NON TROVATO
-    // ============================================
     return res.status(404).json({ error: 'Endpoint non trovato' });
 
   } catch (error) {
-    // CATCH GLOBALE - cattura errori non gestiti
-    console.error('Auth handler error:', error);
+    console.error('Auth API error:', error);
     return res.status(500).json({ 
-      error: 'Errore interno del server',
-      message: error.message 
+      error: 'Errore del server',
+      details: error.message 
     });
   }
 }
