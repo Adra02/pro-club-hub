@@ -25,46 +25,10 @@
       ]
     }
   ],
-  "routes": [
+  "rewrites": [
     {
-      "src": "/api/share",
-      "dest": "/api/share.js"
-    },
-    {
-      "src": "/api/preferiti",
-      "dest": "/api/preferiti.js"
-    },
-    {
-      "src": "/api/notifications",
-      "dest": "/api/notifications.js"
-    },
-    {
-      "src": "/api/auth",
-      "dest": "/api/auth.js"
-    },
-    {
-      "src": "/api/users",
-      "dest": "/api/users.js"
-    },
-    {
-      "src": "/api/teams",
-      "dest": "/api/teams.js"
-    },
-    {
-      "src": "/api/feedback",
-      "dest": "/api/feedback.js"
-    },
-    {
-      "src": "/api/admin",
-      "dest": "/api/admin.js"
-    },
-    {
-      "src": "/api/(.*)",
-      "dest": "/api/$1.js"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/public/$1"
+      "source": "/(.*)",
+      "destination": "/public/$1"
     }
   ]
 }
