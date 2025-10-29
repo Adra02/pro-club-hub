@@ -249,7 +249,7 @@ export default async function handler(req, res) {
   }
 
   // FORGOT PASSWORD
-      if (req.method === 'POST' && req.url.includes('action=forgot-password')) {
+  if (req.method === 'POST' && req.url.includes('action=forgot-password')) {
     try {
       const { email } = req.body;
 
@@ -286,7 +286,7 @@ export default async function handler(req, res) {
   }
 
   // RESET PASSWORD
-  if (req.method === 'POST' && req.url === '/api/auth?action=reset-password') {
+  if (req.method === 'POST' && req.url.includes('action=reset-password')) {
     try {
       const { token, password } = req.body;
 
