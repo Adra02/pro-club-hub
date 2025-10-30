@@ -393,9 +393,7 @@ function setupEventListeners() {
     });
 
   // ADMIN PANEL
-    const levelSettingsForm = document.getElementById('levelSettingsForm');
-    if (levelSettingsForm) levelSettingsForm.addEventListener('submit', handleLevelSettings);
-
+    
     const deleteAllTeamsBtn = document.getElementById('deleteAllTeamsBtn');
     if (deleteAllTeamsBtn) deleteAllTeamsBtn.addEventListener('click', handleDeleteAllTeams);
 
@@ -2512,6 +2510,7 @@ window.unsuspendUser = unsuspendUser;
 window.deleteUser = deleteUser;
 
 console.log('📦 app.js caricato completamente');
+
 
 
 
