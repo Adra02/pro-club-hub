@@ -38,7 +38,7 @@ let selectedTags = [];
 let selectedRating = 0;
 let currentTeam = null;
 let GLOBAL_MIN_LEVEL = 1;
-let GLOBAL_MAX_LEVEL = 999;
+let GLOBAL_MAX_LEVEL = 50;
 let userFavorites = { giocatori: [], squadre: [] };
 
 // ============================================
@@ -2510,6 +2510,7 @@ window.unsuspendUser = unsuspendUser;
 window.deleteUser = deleteUser;
 
 console.log('📦 app.js caricato completamente');
+
 
 
 
