@@ -27,6 +27,42 @@
   ],
   "rewrites": [
     {
+      "source": "/api/auth/register",
+      "destination": "/api/auth"
+    },
+    {
+      "source": "/api/auth/login",
+      "destination": "/api/auth"
+    },
+    {
+      "source": "/api/auth/verify",
+      "destination": "/api/auth"
+    },
+    {
+      "source": "/api/auth/recover",
+      "destination": "/api/auth"
+    },
+    {
+      "source": "/api/auth/reset",
+      "destination": "/api/auth"
+    },
+    {
+      "source": "/api/users/profile",
+      "destination": "/api/users"
+    },
+    {
+      "source": "/api/users/search",
+      "destination": "/api/users"
+    },
+    {
+      "source": "/api/teams/my-team",
+      "destination": "/api/teams"
+    },
+    {
+      "source": "/api/teams/search",
+      "destination": "/api/teams"
+    },
+    {
       "source": "/(.*)",
       "destination": "/public/$1"
     }
