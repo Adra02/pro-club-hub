@@ -1,5 +1,9 @@
+// ============================================
+// API /api/notifications.js - CORRETTO ✅
+// ============================================
+
 import { connectToDatabase } from '../lib/mongodb.js';
-import { NotificationModel, NOTIFICATION_TYPES } from '../models/Notification.js';
+import { NotificationModel, NOTIFICATION_TYPES } from '../models/Notifications.js'; // ✅ CORRETTO: Notifications con la S
 import { UserModel } from '../models/User.js';
 import { authenticateRequest } from '../lib/auth.js';
 
@@ -184,53 +188,37 @@ async function sendPushNotification(toUserId, notification, userModel) {
     const fcmPayload = {
       to: targetUser.fcmToken,
       notification: {
-        title: getNotificationTitle(notification.type),
+        title: 'Pro Club Hub',
         body: notification.message,
-        sound: 'default',
-        badge: '1'
+        icon: 'ic_notification',
+        sound: 'default'
       },
       data: {
-        type: notification.type,
         notificationId: notification._id.toString(),
+        type: notification.type,
         ...notification.data
-      },
-      priority: 'high'
+      }
     };
 
     const response = await fetch('https://fcm.googleapis.com/fcm/send', {
       method: 'POST',
       headers: {
-        'Authorization': `key=${process.env.FIREBASE_SERVER_KEY}`,
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Authorization': `key=${process.env.FIREBASE_SERVER_KEY}`
       },
       body: JSON.stringify(fcmPayload)
     });
 
     if (!response.ok) {
-      console.error('FCM send failed:', await response.text());
+      console.error('FCM Error:', await response.text());
       return false;
     }
 
-    console.log(`✅ Push notification sent to user ${toUserId}`);
+    console.log('✅ Push notification sent successfully');
     return true;
 
   } catch (error) {
     console.error('Error sending push notification:', error);
     return false;
-  }
-}
-
-function getNotificationTitle(type) {
-  switch (type) {
-    case NOTIFICATION_TYPES.CLUB_REQUEST:
-      return '🎮 Nuova Richiesta al Club';
-    case NOTIFICATION_TYPES.PLAYER_REQUEST:
-      return '👤 Richiesta da un Giocatore';
-    case NOTIFICATION_TYPES.REQUEST_APPROVED:
-      return '✅ Richiesta Approvata';
-    case NOTIFICATION_TYPES.REQUEST_REJECTED:
-      return '❌ Richiesta Rifiutata';
-    default:
-      return '🔔 Pro Club Hub';
   }
 }
