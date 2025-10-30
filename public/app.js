@@ -392,7 +392,21 @@ function setupEventListeners() {
         });
     });
 
+  // ADMIN PANEL
+    const levelSettingsForm = document.getElementById('levelSettingsForm');
+    if (levelSettingsForm) levelSettingsForm.addEventListener('submit', handleLevelSettings);
+
+    const deleteAllTeamsBtn = document.getElementById('deleteAllTeamsBtn');
+    if (deleteAllTeamsBtn) deleteAllTeamsBtn.addEventListener('click', handleDeleteAllTeams);
+
+    const resetProfilesBtn = document.getElementById('resetProfilesBtn');
+    if (resetProfilesBtn) resetProfilesBtn.addEventListener('click', handleResetProfiles);
+
+    const newsletterForm = document.getElementById('newsletterForm');
+    if (newsletterForm) newsletterForm.addEventListener('submit', handleNewsletterSubmit);
+
     console.log('✅ Event listeners configurati');
+  
 }
 
 // ============================================
@@ -2832,4 +2846,5 @@ window.unsuspendUser = unsuspendUser;
 window.deleteUser = deleteUser;
 
 console.log('📦 app.js caricato completamente');
+
 
