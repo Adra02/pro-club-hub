@@ -2364,4 +2364,25 @@ if (document.readyState === 'loading') {
     initApp();
 }
 
+
+// ============================================
+// GLOBAL FUNCTIONS FOR ONCLICK
+// ============================================
+window.showPlayerDetail = showPlayerDetail;
+window.showTeamDetail = showTeamDetail;
+window.openFeedbackModal = openFeedbackModal;
+window.requestJoinTeam = requestJoinTeam;
+window.leaveTeam = leaveTeam;
+window.removeMember = removeMember;
+window.setViceCaptain = setViceCaptain;
+window.approveRequest = approveRequest;
+window.rejectRequest = rejectRequest;
+window.cancelRequest = cancelRequest;
+window.toggleFavorite = toggleFavorite;
+window.shareProfile = shareProfile;
+window.suspendUser = suspendUser;
+window.unsuspendUser = unsuspendUser;
+window.deleteUser = deleteUser;
+
 console.log('📦 Pro Club Hub App.js v2.0 - COMPLETO caricato');
+
