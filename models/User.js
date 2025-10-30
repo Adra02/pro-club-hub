@@ -68,11 +68,11 @@ export class UserModel {
       const settings = await this.settingsCollection.findOne({ _id: 'level_limits' });
       return {
         minLevel: settings?.minLevel || 1,
-        maxLevel: settings?.maxLevel || 999
+        maxLevel: settings?.maxLevel || 50
       };
     } catch (error) {
       console.error('Error getting level limits:', error);
-      return { minLevel: 1, maxLevel: 999 };
+      return { minLevel: 1, maxLevel: 50 };
     }
   }
 
@@ -426,3 +426,4 @@ export class UserModel {
     return sanitized;
   }
 }
+
