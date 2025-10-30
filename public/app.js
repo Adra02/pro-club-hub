@@ -98,7 +98,7 @@ async function loadGlobalLevelLimits() {
     } catch (error) {
         console.error('Failed to load level limits:', error);
         GLOBAL_MIN_LEVEL = 1;
-        GLOBAL_MAX_LEVEL = 999;
+        GLOBAL_MAX_LEVEL = 50;
     }
 }
 
@@ -2510,6 +2510,7 @@ window.unsuspendUser = unsuspendUser;
 window.deleteUser = deleteUser;
 
 console.log('📦 app.js caricato completamente');
+
 
 
 
