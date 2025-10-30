@@ -1,30 +1,34 @@
+// ============================================
+// MODELS /models/Feedback.js - COMPLETO ✅
+// ============================================
+
 import { ObjectId } from 'mongodb';
 
 export const FEEDBACK_TAGS = [
-  'Serio',
+  'Ottimo giocatore',
   'Comunicativo',
-  'Divertente',
-  'Tossico',
-  'Giocatore di squadra',
-  'Leader',
   'Affidabile',
-  'Puntuale',
   'Tecnico',
-  'Tattico'
+  'Leader',
+  'Fair play',
+  'Puntuale',
+  'Team player',
+  'Strategico',
+  'Positivo'
 ];
 
 export class FeedbackModel {
   constructor(db) {
-    this.collection = db.collection('feedback');
+    this.collection = db.collection('feedbacks');
     this.createIndexes();
   }
 
   async createIndexes() {
     try {
-      await this.collection.createIndex({ targetUser: 1, createdAt: -1 });
-      await this.collection.createIndex({ targetTeam: 1, createdAt: -1 });
-      await this.collection.createIndex({ fromUser: 1 });
-      await this.collection.createIndex({ createdAt: -1 });
+      await this.collection.createIndex({ targetUserId: 1, createdAt: -1 });
+      await this.collection.createIndex({ targetTeamId: 1, createdAt: -1 });
+      await this.collection.createIndex({ fromUserId: 1 });
+      await this.collection.createIndex({ rating: 1 });
     } catch (error) {
       console.error('Error creating feedback indexes:', error);
     }
@@ -33,34 +37,35 @@ export class FeedbackModel {
   async create(feedbackData) {
     const { fromUserId, targetUserId, targetTeamId, rating, comment, tags } = feedbackData;
 
-    if (!rating || rating < 1 || rating > 5) {
-      throw new Error('Rating deve essere tra 1 e 5');
+    if (!ObjectId.isValid(fromUserId)) {
+      throw new Error('ID utente non valido');
+    }
+
+    if (targetUserId && !ObjectId.isValid(targetUserId)) {
+      throw new Error('ID utente target non valido');
+    }
+
+    if (targetTeamId && !ObjectId.isValid(targetTeamId)) {
+      throw new Error('ID squadra target non valido');
     }
 
     if (!targetUserId && !targetTeamId) {
-      throw new Error('Devi specificare un target (utente o team)');
+      throw new Error('Devi specificare un utente o una squadra');
     }
 
-    const query = { fromUser: new ObjectId(fromUserId) };
-    if (targetUserId) {
-      query.targetUser = new ObjectId(targetUserId);
-      if (fromUserId === targetUserId) {
-        throw new Error('Non puoi lasciare feedback a te stesso');
-      }
-    }
-    if (targetTeamId) {
-      query.targetTeam = new ObjectId(targetTeamId);
+    if (rating < 1 || rating > 5) {
+      throw new Error('Rating deve essere tra 1 e 5');
     }
 
-    const existingFeedback = await this.collection.findOne(query);
-    if (existingFeedback) {
-      throw new Error('Hai già lasciato un feedback per questo target');
+    // Verifica che non stia lasciando feedback a se stesso
+    if (targetUserId && fromUserId === targetUserId) {
+      throw new Error('Non puoi lasciare feedback a te stesso');
     }
 
     const feedback = {
-      fromUser: new ObjectId(fromUserId),
-      targetUser: targetUserId ? new ObjectId(targetUserId) : null,
-      targetTeam: targetTeamId ? new ObjectId(targetTeamId) : null,
+      fromUserId: new ObjectId(fromUserId),
+      targetUserId: targetUserId ? new ObjectId(targetUserId) : null,
+      targetTeamId: targetTeamId ? new ObjectId(targetTeamId) : null,
       rating: parseInt(rating),
       comment: comment || '',
       tags: tags || [],
@@ -71,72 +76,78 @@ export class FeedbackModel {
     return { ...feedback, _id: result.insertedId };
   }
 
-  async getFeedbackForUser(userId) {
+  async getUserFeedbacks(userId) {
     if (!ObjectId.isValid(userId)) return [];
 
-    const feedback = await this.collection
-      .find({ targetUser: new ObjectId(userId) })
+    return await this.collection
+      .find({ targetUserId: new ObjectId(userId) })
       .sort({ createdAt: -1 })
-      .limit(100)
       .toArray();
-
-    return feedback;
   }
 
-  async getFeedbackForTeam(teamId) {
+  async getTeamFeedbacks(teamId) {
     if (!ObjectId.isValid(teamId)) return [];
 
-    const feedback = await this.collection
-      .find({ targetTeam: new ObjectId(teamId) })
+    return await this.collection
+      .find({ targetTeamId: new ObjectId(teamId) })
       .sort({ createdAt: -1 })
-      .limit(100)
       .toArray();
-
-    return feedback;
   }
 
   async calculateUserStats(userId) {
-    if (!ObjectId.isValid(userId)) return { average: 0, count: 0 };
-
-    const feedback = await this.getFeedbackForUser(userId);
-    if (feedback.length === 0) {
+    if (!ObjectId.isValid(userId)) {
       return { average: 0, count: 0 };
     }
 
-    const sum = feedback.reduce((acc, f) => acc + f.rating, 0);
-    const average = sum / feedback.length;
+    const feedbacks = await this.getUserFeedbacks(userId);
+    
+    if (feedbacks.length === 0) {
+      return { average: 0, count: 0 };
+    }
+
+    const totalRating = feedbacks.reduce((sum, f) => sum + f.rating, 0);
+    const average = totalRating / feedbacks.length;
 
     return {
-      average: Math.round(average * 10) / 10,
-      count: feedback.length
+      average: parseFloat(average.toFixed(1)),
+      count: feedbacks.length
     };
   }
 
   async calculateTeamStats(teamId) {
-    if (!ObjectId.isValid(teamId)) return { average: 0, count: 0 };
-
-    const feedback = await this.getFeedbackForTeam(teamId);
-    if (feedback.length === 0) {
+    if (!ObjectId.isValid(teamId)) {
       return { average: 0, count: 0 };
     }
 
-    const sum = feedback.reduce((acc, f) => acc + f.rating, 0);
-    const average = sum / feedback.length;
+    const feedbacks = await this.getTeamFeedbacks(teamId);
+    
+    if (feedbacks.length === 0) {
+      return { average: 0, count: 0 };
+    }
+
+    const totalRating = feedbacks.reduce((sum, f) => sum + f.rating, 0);
+    const average = totalRating / feedbacks.length;
 
     return {
-      average: Math.round(average * 10) / 10,
-      count: feedback.length
+      average: parseFloat(average.toFixed(1)),
+      count: feedbacks.length
     };
   }
 
   async delete(feedbackId, userId) {
-    if (!ObjectId.isValid(feedbackId)) throw new Error('ID feedback non valido');
+    if (!ObjectId.isValid(feedbackId)) {
+      throw new Error('ID feedback non valido');
+    }
 
     const feedback = await this.collection.findOne({ _id: new ObjectId(feedbackId) });
-    if (!feedback) throw new Error('Feedback non trovato');
+    
+    if (!feedback) {
+      throw new Error('Feedback non trovato');
+    }
 
-    if (feedback.fromUser.toString() !== userId) {
-      throw new Error('Puoi eliminare solo i tuoi feedback');
+    // Solo il creatore può eliminare il feedback
+    if (feedback.fromUserId.toString() !== userId) {
+      throw new Error('Non puoi eliminare questo feedback');
     }
 
     await this.collection.deleteOne({ _id: new ObjectId(feedbackId) });
