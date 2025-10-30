@@ -1,11 +1,11 @@
 // ============================================
-// API /api/auth - CON LOGIN ADMIN HARDCODED ✅
+// API /api/auth - Autenticazione Completa
 // ============================================
 
 import { connectToDatabase } from '../lib/mongodb.js';
 import { UserModel } from '../models/User.js';
 import { authenticateRequest, generateToken } from '../lib/auth.js';
-import { sendPasswordResetEmail } from '../lib/email.js';
+import { sendWelcomeEmail, sendPasswordResetEmail } from '../lib/email.js';
 import crypto from 'crypto';
 
 export default async function handler(req, res) {
@@ -25,7 +25,7 @@ export default async function handler(req, res) {
     // ============================================
     // REGISTER
     // ============================================
-    if (req.method === 'POST' && req.url.includes('action=register')) {
+    if (req.method === 'POST' && req.url.includes('/register')) {
       try {
         const { username, email, password, primaryRole, platform, level, nationality } = req.body;
 
@@ -46,6 +46,13 @@ export default async function handler(req, res) {
         const token = generateToken(user._id.toString());
         const sanitizedUser = userModel.sanitizeUser(user);
 
+        // Invia email di benvenuto (opzionale)
+        try {
+          await sendWelcomeEmail(email, username);
+        } catch (emailError) {
+          console.error('Email error:', emailError);
+        }
+
         return res.status(201).json({
           message: 'Registrazione completata con successo',
           token,
@@ -59,14 +66,14 @@ export default async function handler(req, res) {
           return res.status(409).json({ error: error.message });
         }
         
-        return res.status(500).json({ error: 'Errore durante la registrazione. Riprova.' });
+        return res.status(500).json({ error: 'Errore durante la registrazione' });
       }
     }
 
     // ============================================
-    // LOGIN (CON ADMIN HARDCODED) ✅
+    // LOGIN (CON ADMIN HARDCODED)
     // ============================================
-    if (req.method === 'POST' && req.url.includes('action=login')) {
+    if (req.method === 'POST' && req.url.includes('/login')) {
       try {
         const { email, password } = req.body;
 
@@ -81,10 +88,8 @@ export default async function handler(req, res) {
         if (ADMIN_EMAIL && ADMIN_PASSWORD && email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
           console.log('✅ Admin login diretto');
           
-          // Genera token speciale per admin
           const adminToken = generateToken('admin');
           
-          // Crea oggetto admin fittizio
           const adminUser = {
             _id: 'admin',
             username: 'Admin',
@@ -97,7 +102,10 @@ export default async function handler(req, res) {
             averageRating: 5,
             feedbackCount: 0,
             lookingForTeam: false,
-            nationality: 'Italia'
+            nationality: 'Italia',
+            secondaryRoles: [],
+            favoriteTeams: [],
+            favoritePlayers: []
           };
 
           return res.status(200).json({
@@ -107,7 +115,7 @@ export default async function handler(req, res) {
           });
         }
 
-        // Login normale per utenti normali
+        // Login normale per utenti
         const user = await userModel.findByEmail(email);
         
         if (!user) {
@@ -123,6 +131,12 @@ export default async function handler(req, res) {
         if (!isValid) {
           return res.status(401).json({ error: 'Credenziali non valide' });
         }
+
+        // Aggiorna lastActive
+        await userModel.collection.updateOne(
+          { _id: user._id },
+          { $set: { lastActive: new Date() } }
+        );
 
         const token = generateToken(user._id.toString());
         const sanitizedUser = userModel.sanitizeUser(user);
@@ -143,9 +157,9 @@ export default async function handler(req, res) {
     }
 
     // ============================================
-    // ME (Get current user)
+    // VERIFY TOKEN
     // ============================================
-    if (req.method === 'GET' && req.url.includes('action=me')) {
+    if (req.method === 'GET' && req.url.includes('/verify')) {
       try {
         const userId = await authenticateRequest(req);
         
@@ -155,12 +169,10 @@ export default async function handler(req, res) {
 
         // ✅ CONTROLLO ADMIN SPECIALE
         if (userId === 'admin') {
-          const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
-          
           const adminUser = {
             _id: 'admin',
             username: 'Admin',
-            email: ADMIN_EMAIL || 'admin@proclubhub.com',
+            email: process.env.ADMIN_EMAIL,
             isAdmin: true,
             profileCompleted: true,
             platform: 'PC',
@@ -169,9 +181,11 @@ export default async function handler(req, res) {
             averageRating: 5,
             feedbackCount: 0,
             lookingForTeam: false,
-            nationality: 'Italia'
+            nationality: 'Italia',
+            secondaryRoles: [],
+            favoriteTeams: [],
+            favoritePlayers: []
           };
-
           return res.status(200).json({ user: adminUser });
         }
 
@@ -185,75 +199,20 @@ export default async function handler(req, res) {
           return res.status(403).json({ error: 'Account sospeso' });
         }
 
-        const sanitizedUser = userModel.sanitizeUser(user);
-
-        return res.status(200).json({ user: sanitizedUser });
-
-      } catch (error) {
-        console.error('Get me error:', error);
-        return res.status(500).json({ error: 'Errore durante il recupero dei dati utente' });
-      }
-    }
-
-    // ============================================
-    // UPDATE ME (Update current user)
-    // ============================================
-    if (req.method === 'PUT' && req.url.includes('action=me')) {
-      try {
-        const userId = await authenticateRequest(req);
-        
-        if (!userId) {
-          return res.status(401).json({ error: 'Non autenticato' });
-        }
-
-        // ✅ Admin non può modificare il profilo (è hardcoded)
-        if (userId === 'admin') {
-          return res.status(400).json({ error: 'L\'admin non può modificare il profilo' });
-        }
-
-        const updates = req.body;
-        delete updates.password;
-        delete updates.email;
-        delete updates._id;
-        delete updates.role;
-        delete updates.suspended;
-        delete updates.createdAt;
-
-        const currentUser = await userModel.findById(userId);
-        
-        if (!currentUser) {
-          return res.status(404).json({ error: 'Utente non trovato' });
-        }
-
-        if ('instagram' in updates || 'tiktok' in updates) {
-          const newInstagram = updates.instagram !== undefined ? updates.instagram : currentUser.instagram;
-          const newTiktok = updates.tiktok !== undefined ? updates.tiktok : currentUser.tiktok;
-
-          if (!newInstagram && !newTiktok) {
-            return res.status(400).json({ 
-              error: 'Devi avere almeno un social (Instagram O TikTok)' 
-            });
-          }
-        }
-
-        const updatedUser = await userModel.update(userId, updates);
-        const sanitizedUser = userModel.sanitizeUser(updatedUser);
-
         return res.status(200).json({
-          message: 'Profilo aggiornato con successo',
-          user: sanitizedUser
+          user: userModel.sanitizeUser(user)
         });
 
       } catch (error) {
-        console.error('Update me error:', error);
-        return res.status(500).json({ error: 'Errore durante l\'aggiornamento del profilo' });
+        console.error('Verify error:', error);
+        return res.status(401).json({ error: 'Token non valido' });
       }
     }
 
     // ============================================
-    // FORGOT PASSWORD / REQUEST RESET
+    // RECOVER PASSWORD
     // ============================================
-    if (req.method === 'POST' && (req.url.includes('action=forgot-password') || req.url.includes('action=request-reset'))) {
+    if (req.method === 'POST' && req.url.includes('/recover')) {
       try {
         const { email } = req.body;
 
@@ -270,66 +229,80 @@ export default async function handler(req, res) {
         }
 
         const resetToken = crypto.randomBytes(32).toString('hex');
-        const resetTokenExpiry = new Date(Date.now() + 3600000); // 1 ora
+        const resetExpires = new Date(Date.now() + 3600000); // 1 ora
 
-        await userModel.update(user._id.toString(), {
-          resetToken,
-          resetTokenExpiry
-        });
+        await userModel.collection.updateOne(
+          { _id: user._id },
+          { 
+            $set: { 
+              resetPasswordToken: resetToken,
+              resetPasswordExpires: resetExpires 
+            } 
+          }
+        );
 
-        await sendPasswordResetEmail(email, user.username, resetToken);
+        // Invia email
+        try {
+          await sendPasswordResetEmail(email, resetToken);
+        } catch (emailError) {
+          console.error('Email error:', emailError);
+        }
 
         return res.status(200).json({
           message: 'Email di reset inviata con successo'
         });
 
       } catch (error) {
-        console.error('Forgot password error:', error);
-        return res.status(500).json({ error: 'Errore durante l\'invio dell\'email' });
+        console.error('Recover error:', error);
+        return res.status(500).json({ error: 'Errore durante il recupero password' });
       }
     }
 
     // ============================================
     // RESET PASSWORD
     // ============================================
-    if (req.method === 'POST' && req.url.includes('action=reset-password')) {
+    if (req.method === 'POST' && req.url.includes('/reset')) {
       try {
         const { token, newPassword } = req.body;
 
         if (!token || !newPassword) {
-          return res.status(400).json({ error: 'Token e password richiesti' });
+          return res.status(400).json({ error: 'Token e nuova password richiesti' });
         }
 
-        if (newPassword.length < 6) {
-          return res.status(400).json({ error: 'Password deve essere almeno 6 caratteri' });
-        }
+        const user = await userModel.collection.findOne({
+          resetPasswordToken: token,
+          resetPasswordExpires: { $gt: new Date() }
+        });
 
-        const user = await userModel.findByResetToken(token);
-        
         if (!user) {
           return res.status(400).json({ error: 'Token non valido o scaduto' });
         }
 
-        await userModel.update(user._id.toString(), {
-          password: newPassword,
-          resetToken: null,
-          resetTokenExpiry: null
-        });
+        const bcrypt = await import('bcryptjs');
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+        await userModel.collection.updateOne(
+          { _id: user._id },
+          { 
+            $set: { password: hashedPassword },
+            $unset: { resetPasswordToken: '', resetPasswordExpires: '' }
+          }
+        );
 
         return res.status(200).json({
           message: 'Password reimpostata con successo'
         });
 
       } catch (error) {
-        console.error('Reset password error:', error);
-        return res.status(500).json({ error: 'Errore durante il reset della password' });
+        console.error('Reset error:', error);
+        return res.status(500).json({ error: 'Errore durante il reset password' });
       }
     }
 
     return res.status(404).json({ error: 'Endpoint non trovato' });
 
   } catch (error) {
-    console.error('❌ Auth API error:', error);
+    console.error('Auth endpoint error:', error);
     return res.status(500).json({ 
       error: 'Errore del server',
       details: error.message 
