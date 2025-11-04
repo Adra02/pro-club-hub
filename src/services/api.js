@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 
 // ⚠️ IMPORTANTE: Sostituisci con il TUO URL Vercel dopo il deploy!
-const API_BASE_URL = 'https://your-vercel-url.vercel.app';
+const API_BASE_URL = 'https://www.pro-club-hub.com';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -289,3 +289,4 @@ export const adminService = {
 };
 
 export default api;
+
