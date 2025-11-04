@@ -1,0 +1,217 @@
+import i18n from 'i18next';
+import { initReactI18next } from 'react-i18next';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const resources = {
+  it: {
+    translation: {
+      // Auth
+      auth: {
+        login: 'Accedi',
+        register: 'Registrati',
+        email: 'Email',
+        password: 'Password',
+        forgotPassword: 'Password dimenticata?',
+        noAccount: 'Non hai un account?',
+        haveAccount: 'Hai già un account?',
+        resetPassword: 'Reset Password',
+        sendResetLink: 'Invia link reset',
+        username: 'Username',
+        confirmPassword: 'Conferma Password',
+      },
+      // Common
+      common: {
+        search: 'Cerca',
+        save: 'Salva',
+        cancel: 'Annulla',
+        delete: 'Elimina',
+        edit: 'Modifica',
+        loading: 'Caricamento...',
+        error: 'Errore',
+        success: 'Successo',
+        yes: 'Sì',
+        no: 'No',
+        confirm: 'Conferma',
+        back: 'Indietro',
+        next: 'Avanti',
+        submit: 'Invia',
+        close: 'Chiudi',
+        update: 'Aggiorna',
+        create: 'Crea',
+        join: 'Unisciti',
+        leave: 'Lascia',
+        accept: 'Accetta',
+        reject: 'Rifiuta',
+        pending: 'In attesa',
+        completed: 'Completato',
+        view: 'Visualizza',
+        add: 'Aggiungi',
+        remove: 'Rimuovi',
+        filter: 'Filtra',
+        clear: 'Pulisci',
+        all: 'Tutti',
+        none: 'Nessuno',
+      },
+      // Players
+      players: {
+        title: 'Giocatori',
+        searchPlaceholder: 'Cerca giocatori...',
+        level: 'Livello',
+        rating: 'Valutazione',
+        platform: 'Piattaforma',
+        nationality: 'Nazionalità',
+        role: 'Ruolo',
+        primaryRole: 'Ruolo Principale',
+        secondaryRoles: 'Ruoli Secondari',
+        lookingForTeam: 'Cerco Squadra',
+        notLookingForTeam: 'Non cerco squadra',
+        bio: 'Biografia',
+        statistics: 'Statistiche',
+        feedback: 'Feedback',
+        sendRequest: 'Invia Richiesta',
+        leaveFeedback: 'Lascia Feedback',
+        addToFavorites: 'Aggiungi ai Preferiti',
+        removeFromFavorites: 'Rimuovi dai Preferiti',
+      },
+      // Teams
+      teams: {
+        title: 'Squadre',
+        searchPlaceholder: 'Cerca squadre...',
+        createTeam: 'Crea Squadra',
+        teamName: 'Nome Squadra',
+        description: 'Descrizione',
+        members: 'Membri',
+        owner: 'Proprietario',
+        lookingForPlayers: 'Cerchiamo giocatori',
+        notLookingForPlayers: 'Non cerchiamo giocatori',
+        joinTeam: 'Unisciti alla Squadra',
+        leaveTeam: 'Lascia Squadra',
+        editTeam: 'Modifica Squadra',
+        deleteTeam: 'Elimina Squadra',
+        kickMember: 'Espelli Membro',
+        confirmDelete: 'Sei sicuro di voler eliminare questa squadra?',
+        confirmLeave: 'Sei sicuro di voler lasciare questa squadra?',
+        confirmKick: 'Sei sicuro di voler espellere questo membro?',
+      },
+      // Roles
+      roles: {
+        GK: 'Portiere',
+        CB: 'Difensore Centrale',
+        RB: 'Terzino Destro',
+        LB: 'Terzino Sinistro',
+        CDM: 'Centrocampista Difensivo',
+        CM: 'Centrocampista',
+        CAM: 'Trequartista',
+        RM: 'Ala Destra',
+        LM: 'Ala Sinistra',
+        RW: 'Attaccante Destro',
+        LW: 'Attaccante Sinistro',
+        ST: 'Attaccante',
+      },
+      // Platforms
+      platforms: {
+        'PlayStation 5': 'PlayStation 5',
+        'Xbox Series X/S': 'Xbox Series X/S',
+        PC: 'PC',
+      },
+      // Feedback
+      feedback: {
+        title: 'Feedback',
+        leaveFeedback: 'Lascia Feedback',
+        rating: 'Valutazione',
+        tags: 'Tag',
+        comment: 'Commento',
+        optional: 'Opzionale',
+        submit: 'Invia Feedback',
+        feedbackSent: 'Feedback inviato con successo',
+        averageRating: 'Valutazione Media',
+        feedbackCount: 'Numero Feedback',
+        tagsPlaceholder: 'Seleziona tag (max 5)',
+      },
+      // Favorites
+      favorites: {
+        title: 'Preferiti',
+        players: 'Giocatori',
+        teams: 'Squadre',
+        noFavorites: 'Nessun preferito',
+        added: 'Aggiunto ai preferiti',
+        removed: 'Rimosso dai preferiti',
+      },
+      // Profile
+      profile: {
+        title: 'Profilo',
+        editProfile: 'Modifica Profilo',
+        myTeam: 'La Mia Squadra',
+        mySocial: 'I Miei Social',
+        receivedFeedback: 'Feedback Ricevuti',
+        changeLanguage: 'Cambia Lingua',
+        adminPanel: 'Admin Panel',
+        logout: 'Logout',
+        completeProfile: 'Completa Profilo',
+        profileIncomplete: 'Profilo incompleto. Completa il profilo per sbloccare tutte le funzionalità.',
+        instagram: 'Instagram',
+        tiktok: 'TikTok',
+        liveLink: 'Link Live',
+      },
+      // Errors
+      errors: {
+        invalidCredentials: 'Credenziali non valide',
+        emailInUse: 'Email già in uso',
+        usernameInUse: 'Username già in uso',
+        profileIncomplete: 'Profilo incompleto. Completa il profilo per accedere a questa funzione.',
+        alreadyInTeam: 'Hai già una squadra',
+        requestAlreadySent: 'Hai già inviato una richiesta a questa squadra',
+        requestLimit: 'Hai raggiunto il limite di richieste (10/ora)',
+        cannotFeedbackSelf: 'Non puoi lasciare feedback a te stesso',
+        alreadyFeedback: 'Hai già lasciato un feedback a questo giocatore',
+        accountSuspended: 'Account sospeso. Contatta l\'amministratore.',
+        invalidToken: 'Token non valido o scaduto',
+        requiredField: 'Campo obbligatorio',
+        networkError: 'Errore di rete. Riprova.',
+        somethingWentWrong: 'Qualcosa è andato storto. Riprova.',
+      },
+      // Success
+      success: {
+        registrationComplete: 'Registrazione completata con successo! Controlla la tua email',
+        loginSuccess: 'Login effettuato con successo',
+        profileUpdated: 'Profilo aggiornato con successo',
+        teamCreated: 'Squadra creata con successo',
+        requestSent: 'Richiesta inviata con successo',
+        requestAccepted: 'Richiesta accettata',
+        feedbackSent: 'Feedback inviato con successo',
+        addedToFavorites: 'Aggiunto ai preferiti',
+        removedFromFavorites: 'Rimosso dai preferiti',
+        imageUploaded: 'Immagine caricata con successo',
+      },
+    },
+  },
+  en: {
+    translation: {
+      auth: {
+        login: 'Login',
+        register: 'Register',
+        email: 'Email',
+        password: 'Password',
+        forgotPassword: 'Forgot Password?',
+      },
+      common: {
+        search: 'Search',
+        save: 'Save',
+        cancel: 'Cancel',
+      },
+    },
+  },
+};
+
+i18n
+  .use(initReactI18next)
+  .init({
+    resources,
+    lng: 'it',
+    fallbackLng: 'it',
+    interpolation: {
+      escapeValue: false,
+    },
+  });
+
+export default i18n;
