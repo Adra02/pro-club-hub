@@ -1,0 +1,33 @@
+{
+  "expo": {
+    "name": "Pro Club Hub",
+    "slug": "pro-club-hub",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#0a0f1e"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.proclubhub.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0a0f1e"
+      },
+      "package": "com.proclubhub.app",
+      "permissions": [
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE"
+      ]
+    },
+    "web": {
+      "bundler": "metro"
+    }
+  }
+}
